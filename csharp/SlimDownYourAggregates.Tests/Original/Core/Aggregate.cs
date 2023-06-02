@@ -1,6 +1,6 @@
 namespace SlimDownYourAggregates.Tests.Original.Core;
 
-public class Aggregate
+public abstract class Aggregate
 {
     public Guid Id { get; protected set; }
 
