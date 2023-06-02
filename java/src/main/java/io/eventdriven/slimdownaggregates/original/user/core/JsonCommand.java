@@ -1,4 +1,4 @@
-package io.eventdriven.slimdownaggregates.original.core;
+package io.eventdriven.slimdownaggregates.original.user.core;
 
 public class JsonCommand {
   public String stringValueOfParameterNamed(String username) {

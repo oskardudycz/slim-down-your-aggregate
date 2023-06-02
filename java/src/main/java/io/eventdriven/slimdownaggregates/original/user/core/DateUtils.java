@@ -1,4 +1,4 @@
-package io.eventdriven.slimdownaggregates.original.core;
+package io.eventdriven.slimdownaggregates.original.user.core;
 
 import java.time.LocalDate;
 

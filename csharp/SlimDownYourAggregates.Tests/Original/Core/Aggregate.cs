@@ -22,5 +22,4 @@ public class Aggregate
     }
 
     public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
-
 }

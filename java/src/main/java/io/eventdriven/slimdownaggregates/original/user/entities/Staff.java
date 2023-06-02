@@ -1,6 +1,6 @@
-package io.eventdriven.slimdownaggregates.original.entities;
+package io.eventdriven.slimdownaggregates.original.user.entities;
 
-import io.eventdriven.slimdownaggregates.original.core.EnumOptionData;
+import io.eventdriven.slimdownaggregates.original.user.core.EnumOptionData;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 

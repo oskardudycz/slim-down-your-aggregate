@@ -1,8 +1,8 @@
-package io.eventdriven.slimdownaggregates.original.entities;
+package io.eventdriven.slimdownaggregates.original.user.entities;
 
 
-import io.eventdriven.slimdownaggregates.original.AppUser;
-import io.eventdriven.slimdownaggregates.original.core.AbstractPersistableCustom;
+import io.eventdriven.slimdownaggregates.original.user.AppUser;
+import io.eventdriven.slimdownaggregates.original.user.core.AbstractPersistableCustom;
 import jakarta.persistence.*;
 
 @Entity

@@ -1,4 +1,4 @@
-package io.eventdriven.slimdownaggregates.original.entities;
+package io.eventdriven.slimdownaggregates.original.user.entities;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;

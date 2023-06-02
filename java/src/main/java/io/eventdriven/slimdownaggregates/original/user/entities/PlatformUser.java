@@ -1,4 +1,4 @@
-package io.eventdriven.slimdownaggregates.original.entities;
+package io.eventdriven.slimdownaggregates.original.user.entities;
 
 import org.springframework.security.core.userdetails.UserDetails;
 

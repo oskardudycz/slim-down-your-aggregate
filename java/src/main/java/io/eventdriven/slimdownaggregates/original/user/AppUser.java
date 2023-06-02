@@ -1,7 +1,7 @@
-package io.eventdriven.slimdownaggregates.original;
+package io.eventdriven.slimdownaggregates.original.user;
 
-import io.eventdriven.slimdownaggregates.original.core.*;
-import io.eventdriven.slimdownaggregates.original.entities.*;
+import io.eventdriven.slimdownaggregates.original.user.core.*;
+import io.eventdriven.slimdownaggregates.original.user.entities.*;
 import jakarta.persistence.*;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.core.GrantedAuthority;
