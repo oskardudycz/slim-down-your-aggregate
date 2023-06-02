@@ -1,0 +1,65 @@
+plugins {
+  id 'org.springframework.boot' version '3.0.1'
+  id 'io.spring.dependency-management' version '1.1.0'
+  id 'java'
+}
+
+group = 'io.event-driven'
+version = '0.0.1-SNAPSHOT'
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  // Spring Boot Web
+  implementation 'org.springframework.boot:spring-boot-starter-web:3.0.1'
+  // Validation
+  implementation 'org.springframework.boot:spring-boot-starter-validation:3.0.1'
+  // Retry policy
+  implementation 'org.springframework.retry:spring-retry:2.0.0'
+  // Swagger
+  implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.0.2'
+  // Serialisation
+  implementation 'com.fasterxml.jackson.core:jackson-databind:2.14.0'
+
+  // Log4J logging
+  implementation 'org.springframework.boot:spring-boot-starter-log4j2:3.0.1'
+
+  // Postgres and JPA
+  implementation 'org.springframework.boot:spring-boot-starter-data-jpa:3.0.1'
+  implementation 'org.postgresql:postgresql:42.5.1'
+  implementation 'junit:junit:4.13.2'
+
+  // Test frameworks
+  testImplementation 'org.springframework.boot:spring-boot-starter-test:3.0.1'
+
+  testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.1'
+  testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.9.1'
+  testImplementation 'org.junit.platform:junit-platform-launcher:1.9.1'
+  testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.14.0'
+}
+
+configurations {
+  all*.exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+  all*.exclude group: 'spring-boot-starter-test', module: 'junit'
+}
+
+tasks.named('test') {
+  useJUnitPlatform()
+}
+
+tasks.withType(JavaCompile) {
+  options.compilerArgs += "--enable-preview"
+}
+tasks.withType(Test) {
+  jvmArgs += "--enable-preview"
+}
+tasks.withType(JavaExec) {
+  jvmArgs += "--enable-preview"
+}
+
+test {
+  testLogging.showStandardStreams = true
+  testLogging.exceptionFormat = 'full'
+}
