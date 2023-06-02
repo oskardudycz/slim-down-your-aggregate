@@ -1,4 +1,4 @@
-package io.eventdriven.slimdownaggregates.book.entities;
+package io.eventdriven.slimdownaggregates.original.entities;
 
 public class ChapterTitle {
   private final String value;

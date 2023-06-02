@@ -1,4 +1,4 @@
-package io.eventdriven.slimdownaggregates.book.core;
+package io.eventdriven.slimdownaggregates.original.core;
 
 import java.util.ArrayList;
 import java.util.Collections;

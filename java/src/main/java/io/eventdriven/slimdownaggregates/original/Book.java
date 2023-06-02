@@ -1,8 +1,8 @@
-package io.eventdriven.slimdownaggregates.book;
+package io.eventdriven.slimdownaggregates.original;
 
-import io.eventdriven.slimdownaggregates.book.core.Aggregate;
-import io.eventdriven.slimdownaggregates.book.entities.*;
-import io.eventdriven.slimdownaggregates.book.services.IPublishingHouse;
+import io.eventdriven.slimdownaggregates.original.core.Aggregate;
+import io.eventdriven.slimdownaggregates.original.entities.*;
+import io.eventdriven.slimdownaggregates.original.services.IPublishingHouse;
 
 import java.time.LocalDate;
 import java.util.*;

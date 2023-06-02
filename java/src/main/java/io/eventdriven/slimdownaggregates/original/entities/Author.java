@@ -1,4 +1,4 @@
-package io.eventdriven.slimdownaggregates.book.entities;
+package io.eventdriven.slimdownaggregates.original.entities;
 
 public class Author {
   // Assuming that the Author class has a name
