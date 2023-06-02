@@ -1,32 +1,15 @@
 package io.eventdriven.slimdownaggregates.original;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import io.eventdriven.slimdownaggregates.original.core.*;
 import io.eventdriven.slimdownaggregates.original.entities.*;
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinTable;
-import jakarta.persistence.ManyToMany;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.*;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
+
+import java.time.LocalDate;
+import java.util.*;
 
 @Entity
 @Table(name = "m_appuser", uniqueConstraints = @UniqueConstraint(columnNames = { "username" }, name = "username_org"))
@@ -179,12 +162,12 @@ public class AppUser extends AbstractPersistableCustom implements PlatformUser {
 
   }
 
-  public void changeOffice(final Office differentOffice) {
-    this.office = differentOffice;
+  public void changeOffice(final Office newValue) {
+    this.office = newValue;
   }
 
-  public void changeStaff(final Staff differentStaff) {
-    this.staff = differentStaff;
+  public void changeStaff(final Staff newValue) {
+    this.staff = newValue;
   }
 
   public void updateRoles(final Set<Role> allRoles) {
@@ -194,104 +177,37 @@ public class AppUser extends AbstractPersistableCustom implements PlatformUser {
     }
   }
 
-  public Map<String, Object> update(final JsonCommand command, final PlatformPasswordEncoder platformPasswordEncoder,
-                                    final Collection<Client> clients) {
-
-    final Map<String, Object> actualChanges = new LinkedHashMap<>(7);
-
-    // unencoded password provided
-    final String passwordParamName = "password";
-    final String passwordEncodedParamName = "passwordEncoded";
-    if (command.hasParameter(passwordParamName)) {
-      if (command.isChangeInPasswordParameterNamed(passwordParamName, this.password, platformPasswordEncoder, getId())) {
-        final String passwordEncodedValue = command.passwordValueOfParameterNamed(passwordParamName, platformPasswordEncoder,
-          getId());
-        actualChanges.put(passwordEncodedParamName, passwordEncodedValue);
-        updatePassword(passwordEncodedValue);
-      }
+  public void setUsername(final String newValue) {
+    // TODO Remove this check once we are identifying system user based on user ID
+    if (isSystemUser()) {
+      throw new NoAuthorizationException("User name of current system user may not be modified");
     }
 
-    if (command.hasParameter(passwordEncodedParamName)) {
-      if (command.isChangeInStringParameterNamed(passwordEncodedParamName, this.password)) {
-        final String newValue = command.stringValueOfParameterNamed(passwordEncodedParamName);
-        actualChanges.put(passwordEncodedParamName, newValue);
-        updatePassword(newValue);
-      }
-    }
+    this.username = newValue;
+  }
 
-    final String officeIdParamName = "officeId";
-    if (command.isChangeInLongParameterNamed(officeIdParamName, this.office.getId())) {
-      final Long newValue = command.longValueOfParameterNamed(officeIdParamName);
-      actualChanges.put(officeIdParamName, newValue);
-    }
+  public void setFirstname(final String newValue) {
+    this.firstname = newValue;
+  }
 
-    final String staffIdParamName = "staffId";
-    if (command.hasParameter(staffIdParamName)
-      && (this.staff == null || command.isChangeInLongParameterNamed(staffIdParamName, this.staff.getId()))) {
-      final Long newValue = command.longValueOfParameterNamed(staffIdParamName);
-      actualChanges.put(staffIdParamName, newValue);
-    }
+  public void setLastname(final String newValue) {
+    this.lastname = newValue;
+  }
 
-    final String rolesParamName = "roles";
-    if (command.isChangeInArrayParameterNamed(rolesParamName, getRolesAsIdStringArray())) {
-      final String[] newValue = command.arrayValueOfParameterNamed(rolesParamName);
-      actualChanges.put(rolesParamName, newValue);
-    }
+  public void setEmail(final String newValue) {
+    this.email = newValue;
+  }
 
-    final String usernameParamName = "username";
-    if (command.isChangeInStringParameterNamed(usernameParamName, this.username)) {
+  public void setPasswordNeverExpires(final boolean newValue) {
+    this.passwordNeverExpires = newValue;
+  }
 
-      // TODO Remove this check once we are identifying system user based on user ID
-      if (isSystemUser()) {
-        throw new NoAuthorizationException("User name of current system user may not be modified");
-      }
+  public void setIsSelfServiceUser(final boolean newValue) {
+    this.isSelfServiceUser = newValue;
+  }
 
-      final String newValue = command.stringValueOfParameterNamed(usernameParamName);
-      actualChanges.put(usernameParamName, newValue);
-      this.username = newValue;
-    }
-
-    final String firstnameParamName = "firstname";
-    if (command.isChangeInStringParameterNamed(firstnameParamName, this.firstname)) {
-      final String newValue = command.stringValueOfParameterNamed(firstnameParamName);
-      actualChanges.put(firstnameParamName, newValue);
-      this.firstname = newValue;
-    }
-
-    final String lastnameParamName = "lastname";
-    if (command.isChangeInStringParameterNamed(lastnameParamName, this.lastname)) {
-      final String newValue = command.stringValueOfParameterNamed(lastnameParamName);
-      actualChanges.put(lastnameParamName, newValue);
-      this.lastname = newValue;
-    }
-
-    final String emailParamName = "email";
-    if (command.isChangeInStringParameterNamed(emailParamName, this.email)) {
-      final String newValue = command.stringValueOfParameterNamed(emailParamName);
-      actualChanges.put(emailParamName, newValue);
-      this.email = newValue;
-    }
-
-    final String passwordNeverExpire = "passwordNeverExpires";
-
-    if (command.hasParameter(passwordNeverExpire)) {
-      if (command.isChangeInBooleanParameterNamed(passwordNeverExpire, this.passwordNeverExpires)) {
-        final boolean newValue = command.booleanPrimitiveValueOfParameterNamed(passwordNeverExpire);
-        actualChanges.put(passwordNeverExpire, newValue);
-        this.passwordNeverExpires = newValue;
-      }
-    }
-
-    if (command.hasParameter(AppUserConstants.IS_SELF_SERVICE_USER)) {
-      if (command.isChangeInBooleanParameterNamed(AppUserConstants.IS_SELF_SERVICE_USER, this.isSelfServiceUser)) {
-        final boolean newValue = command.booleanPrimitiveValueOfParameterNamed(AppUserConstants.IS_SELF_SERVICE_USER);
-        actualChanges.put(AppUserConstants.IS_SELF_SERVICE_USER, newValue);
-        this.isSelfServiceUser = newValue;
-      }
-    }
-
-    if (this.isSelfServiceUser && command.hasParameter(AppUserConstants.CLIENTS)) {
-      actualChanges.put(AppUserConstants.CLIENTS, command.arrayValueOfParameterNamed(AppUserConstants.CLIENTS));
+  public void setClients(final Collection<Client> clients) {
+    if (this.isSelfServiceUser) {
       Set<AppUserClientMapping> newClients = createAppUserClientMappings(clients);
       if (this.appUserClientMappings == null) {
         this.appUserClientMappings = new HashSet<>();
@@ -299,16 +215,12 @@ public class AppUser extends AbstractPersistableCustom implements PlatformUser {
         this.appUserClientMappings.retainAll(newClients);
       }
       this.appUserClientMappings.addAll(newClients);
-    } else if (!this.isSelfServiceUser && actualChanges.containsKey(AppUserConstants.IS_SELF_SERVICE_USER)) {
-      actualChanges.put(AppUserConstants.CLIENTS, new ArrayList<>());
+    } else {
       if (this.appUserClientMappings != null) {
         this.appUserClientMappings.clear();
       }
     }
-
-    return actualChanges;
   }
-
   private String[] getRolesAsIdStringArray() {
     final List<String> roleIds = new ArrayList<>();
 
