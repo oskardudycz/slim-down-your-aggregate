@@ -11,7 +11,7 @@
     </File>
   </Appenders>
   <Loggers>
-    <Logger name="io.eventdriven.ecommerce" level="debug" additivity="false">
+    <Logger name="io.eventdriven.slimdownaggregates" level="debug" additivity="false">
       <AppenderRef ref="LogToFile"/>
       <AppenderRef ref="LogToConsole"/>
     </Logger>
