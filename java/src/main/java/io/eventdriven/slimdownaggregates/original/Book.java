@@ -144,6 +144,9 @@ public class Book extends Aggregate {
   }
 
   public void addTranslation(Translation translation) {
+    if (currentState != State.EDITING)
+      throw new IllegalStateException("Cannot add translation of a book that is not in the Editing state.");
+
     if (translations.size() >= 5)
       throw new IllegalStateException("Cannot add more translations. Maximum 5 translations are allowed.");
 
@@ -151,6 +154,9 @@ public class Book extends Aggregate {
   }
 
   public void addFormat(Format format) {
+    if (currentState != State.EDITING)
+      throw new IllegalStateException("Cannot add format of a book that is not in the Editing state.");
+
     if (formats.stream().anyMatch(f -> f.getFormatType().equals(format.getFormatType())))
       throw new IllegalStateException("Format " + format.getFormatType() + " already exists.");
 
@@ -158,6 +164,9 @@ public class Book extends Aggregate {
   }
 
   public void removeFormat(Format format) {
+    if (currentState != State.EDITING)
+      throw new IllegalStateException("Cannot remove format of a book that is not in the Editing state.");
+
     if (formats.stream().noneMatch(f -> f.getFormatType().equals(format.getFormatType())))
       throw new IllegalStateException("Format " + format.getFormatType() + " does not exist.");
 
