@@ -10,7 +10,7 @@ import java.util.UUID;
 
 import static io.eventdriven.slimdownaggregates.slimmed.BookEvent.*;
 
-public class Book{
+public class Book {
   private List<Chapter> chapters = new ArrayList<>();
   private CommitteeApproval committeeApproval;
   private IPublishingHouse publishingHouse;
@@ -41,18 +41,17 @@ public class Book{
 
   public ChapterAdded addChapter(ChapterTitle title, ChapterContent content) {
     if (chapters.stream().anyMatch(chap -> chap.getTitle().equals(title))) {
-      throw new IllegalStateException("Chapter with the same title already exists.");
+      throw new IllegalStateException("chapter with the same title already exists.");
     }
 
-    if (!chapters.isEmpty() && !chapters.get(chapters.size() - 1).getTitle().getValue().equals("Chapter " + chapters.size())) {
+    if (!chapters.isEmpty() && !chapters.get(chapters.size() - 1).getTitle().getValue().equals("chapter " + chapters.size())) {
       throw new IllegalStateException(
-        "Chapter should be added in sequence. The title of the next chapter should be 'Chapter " + (chapters.size() + 1) + "'.");
+        "chapter should be added in sequence. The title of the next chapter should be 'chapter " + (chapters.size() + 1) + "'.");
     }
 
     var chapter = new Chapter(title, content);
-    chapters.add(chapter);
 
-    return new ChapterAdded(this.bookId, chapter);
+    return evolve(new ChapterAdded(this.bookId, chapter));
   }
 
   public MovedToEditing moveToEditing() {
@@ -62,9 +61,7 @@ public class Book{
     if (chapters.size() < 1)
       throw new IllegalStateException("A book must have at least one chapter to move to the Editing state.");
 
-    currentState = State.EDITING;
-
-    return new MovedToEditing(this.bookId);
+    return evolve(new MovedToEditing(this.bookId));
   }
 
   public TranslationAdded addTranslation(Translation translation) {
@@ -74,9 +71,7 @@ public class Book{
     if (translations.size() >= 5)
       throw new IllegalStateException("Cannot add more translations. Maximum 5 translations are allowed.");
 
-    translations.add(translation);
-
-    return new TranslationAdded(this.bookId, translation);
+    return evolve(new TranslationAdded(this.bookId, translation));
   }
 
   public FormatAdded addFormat(Format format) {
@@ -86,9 +81,7 @@ public class Book{
     if (formats.stream().anyMatch(f -> f.getFormatType().equals(format.getFormatType())))
       throw new IllegalStateException("Format " + format.getFormatType() + " already exists.");
 
-    formats.add(format);
-
-    return new FormatAdded(this.bookId, format);
+    return evolve(new FormatAdded(this.bookId, format));
   }
 
   public FormatRemoved removeFormat(Format format) {
@@ -98,9 +91,7 @@ public class Book{
     if (formats.stream().noneMatch(f -> f.getFormatType().equals(format.getFormatType())))
       throw new IllegalStateException("Format " + format.getFormatType() + " does not exist.");
 
-    formats.removeIf(f -> f.getFormatType().equals(format.getFormatType()));
-
-    return new FormatRemoved(this.bookId, format);
+    return evolve(new FormatRemoved(this.bookId, format));
   }
 
   public Approved approve(CommitteeApproval committeeApproval) {
@@ -111,9 +102,7 @@ public class Book{
       throw new IllegalStateException(
         "A book cannot be approved unless it has been reviewed by at least three reviewers.");
 
-    this.committeeApproval = committeeApproval;
-
-    return new Approved(this.bookId, committeeApproval);
+    return evolve(new Approved(this.bookId, committeeApproval));
   }
 
   public MovedToPrinting moveToPrinting() throws Exception {
@@ -134,9 +123,7 @@ public class Book{
       throw new Exception("Cannot move to the Printing state until the genre limit is reached.");
     }
 
-    this.currentState = State.PRINTING;
-
-    return new MovedToPrinting(this.bookId);
+    return evolve(new MovedToPrinting(this.bookId));
   }
 
   public Published moveToPublished() {
@@ -147,12 +134,10 @@ public class Book{
       throw new IllegalStateException(
         "A book cannot be moved to the Published state unless it has been reviewed by at least three reviewers.");
 
-    currentState = State.PUBLISHED;
-
-    return new Published(this.bookId, isbn, title, author);
+    return evolve(new Published(this.bookId, isbn, title, author));
   }
 
-  public BookMovedToOutOfPrintEvent moveToOutOfPrint() {
+  public MovedToOutOfPrint moveToOutOfPrint() {
     if (currentState != State.PUBLISHED)
       throw new IllegalStateException("Cannot move to Out of Print state from the current state.");
 
@@ -162,16 +147,48 @@ public class Book{
       throw new IllegalStateException(
         "Cannot move to Out of Print state if more than 10% of total copies are unsold.");
 
-    currentState = State.OUT_OF_PRINT;
-
-    return new BookMovedToOutOfPrintEvent(this.bookId);
+    return evolve(new MovedToOutOfPrint(this.bookId));
   }
 
-//  public static Book evolve(Book state, BookEvent event){
-//    return switch (event){
-//      case A
-//    }
-//  }
+  public <T extends BookEvent> T evolve(T event) {
+    return switch (event) {
+      case ChapterAdded chapterAdded: {
+        chapters.add(chapterAdded.chapter());
+        yield event;
+      }
+      case MovedToEditing ignore: {
+        currentState = State.EDITING;
+        yield event;
+      }
+      case FormatAdded formatAdded: {
+        formats.add(formatAdded.format());
+      }
+      case FormatRemoved formatRemoved: {
+        formats.removeIf(f -> f.getFormatType().equals(formatRemoved.format().getFormatType());
+        yield event;
+      }
+      case TranslationAdded translationAdded: {
+        translations.add(translationAdded.translation());
+        yield event;
+      }
+      case Approved approved: {
+        this.committeeApproval = approved.committeeApproval();
+        yield event;
+      }
+      case MovedToPrinting ignore: {
+        currentState = State.EDITING;
+        yield event;
+      }
+      case Published ignore: {
+        this.currentState = State.PRINTING;
+        yield event;
+      }
+      case MovedToOutOfPrint ignore: {
+        this.currentState = State.OUT_OF_PRINT;
+        yield event;
+      }
+    };
+  }
 
   // Getter methods
   public UUID getId() {

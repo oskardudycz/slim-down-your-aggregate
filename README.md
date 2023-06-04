@@ -45,3 +45,5 @@ We'll be doing multiple transitions step by step to make it more focused on the 
 4. Remove all the data that we don't need for IFs from Book aggregate.
 5. Add missing events.
 6. Group them in the same file to make it more readable (as they're form of documentation) and make managing it less tedious.
+7. Return events as the result of the method, and remove aggregates.
+8. Add evolve method that will take the event, update the state and return the event. Thanks to that we're getting the split between business logic and state apply.

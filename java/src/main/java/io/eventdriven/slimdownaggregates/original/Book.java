@@ -59,12 +59,12 @@ public class Book extends Aggregate {
 
   public void addChapter(ChapterTitle title, ChapterContent content) {
     if (chapters.stream().anyMatch(chap -> chap.getTitle().equals(title))) {
-      throw new IllegalStateException("Chapter with the same title already exists.");
+      throw new IllegalStateException("chapter with the same title already exists.");
     }
 
-    if (!chapters.isEmpty() && !chapters.get(chapters.size() - 1).getTitle().getValue().equals("Chapter " + chapters.size())) {
+    if (!chapters.isEmpty() && !chapters.get(chapters.size() - 1).getTitle().getValue().equals("chapter " + chapters.size())) {
       throw new IllegalStateException(
-        "Chapter should be added in sequence. The title of the next chapter should be 'Chapter " + (chapters.size() + 1) + "'.");
+        "chapter should be added in sequence. The title of the next chapter should be 'chapter " + (chapters.size() + 1) + "'.");
     }
 
     var chapter = new Chapter(title, content);
