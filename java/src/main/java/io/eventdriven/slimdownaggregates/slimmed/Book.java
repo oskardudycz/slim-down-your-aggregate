@@ -1,16 +1,16 @@
 package io.eventdriven.slimdownaggregates.slimmed;
 
-import io.eventdriven.slimdownaggregates.slimmed.core.Aggregate;
 import io.eventdriven.slimdownaggregates.slimmed.entities.*;
 import io.eventdriven.slimdownaggregates.slimmed.services.IPublishingHouse;
-
-import static io.eventdriven.slimdownaggregates.slimmed.BookEvent.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
-public class Book extends Aggregate {
+import static io.eventdriven.slimdownaggregates.slimmed.BookEvent.*;
+
+public class Book{
   private List<Chapter> chapters = new ArrayList<>();
   private CommitteeApproval committeeApproval;
   private IPublishingHouse publishingHouse;
@@ -30,8 +30,6 @@ public class Book extends Aggregate {
 
   public Book(BookId bookId, Title title, Author author, Genre genre, List<Reviewer> reviewers,
               IPublishingHouse publishingHouse, ISBN isbn) {
-    super(bookId.getValue());
-
     this.bookId = bookId;
     this.title = title;
     this.author = author;
@@ -41,7 +39,7 @@ public class Book extends Aggregate {
     this.isbn = isbn;
   }
 
-  public void addChapter(ChapterTitle title, ChapterContent content) {
+  public ChapterAdded addChapter(ChapterTitle title, ChapterContent content) {
     if (chapters.stream().anyMatch(chap -> chap.getTitle().equals(title))) {
       throw new IllegalStateException("Chapter with the same title already exists.");
     }
@@ -54,10 +52,10 @@ public class Book extends Aggregate {
     var chapter = new Chapter(title, content);
     chapters.add(chapter);
 
-    addDomainEvent(new ChapterAdded(this.bookId, chapter));
+    return new ChapterAdded(this.bookId, chapter);
   }
 
-  public void approve(CommitteeApproval committeeApproval) {
+  public Approved approve(CommitteeApproval committeeApproval) {
     if (currentState != State.EDITING)
       throw new IllegalStateException("Cannot approve a book that is not in the Editing state.");
 
@@ -67,10 +65,10 @@ public class Book extends Aggregate {
 
     this.committeeApproval = committeeApproval;
 
-    addDomainEvent(new Approved(this.bookId, committeeApproval));
+    return new Approved(this.bookId, committeeApproval);
   }
 
-  public void moveToEditing() {
+  public MovedToEditing moveToEditing() {
     if (currentState != State.WRITING)
       throw new IllegalStateException("Cannot move to Editing state from the current state.");
 
@@ -79,10 +77,10 @@ public class Book extends Aggregate {
 
     currentState = State.EDITING;
 
-    addDomainEvent(new MovedToEditing(this.bookId));
+    return new MovedToEditing(this.bookId);
   }
 
-  public void moveToPrinting() throws Exception {
+  public MovedToPrinting moveToPrinting() throws Exception {
     if (this.currentState != State.EDITING) {
       throw new Exception("Cannot move to Printing state from the current state.");
     }
@@ -102,10 +100,10 @@ public class Book extends Aggregate {
 
     this.currentState = State.PRINTING;
 
-    addDomainEvent(new MovedToPrinting(this.bookId));
+    return new MovedToPrinting(this.bookId);
   }
 
-  public void moveToPublished() {
+  public Published moveToPublished() {
     if (currentState != State.PRINTING || translations.size() < 5)
       throw new IllegalStateException("Cannot move to Published state from the current state.");
 
@@ -115,10 +113,10 @@ public class Book extends Aggregate {
 
     currentState = State.PUBLISHED;
 
-    addDomainEvent(new Published(this.bookId, isbn, title, author));
+    return new Published(this.bookId, isbn, title, author);
   }
 
-  public void moveToOutOfPrint() {
+  public BookMovedToOutOfPrintEvent moveToOutOfPrint() {
     if (currentState != State.PUBLISHED)
       throw new IllegalStateException("Cannot move to Out of Print state from the current state.");
 
@@ -130,34 +128,38 @@ public class Book extends Aggregate {
 
     currentState = State.OUT_OF_PRINT;
 
-    addDomainEvent(new BookMovedToOutOfPrintEvent(this.bookId));
+    return new BookMovedToOutOfPrintEvent(this.bookId);
   }
 
-  public void addTranslation(Translation translation) {
+  public TranslationAdded addTranslation(Translation translation) {
     if (translations.size() >= 5)
       throw new IllegalStateException("Cannot add more translations. Maximum 5 translations are allowed.");
 
     translations.add(translation);
 
-    addDomainEvent(new TranslationAdded(this.bookId, translation));
+    return new TranslationAdded(this.bookId, translation);
   }
 
-  public void addFormat(Format format) {
+  public FormatAdded addFormat(Format format) {
     if (formats.stream().anyMatch(f -> f.getFormatType().equals(format.getFormatType())))
       throw new IllegalStateException("Format " + format.getFormatType() + " already exists.");
 
     formats.add(format);
 
-    addDomainEvent(new FormatAdded(this.bookId, format));
+    return new FormatAdded(this.bookId, format);
   }
 
-  public void removeFormat(Format format) {
+  public FormatRemoved removeFormat(Format format) {
     if (formats.stream().noneMatch(f -> f.getFormatType().equals(format.getFormatType())))
       throw new IllegalStateException("Format " + format.getFormatType() + " does not exist.");
 
     formats.removeIf(f -> f.getFormatType().equals(format.getFormatType()));
 
-    addDomainEvent(new FormatRemoved(this.bookId, format));
+    return new FormatRemoved(this.bookId, format);
+  }
+  // Getter methods
+  public UUID getId() {
+    return bookId.getValue();
   }
 
   // Getter methods

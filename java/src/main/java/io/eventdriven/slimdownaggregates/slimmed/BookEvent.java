@@ -1,9 +1,8 @@
 package io.eventdriven.slimdownaggregates.slimmed;
 
-import io.eventdriven.slimdownaggregates.slimmed.core.IDomainEvent;
 import io.eventdriven.slimdownaggregates.slimmed.entities.*;
 
-public sealed interface BookEvent extends IDomainEvent {
+public sealed interface BookEvent {
   record ChapterAdded(
     BookId BookId,
     Chapter Chapter

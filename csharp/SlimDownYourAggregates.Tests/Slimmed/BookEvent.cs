@@ -1,9 +1,8 @@
-﻿using SlimDownYourAggregates.Tests.Slimmed.Core;
-using SlimDownYourAggregates.Tests.Slimmed.Entities;
+﻿using SlimDownYourAggregates.Tests.Slimmed.Entities;
 
 namespace SlimDownYourAggregates.Tests.Slimmed;
 
-public abstract record BookEvent: IDomainEvent
+public abstract record BookEvent
 {
     public record ChapterAdded(
         BookId BookId,

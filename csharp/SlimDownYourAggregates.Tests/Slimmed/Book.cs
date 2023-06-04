@@ -1,4 +1,3 @@
-using SlimDownYourAggregates.Tests.Slimmed.Core;
 using SlimDownYourAggregates.Tests.Slimmed.Entities;
 using SlimDownYourAggregates.Tests.Slimmed.Services;
 
@@ -6,8 +5,9 @@ using static SlimDownYourAggregates.Tests.Slimmed.BookEvent;
 
 namespace SlimDownYourAggregates.Tests.Slimmed;
 
-public class Book: Aggregate
+public class Book
 {
+    private Guid Id => BookId.Value;
     private List<Chapter> _chapters = new();
     private CommitteeApproval? _committeeApproval;
     private readonly IPublishingHouse _publishingHouse;
@@ -26,7 +26,7 @@ public class Book: Aggregate
         List<Reviewer> reviewers,
         IPublishingHouse publishingHouse,
         ISBN isbn
-    ): base(bookId.Value)
+    )
     {
         BookId = bookId;
         Title = title;
@@ -45,7 +45,7 @@ public class Book: Aggregate
     public List<Reviewer> Reviewers { get; }
     public ISBN ISBN { get; }
 
-    public void AddChapter(ChapterTitle title, ChapterContent content)
+    public ChapterAdded AddChapter(ChapterTitle title, ChapterContent content)
     {
         if (_chapters.Any(chap => chap.Title.Value == title.Value))
             throw new InvalidOperationException($"Chapter with title {title.Value} already exists.");
@@ -57,10 +57,10 @@ public class Book: Aggregate
         var chapter = new Chapter(title, content);
         _chapters.Add(chapter);
 
-        AddDomainEvent(new ChapterAdded(BookId, chapter));
+        return new ChapterAdded(BookId, chapter);
     }
 
-    public void Approve(CommitteeApproval committeeApproval)
+    public Approved Approve(CommitteeApproval committeeApproval)
     {
         if (_currentState != State.Editing)
             throw new InvalidOperationException("Cannot approve a book that is not in the Editing state.");
@@ -71,10 +71,10 @@ public class Book: Aggregate
 
         _committeeApproval = committeeApproval;
 
-        AddDomainEvent(new Approved(BookId, committeeApproval));
+        return new Approved(BookId, committeeApproval);
     }
 
-    public void MoveToEditing()
+    public MovedToEditing MoveToEditing()
     {
         if (_currentState != State.Writing)
             throw new InvalidOperationException("Cannot move to Editing state from the current state.");
@@ -84,10 +84,10 @@ public class Book: Aggregate
 
         _currentState = State.Editing;
 
-        AddDomainEvent(new MovedToEditing(BookId));
+        return new MovedToEditing(BookId);
     }
 
-    public void MoveToPrinting()
+    public MovedToPrinting MoveToPrinting()
     {
         if (_currentState != State.Editing)
             throw new InvalidOperationException("Cannot move to Printing state from the current state.");
@@ -104,10 +104,10 @@ public class Book: Aggregate
 
         _currentState = State.Printing;
 
-        AddDomainEvent(new MovedToPrinting(BookId));
+        return new MovedToPrinting(BookId);
     }
 
-    public void MoveToPublished()
+    public Published MoveToPublished()
     {
         if (_currentState != State.Printing || _translations.Count < 5)
             throw new InvalidOperationException("Cannot move to Published state from the current state.");
@@ -118,10 +118,10 @@ public class Book: Aggregate
 
         _currentState = State.Published;
 
-        AddDomainEvent(new Published(BookId, ISBN, Title, Author));
+        return new Published(BookId, ISBN, Title, Author);
     }
 
-    public void MoveToOutOfPrint()
+    public MovedToOutOfPrint MoveToOutOfPrint()
     {
         if (_currentState != State.Published)
             throw new InvalidOperationException("Cannot move to Out of Print state from the current state.");
@@ -134,10 +134,10 @@ public class Book: Aggregate
 
         _currentState = State.OutOfPrint;
 
-        AddDomainEvent(new MovedToOutOfPrint(BookId));
+        return new MovedToOutOfPrint(BookId);
     }
 
-    public void AddTranslation(Translation translation)
+    public TranslationAdded AddTranslation(Translation translation)
     {
         if (_currentState != State.Editing)
             throw new InvalidOperationException("Cannot add translation of a book that is not in the Editing state.");
@@ -147,10 +147,10 @@ public class Book: Aggregate
 
         _translations.Add(translation);
 
-        AddDomainEvent(new TranslationAdded(BookId, translation));
+        return new TranslationAdded(BookId, translation);
     }
 
-    public void AddFormat(Format format)
+    public FormatAdded AddFormat(Format format)
     {
         if (_currentState != State.Editing)
             throw new InvalidOperationException("Cannot add format of a book that is not in the Editing state.");
@@ -160,10 +160,10 @@ public class Book: Aggregate
 
         _formats.Add(format);
 
-        AddDomainEvent(new FormatAdded(BookId, format));
+        return new FormatAdded(BookId, format);
     }
 
-    public void RemoveFormat(Format format)
+    public FormatRemoved RemoveFormat(Format format)
     {
         if (_currentState != State.Editing)
             throw new InvalidOperationException("Cannot remove format of a book that is not in the Editing state.");
@@ -174,6 +174,6 @@ public class Book: Aggregate
 
         _formats.Remove(existingFormat);
 
-        AddDomainEvent(new FormatAdded(BookId, format));
+        return new FormatRemoved(BookId, format);
     }
 }
