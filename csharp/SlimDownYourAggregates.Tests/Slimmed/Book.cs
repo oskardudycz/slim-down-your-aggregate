@@ -1,7 +1,8 @@
 using SlimDownYourAggregates.Tests.Slimmed.Core;
 using SlimDownYourAggregates.Tests.Slimmed.Entities;
-using SlimDownYourAggregates.Tests.Slimmed.Events;
 using SlimDownYourAggregates.Tests.Slimmed.Services;
+
+using static SlimDownYourAggregates.Tests.Slimmed.BookEvent;
 
 namespace SlimDownYourAggregates.Tests.Slimmed;
 
