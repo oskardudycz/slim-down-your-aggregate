@@ -11,12 +11,12 @@ public abstract record BookEvent
 
     public record FormatAdded(
         BookId BookId,
-        Format Translation
+        Format Format
     ): BookEvent;
 
     public record FormatRemoved(
         BookId BookId,
-        Format Translation
+        Format Format
     ): BookEvent;
 
     public record TranslationAdded(

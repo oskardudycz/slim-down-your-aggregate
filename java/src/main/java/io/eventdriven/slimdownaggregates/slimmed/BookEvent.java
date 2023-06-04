@@ -4,57 +4,57 @@ import io.eventdriven.slimdownaggregates.slimmed.entities.*;
 
 public sealed interface BookEvent {
   record ChapterAdded(
-    BookId BookId,
-    Chapter Chapter
+    BookId bookId,
+    Chapter chapter
   ) implements BookEvent {
   }
 
   record MovedToEditing(
-    BookId BookId
+    BookId bookId
   ) implements BookEvent {
   }
 
   record FormatAdded(
-    BookId BookId,
-    Format Translation
+    BookId bookId,
+    Format format
   ) implements BookEvent {
   }
 
   record FormatRemoved(
-    BookId BookId,
-    Format Translation
+    BookId bookId,
+    Format format
   ) implements BookEvent {
   }
 
   record TranslationAdded(
-    BookId BookId,
-    Translation Translation
+    BookId bookId,
+    Translation translation
   ) implements BookEvent {
   }
 
   record Approved(
-    BookId BookId,
-    CommitteeApproval CommitteeApproval
+    BookId bookId,
+    CommitteeApproval committeeApproval
   ) implements BookEvent {
   }
 
   record MovedToPrinting
     (
-      BookId BookId
+      BookId bookId
     ) implements BookEvent {
   }
 
   record Published(
-    BookId BookId,
-    ISBN ISBN,
-    Title Title,
-    Author Author
+    BookId bookId,
+    ISBN isbn,
+    Title title,
+    Author author
   ) implements BookEvent {
   }
 
-  record BookMovedToOutOfPrintEvent
+  record MovedToOutOfPrint
     (
-      BookId BookId
+      BookId bookId
     ) implements BookEvent {
   }
 }

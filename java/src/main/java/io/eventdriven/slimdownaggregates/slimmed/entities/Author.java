@@ -1,7 +1,7 @@
 package io.eventdriven.slimdownaggregates.slimmed.entities;
 
 public class Author {
-  // Assuming that the Author class has a name
+  // Assuming that the author class has a name
   private final String name;
 
   public Author(String name) {

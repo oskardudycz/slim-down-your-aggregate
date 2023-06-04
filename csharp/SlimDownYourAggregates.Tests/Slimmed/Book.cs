@@ -54,9 +54,8 @@ public class Book
                 $"Chapter should be added in sequence. The title of the next chapter should be 'Chapter {_chapters.Count + 1}'");
 
         var chapter = new Chapter(title, content);
-        _chapters.Add(chapter);
 
-        return new ChapterAdded(BookId, chapter);
+        return Evolve(new ChapterAdded(BookId, chapter));
     }
 
     public MovedToEditing MoveToEditing()
@@ -67,9 +66,7 @@ public class Book
         if (_chapters.Count < 1)
             throw new InvalidOperationException("A book must have at least one chapter to move to the Editing state.");
 
-        _currentState = State.Editing;
-
-        return new MovedToEditing(BookId);
+        return Evolve(new MovedToEditing(BookId));
     }
 
 
@@ -81,9 +78,7 @@ public class Book
         if (_translations.Count >= 5)
             throw new InvalidOperationException("Cannot add more translations. Maximum 5 translations are allowed.");
 
-        _translations.Add(translation);
-
-        return new TranslationAdded(BookId, translation);
+        return Evolve(new TranslationAdded(BookId, translation));
     }
 
     public FormatAdded AddFormat(Format format)
@@ -94,9 +89,7 @@ public class Book
         if (_formats.Any(f => f.FormatType == format.FormatType))
             throw new InvalidOperationException($"Format {format.FormatType} already exists.");
 
-        _formats.Add(format);
-
-        return new FormatAdded(BookId, format);
+        return Evolve(new FormatAdded(BookId, format));
     }
 
     public FormatRemoved RemoveFormat(Format format)
@@ -108,9 +101,7 @@ public class Book
         if (existingFormat == null)
             throw new InvalidOperationException($"Format {format.FormatType} does not exist.");
 
-        _formats.Remove(existingFormat);
-
-        return new FormatRemoved(BookId, format);
+        return Evolve(new FormatRemoved(BookId, format));
     }
 
     public Approved Approve(CommitteeApproval committeeApproval)
@@ -122,9 +113,7 @@ public class Book
             throw new InvalidOperationException(
                 "A book cannot be approved unless it has been reviewed by at least three reviewers.");
 
-        _committeeApproval = committeeApproval;
-
-        return new Approved(BookId, committeeApproval);
+        return Evolve(new Approved(BookId, committeeApproval));
     }
 
     public MovedToPrinting MoveToPrinting()
@@ -142,9 +131,7 @@ public class Book
         if (!_publishingHouse.IsGenreLimitReached(Genre))
             throw new InvalidOperationException("Cannot move to the Printing state until the genre limit is reached.");
 
-        _currentState = State.Printing;
-
-        return new MovedToPrinting(BookId);
+        return Evolve(new MovedToPrinting(BookId));
     }
 
     public Published MoveToPublished()
@@ -156,9 +143,7 @@ public class Book
             throw new InvalidOperationException(
                 "A book cannot be moved to the Published state unless it has been reviewed by at least three reviewers.");
 
-        _currentState = State.Published;
-
-        return new Published(BookId, ISBN, Title, Author);
+        return Evolve(new Published(BookId, ISBN, Title, Author));
     }
 
     public MovedToOutOfPrint MoveToOutOfPrint()
@@ -172,8 +157,57 @@ public class Book
             throw new InvalidOperationException(
                 "Cannot move to Out of Print state if more than 10% of total copies are unsold.");
 
-        _currentState = State.OutOfPrint;
+        return Evolve(new MovedToOutOfPrint(BookId));
+    }
 
-        return new MovedToOutOfPrint(BookId);
+    public T Evolve<T>(T @event) where T : BookEvent
+    {
+        switch(@event)
+        {
+            case ChapterAdded chapterAdded:
+            {
+                _chapters.Add(chapterAdded.Chapter);
+                return @event;
+            }
+            case MovedToEditing ignore: {
+                _currentState = State.Editing;
+                return @event;
+            }
+            case FormatAdded formatAdded: {
+                _formats.Add(formatAdded.Format);
+                return @event;
+            }
+            case FormatRemoved formatRemoved: {
+                var existingFormat = _formats.FirstOrDefault(f => f.FormatType == formatRemoved.Format.FormatType);
+                if (existingFormat != null)
+                    _formats.Remove(existingFormat);
+
+                return @event;
+            }
+            case TranslationAdded translationAdded: {
+                _translations.Add(translationAdded.Translation);
+                return @event;
+            }
+            case Approved approved: {
+                _committeeApproval = approved.CommitteeApproval;
+                return @event;
+            }
+            case MovedToPrinting ignore: {
+                _currentState = State.Editing;
+                return @event;
+            }
+            case Published ignore: {
+                _currentState = State.Printing;
+                return @event;
+            }
+            case MovedToOutOfPrint ignore: {
+                _currentState = State.OutOfPrint;
+                return @event;
+            }
+            default:
+            {
+                return @event;
+            }
+        }
     }
 }
