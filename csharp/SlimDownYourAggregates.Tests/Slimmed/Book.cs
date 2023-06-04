@@ -1,6 +1,5 @@
 using SlimDownYourAggregates.Tests.Slimmed.Entities;
 using SlimDownYourAggregates.Tests.Slimmed.Services;
-
 using static SlimDownYourAggregates.Tests.Slimmed.BookEvent;
 
 namespace SlimDownYourAggregates.Tests.Slimmed;
@@ -60,6 +59,60 @@ public class Book
         return new ChapterAdded(BookId, chapter);
     }
 
+    public MovedToEditing MoveToEditing()
+    {
+        if (_currentState != State.Writing)
+            throw new InvalidOperationException("Cannot move to Editing state from the current state.");
+
+        if (_chapters.Count < 1)
+            throw new InvalidOperationException("A book must have at least one chapter to move to the Editing state.");
+
+        _currentState = State.Editing;
+
+        return new MovedToEditing(BookId);
+    }
+
+
+    public TranslationAdded AddTranslation(Translation translation)
+    {
+        if (_currentState != State.Editing)
+            throw new InvalidOperationException("Cannot add translation of a book that is not in the Editing state.");
+
+        if (_translations.Count >= 5)
+            throw new InvalidOperationException("Cannot add more translations. Maximum 5 translations are allowed.");
+
+        _translations.Add(translation);
+
+        return new TranslationAdded(BookId, translation);
+    }
+
+    public FormatAdded AddFormat(Format format)
+    {
+        if (_currentState != State.Editing)
+            throw new InvalidOperationException("Cannot add format of a book that is not in the Editing state.");
+
+        if (_formats.Any(f => f.FormatType == format.FormatType))
+            throw new InvalidOperationException($"Format {format.FormatType} already exists.");
+
+        _formats.Add(format);
+
+        return new FormatAdded(BookId, format);
+    }
+
+    public FormatRemoved RemoveFormat(Format format)
+    {
+        if (_currentState != State.Editing)
+            throw new InvalidOperationException("Cannot remove format of a book that is not in the Editing state.");
+
+        var existingFormat = _formats.FirstOrDefault(f => f.FormatType == format.FormatType);
+        if (existingFormat == null)
+            throw new InvalidOperationException($"Format {format.FormatType} does not exist.");
+
+        _formats.Remove(existingFormat);
+
+        return new FormatRemoved(BookId, format);
+    }
+
     public Approved Approve(CommitteeApproval committeeApproval)
     {
         if (_currentState != State.Editing)
@@ -72,19 +125,6 @@ public class Book
         _committeeApproval = committeeApproval;
 
         return new Approved(BookId, committeeApproval);
-    }
-
-    public MovedToEditing MoveToEditing()
-    {
-        if (_currentState != State.Writing)
-            throw new InvalidOperationException("Cannot move to Editing state from the current state.");
-
-        if (_chapters.Count < 1)
-            throw new InvalidOperationException("A book must have at least one chapter to move to the Editing state.");
-
-        _currentState = State.Editing;
-
-        return new MovedToEditing(BookId);
     }
 
     public MovedToPrinting MoveToPrinting()
@@ -135,45 +175,5 @@ public class Book
         _currentState = State.OutOfPrint;
 
         return new MovedToOutOfPrint(BookId);
-    }
-
-    public TranslationAdded AddTranslation(Translation translation)
-    {
-        if (_currentState != State.Editing)
-            throw new InvalidOperationException("Cannot add translation of a book that is not in the Editing state.");
-
-        if (_translations.Count >= 5)
-            throw new InvalidOperationException("Cannot add more translations. Maximum 5 translations are allowed.");
-
-        _translations.Add(translation);
-
-        return new TranslationAdded(BookId, translation);
-    }
-
-    public FormatAdded AddFormat(Format format)
-    {
-        if (_currentState != State.Editing)
-            throw new InvalidOperationException("Cannot add format of a book that is not in the Editing state.");
-
-        if (_formats.Any(f => f.FormatType == format.FormatType))
-            throw new InvalidOperationException($"Format {format.FormatType} already exists.");
-
-        _formats.Add(format);
-
-        return new FormatAdded(BookId, format);
-    }
-
-    public FormatRemoved RemoveFormat(Format format)
-    {
-        if (_currentState != State.Editing)
-            throw new InvalidOperationException("Cannot remove format of a book that is not in the Editing state.");
-
-        var existingFormat = _formats.FirstOrDefault(f => f.FormatType == format.FormatType);
-        if (existingFormat == null)
-            throw new InvalidOperationException($"Format {format.FormatType} does not exist.");
-
-        _formats.Remove(existingFormat);
-
-        return new FormatRemoved(BookId, format);
     }
 }

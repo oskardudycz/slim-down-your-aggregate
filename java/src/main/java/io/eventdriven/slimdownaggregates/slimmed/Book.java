@@ -55,6 +55,54 @@ public class Book{
     return new ChapterAdded(this.bookId, chapter);
   }
 
+  public MovedToEditing moveToEditing() {
+    if (currentState != State.WRITING)
+      throw new IllegalStateException("Cannot move to Editing state from the current state.");
+
+    if (chapters.size() < 1)
+      throw new IllegalStateException("A book must have at least one chapter to move to the Editing state.");
+
+    currentState = State.EDITING;
+
+    return new MovedToEditing(this.bookId);
+  }
+
+  public TranslationAdded addTranslation(Translation translation) {
+    if (currentState != State.EDITING)
+      throw new IllegalStateException("Cannot add translation of a book that is not in the Editing state.");
+
+    if (translations.size() >= 5)
+      throw new IllegalStateException("Cannot add more translations. Maximum 5 translations are allowed.");
+
+    translations.add(translation);
+
+    return new TranslationAdded(this.bookId, translation);
+  }
+
+  public FormatAdded addFormat(Format format) {
+    if (currentState != State.EDITING)
+      throw new IllegalStateException("Cannot add format of a book that is not in the Editing state.");
+
+    if (formats.stream().anyMatch(f -> f.getFormatType().equals(format.getFormatType())))
+      throw new IllegalStateException("Format " + format.getFormatType() + " already exists.");
+
+    formats.add(format);
+
+    return new FormatAdded(this.bookId, format);
+  }
+
+  public FormatRemoved removeFormat(Format format) {
+    if (currentState != State.EDITING)
+      throw new IllegalStateException("Cannot remove format of a book that is not in the Editing state.");
+
+    if (formats.stream().noneMatch(f -> f.getFormatType().equals(format.getFormatType())))
+      throw new IllegalStateException("Format " + format.getFormatType() + " does not exist.");
+
+    formats.removeIf(f -> f.getFormatType().equals(format.getFormatType()));
+
+    return new FormatRemoved(this.bookId, format);
+  }
+
   public Approved approve(CommitteeApproval committeeApproval) {
     if (currentState != State.EDITING)
       throw new IllegalStateException("Cannot approve a book that is not in the Editing state.");
@@ -66,18 +114,6 @@ public class Book{
     this.committeeApproval = committeeApproval;
 
     return new Approved(this.bookId, committeeApproval);
-  }
-
-  public MovedToEditing moveToEditing() {
-    if (currentState != State.WRITING)
-      throw new IllegalStateException("Cannot move to Editing state from the current state.");
-
-    if (chapters.size() < 1)
-      throw new IllegalStateException("A book must have at least one chapter to move to the Editing state.");
-
-    currentState = State.EDITING;
-
-    return new MovedToEditing(this.bookId);
   }
 
   public MovedToPrinting moveToPrinting() throws Exception {
@@ -131,32 +167,12 @@ public class Book{
     return new BookMovedToOutOfPrintEvent(this.bookId);
   }
 
-  public TranslationAdded addTranslation(Translation translation) {
-    if (translations.size() >= 5)
-      throw new IllegalStateException("Cannot add more translations. Maximum 5 translations are allowed.");
+//  public static Book evolve(Book state, BookEvent event){
+//    return switch (event){
+//      case A
+//    }
+//  }
 
-    translations.add(translation);
-
-    return new TranslationAdded(this.bookId, translation);
-  }
-
-  public FormatAdded addFormat(Format format) {
-    if (formats.stream().anyMatch(f -> f.getFormatType().equals(format.getFormatType())))
-      throw new IllegalStateException("Format " + format.getFormatType() + " already exists.");
-
-    formats.add(format);
-
-    return new FormatAdded(this.bookId, format);
-  }
-
-  public FormatRemoved removeFormat(Format format) {
-    if (formats.stream().noneMatch(f -> f.getFormatType().equals(format.getFormatType())))
-      throw new IllegalStateException("Format " + format.getFormatType() + " does not exist.");
-
-    formats.removeIf(f -> f.getFormatType().equals(format.getFormatType()));
-
-    return new FormatRemoved(this.bookId, format);
-  }
   // Getter methods
   public UUID getId() {
     return bookId.getValue();

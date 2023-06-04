@@ -9,13 +9,28 @@ public abstract record BookEvent
         Chapter Chapter
     ): BookEvent;
 
-    public record Approved(
+    public record FormatAdded(
         BookId BookId,
-        CommitteeApproval CommitteeApproval
+        Format Translation
+    ): BookEvent;
+
+    public record FormatRemoved(
+        BookId BookId,
+        Format Translation
+    ): BookEvent;
+
+    public record TranslationAdded(
+        BookId BookId,
+        Translation Translation
     ): BookEvent;
 
     public record MovedToEditing(
         BookId BookId
+    ): BookEvent;
+
+    public record Approved(
+        BookId BookId,
+        CommitteeApproval CommitteeApproval
     ): BookEvent;
 
     public record MovedToPrinting
@@ -33,21 +48,6 @@ public abstract record BookEvent
     public record MovedToOutOfPrint
     (
         BookId BookId
-    ): BookEvent;
-
-    public record FormatAdded(
-        BookId BookId,
-        Format Translation
-    ): BookEvent;
-
-    public record FormatRemoved(
-        BookId BookId,
-        Format Translation
-    ): BookEvent;
-
-    public record TranslationAdded(
-        BookId BookId,
-        Translation Translation
     ): BookEvent;
 
     private BookEvent() { }
