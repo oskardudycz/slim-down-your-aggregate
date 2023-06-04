@@ -3,135 +3,174 @@ package io.eventdriven.slimdownaggregates.slimmed;
 import io.eventdriven.slimdownaggregates.slimmed.entities.*;
 import io.eventdriven.slimdownaggregates.slimmed.services.IPublishingHouse;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import static io.eventdriven.slimdownaggregates.slimmed.BookEvent.*;
+import static io.eventdriven.slimdownaggregates.slimmed.core.ListExtensions.*;
 
-public class Book {
-  private List<Chapter> chapters = new ArrayList<>();
-  private CommitteeApproval committeeApproval;
-  private IPublishingHouse publishingHouse;
-  private List<Translation> translations = new ArrayList<>();
-  private List<Format> formats = new ArrayList<>();
-  private State currentState = State.WRITING;
-
+public record Book(
+  BookId bookId,
+  Title title,
+  Author author,
+  Genre genre,
+  List<Reviewer> reviewers,
+  IPublishingHouse publishingHouse,
+  ISBN isbn,
+  List<Chapter> chapters,
+  List<Translation> translations,
+  List<Format> formats,
+  Book.State currentState,
+  CommitteeApproval committeeApproval
+) {
   public enum State {WRITING, EDITING, PRINTING, PUBLISHED, OUT_OF_PRINT}
 
-  // Properties
-  private BookId bookId;
-  private Title title;
-  private Author author;
-  private Genre genre;
-  private List<Reviewer> reviewers;
-  private ISBN isbn;
-
-  public Book(BookId bookId, Title title, Author author, Genre genre, List<Reviewer> reviewers,
-              IPublishingHouse publishingHouse, ISBN isbn) {
-    this.bookId = bookId;
-    this.title = title;
-    this.author = author;
-    this.genre = genre;
-    this.reviewers = reviewers;
-    this.publishingHouse = publishingHouse;
-    this.isbn = isbn;
-  }
-
-  public <T extends BookEvent> T evolve(T event) {
+  public static <T extends BookEvent> Book evolve(Book state, T event) {
     return switch (event) {
       case ChapterAdded chapterAdded: {
-        chapters.add(chapterAdded.chapter());
-        yield event;
+        yield new Book(
+          state.bookId,
+          state.title,
+          state.author,
+          state.genre,
+          state.reviewers,
+          state.publishingHouse,
+          state.isbn,
+          union(state.chapters, chapterAdded.chapter()),
+          state.translations,
+          state.formats,
+          state.currentState,
+          state.committeeApproval
+        );
       }
       case MovedToEditing ignore: {
-        currentState = State.EDITING;
-        yield event;
+        yield new Book(
+          state.bookId,
+          state.title,
+          state.author,
+          state.genre,
+          state.reviewers,
+          state.publishingHouse,
+          state.isbn,
+          state.chapters,
+          state.translations,
+          state.formats,
+          State.WRITING,
+          state.committeeApproval
+        );
       }
       case FormatAdded formatAdded: {
-        formats.add(formatAdded.format());
-        yield event;
+        yield new Book(
+          state.bookId,
+          state.title,
+          state.author,
+          state.genre,
+          state.reviewers,
+          state.publishingHouse,
+          state.isbn,
+          state.chapters,
+          state.translations,
+          union(state.formats, formatAdded.format()),
+          state.currentState,
+          state.committeeApproval
+        );
       }
       case FormatRemoved formatRemoved: {
-        formats.removeIf(f -> f.getFormatType().equals(formatRemoved.format().getFormatType()));
-        yield event;
+        yield new Book(
+          state.bookId,
+          state.title,
+          state.author,
+          state.genre,
+          state.reviewers,
+          state.publishingHouse,
+          state.isbn,
+          state.chapters,
+          state.translations,
+          except(state.formats, f -> f.getFormatType().equals(formatRemoved.format().getFormatType())),
+          state.currentState,
+          state.committeeApproval
+        );
       }
       case TranslationAdded translationAdded: {
-        translations.add(translationAdded.translation());
-        yield event;
+        yield new Book(
+          state.bookId,
+          state.title,
+          state.author,
+          state.genre,
+          state.reviewers,
+          state.publishingHouse,
+          state.isbn,
+          state.chapters,
+          union(state.translations, translationAdded.translation()),
+          state.formats,
+          state.currentState,
+          state.committeeApproval
+        );
       }
       case Approved approved: {
-        this.committeeApproval = approved.committeeApproval();
-        yield event;
+        yield new Book(
+          state.bookId,
+          state.title,
+          state.author,
+          state.genre,
+          state.reviewers,
+          state.publishingHouse,
+          state.isbn,
+          state.chapters,
+          state.translations,
+          state.formats,
+          state.currentState,
+          approved.committeeApproval()
+        );
       }
       case MovedToPrinting ignore: {
-        currentState = State.EDITING;
-        yield event;
+        yield new Book(
+          state.bookId,
+          state.title,
+          state.author,
+          state.genre,
+          state.reviewers,
+          state.publishingHouse,
+          state.isbn,
+          state.chapters,
+          state.translations,
+          state.formats,
+          State.EDITING,
+          state.committeeApproval
+        );
       }
       case Published ignore: {
-        this.currentState = State.PRINTING;
-        yield event;
+        yield new Book(
+          state.bookId,
+          state.title,
+          state.author,
+          state.genre,
+          state.reviewers,
+          state.publishingHouse,
+          state.isbn,
+          state.chapters,
+          state.translations,
+          state.formats,
+          State.PRINTING,
+          state.committeeApproval
+        );
       }
       case MovedToOutOfPrint ignore: {
-        this.currentState = State.OUT_OF_PRINT;
-        yield event;
+        yield new Book(
+          state.bookId,
+          state.title,
+          state.author,
+          state.genre,
+          state.reviewers,
+          state.publishingHouse,
+          state.isbn,
+          state.chapters,
+          state.translations,
+          state.formats,
+          State.OUT_OF_PRINT,
+          state.committeeApproval
+        );
       }
     };
-  }
-
-  // Getter methods
-  public UUID getId() {
-    return bookId.getValue();
-  }
-
-  // Getter methods
-  public BookId getBookId() {
-    return bookId;
-  }
-
-  public Title getTitle() {
-    return title;
-  }
-
-  public Author getAuthor() {
-    return author;
-  }
-
-  public Genre getGenre() {
-    return genre;
-  }
-
-  public State getCurrentState() {
-    return currentState;
-  }
-
-  public IPublishingHouse getPublishingHouse() {
-    return publishingHouse;
-  }
-
-  public List<Reviewer> getReviewers() {
-    return Collections.unmodifiableList(reviewers);
-  }
-
-  public ISBN getIsbn() {
-    return isbn;
-  }
-
-  public List<Chapter> getChapters() {
-    return Collections.unmodifiableList(chapters);
-  }
-
-  public CommitteeApproval getCommitteeApproval() {
-    return committeeApproval;
-  }
-
-  public List<Translation> getTranslations() {
-    return Collections.unmodifiableList(translations);
-  }
-
-  public List<Format> getFormats() {
-    return Collections.unmodifiableList(formats);
   }
 }
 

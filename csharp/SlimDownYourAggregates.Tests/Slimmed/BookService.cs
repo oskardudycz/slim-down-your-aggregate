@@ -31,7 +31,6 @@ public static class BookService
         return new MovedToEditing(state.BookId);
     }
 
-
     public static TranslationAdded AddTranslation(Translation translation, Book state)
     {
         if (state.CurrentState != State.Editing)

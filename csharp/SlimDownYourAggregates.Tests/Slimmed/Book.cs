@@ -4,94 +4,55 @@ using static SlimDownYourAggregates.Tests.Slimmed.BookEvent;
 
 namespace SlimDownYourAggregates.Tests.Slimmed;
 
-public class Book
+public record Book(
+    BookId BookId,
+    Title Title,
+    Author Author,
+    Genre Genre,
+    List<Reviewer> Reviewers,
+    IPublishingHouse PublishingHouse,
+    ISBN ISBN,
+    List<Chapter> Chapters,
+    List<Translation> Translations,
+    List<Format> Formats,
+    Book.State CurrentState = Book.State.Writing,
+    CommitteeApproval? CommitteeApproval = null
+)
 {
-    private Guid Id => BookId.Value;
-    public List<Chapter> Chapters { get; } = new();
-    public CommitteeApproval? CommitteeApproval { get; set; }
-    public IPublishingHouse PublishingHouse { get; }
-    public List<Translation> Translations { get; } = new();
-    public List<Format> Formats { get; } = new();
-
     public enum State { Writing, Editing, Printing, Published, OutOfPrint }
 
-    public State CurrentState { get; private set; } = State.Writing;
-
-    public Book(
-        BookId bookId,
-        Title title,
-        Author author,
-        Genre genre,
-        List<Reviewer> reviewers,
-        IPublishingHouse publishingHouse,
-        ISBN isbn
-    )
+    public Book Evolve<T>(Book book, T @event) where T : BookEvent
     {
-        BookId = bookId;
-        Title = title;
-        Author = author;
-        Genre = genre;
-        Reviewers = reviewers;
-        PublishingHouse = publishingHouse;
-        ISBN = isbn;
-    }
-
-    public BookId BookId { get; }
-    public Title Title { get; }
-
-    public Author Author { get; }
-    public Genre Genre { get; }
-    public List<Reviewer> Reviewers { get; }
-    public ISBN ISBN { get; }
-
-    public T Evolve<T>(T @event) where T : BookEvent
-    {
-        switch(@event)
+        return @event switch
         {
-            case ChapterAdded chapterAdded:
-            {
-                Chapters.Add(chapterAdded.Chapter);
-                return @event;
-            }
-            case MovedToEditing ignore: {
-                CurrentState = State.Editing;
-                return @event;
-            }
-            case FormatAdded formatAdded: {
-                Formats.Add(formatAdded.Format);
-                return @event;
-            }
-            case FormatRemoved formatRemoved: {
-                var existingFormat = Formats.FirstOrDefault(f => f.FormatType == formatRemoved.Format.FormatType);
-                if (existingFormat != null)
-                    Formats.Remove(existingFormat);
+            ChapterAdded chapterAdded =>
+                book with { Chapters = Chapters.Union(new[] { chapterAdded.Chapter }).ToList() },
 
-                return @event;
-            }
-            case TranslationAdded translationAdded: {
-                Translations.Add(translationAdded.Translation);
-                return @event;
-            }
-            case Approved approved: {
-                CommitteeApproval = approved.CommitteeApproval;
-                return @event;
-            }
-            case MovedToPrinting ignore: {
-                CurrentState = State.Editing;
-                return @event;
-            }
-            case Published ignore: {
-                CurrentState = State.Printing;
-                return @event;
-            }
-            case MovedToOutOfPrint ignore: {
-                CurrentState = State.OutOfPrint;
-                return @event;
-            }
-            default:
-            {
-                return @event;
-            }
-        }
+            MovedToEditing ignore =>
+                book with { CurrentState = State.Editing },
+
+            FormatAdded formatAdded =>
+                book with { Formats = Formats.Union(new[] { formatAdded.Format }).ToList() },
+
+            FormatRemoved formatRemoved =>
+                book with { Formats = Formats.Where(f => f.FormatType != formatRemoved.Format.FormatType).ToList() },
+
+            TranslationAdded translationAdded =>
+                book with { Translations = Translations.Union(new[] { translationAdded.Translation }).ToList() },
+
+            Approved approved =>
+                book with { CommitteeApproval = approved.CommitteeApproval },
+
+            MovedToPrinting ignore =>
+                book with { CurrentState = State.Printing },
+
+            Published ignore =>
+                book with { CurrentState = State.Published },
+
+            MovedToOutOfPrint ignore =>
+                book with { CurrentState = State.OutOfPrint },
+
+            _ => book
+        };
     }
 }
