@@ -138,6 +138,9 @@ public class Book: Aggregate
 
     public void AddTranslation(Translation translation)
     {
+        if (_currentState != State.Editing)
+            throw new InvalidOperationException("Cannot add translation of a book that is not in the Editing state.");
+
         if (_translations.Count >= 5)
             throw new InvalidOperationException("Cannot add more translations. Maximum 5 translations are allowed.");
 
@@ -148,6 +151,9 @@ public class Book: Aggregate
 
     public void AddFormat(Format format)
     {
+        if (_currentState != State.Editing)
+            throw new InvalidOperationException("Cannot add format of a book that is not in the Editing state.");
+
         if (_formats.Any(f => f.FormatType == format.FormatType))
             throw new InvalidOperationException($"Format {format.FormatType} already exists.");
 
@@ -158,6 +164,9 @@ public class Book: Aggregate
 
     public void RemoveFormat(Format format)
     {
+        if (_currentState != State.Editing)
+            throw new InvalidOperationException("Cannot remove format of a book that is not in the Editing state.");
+
         var existingFormat = _formats.FirstOrDefault(f => f.FormatType == format.FormatType);
         if (existingFormat == null)
             throw new InvalidOperationException($"Format {format.FormatType} does not exist.");
