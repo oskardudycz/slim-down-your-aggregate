@@ -2,8 +2,10 @@ package io.eventdriven.slimdownaggregates.slimmed.events;
 
 import io.eventdriven.slimdownaggregates.slimmed.core.IDomainEvent;
 import io.eventdriven.slimdownaggregates.slimmed.entities.BookId;
+import io.eventdriven.slimdownaggregates.slimmed.entities.Translation;
 
-import java.util.UUID;
-
-public record BookMovedToEditingEvent(BookId bookId) implements IDomainEvent {
+public record TranslationAddedEvent(
+  BookId bookId,
+  Translation translation
+) implements IDomainEvent {
 }

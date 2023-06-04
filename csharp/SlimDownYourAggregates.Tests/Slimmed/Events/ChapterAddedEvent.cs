@@ -3,4 +3,4 @@ using SlimDownYourAggregates.Tests.Slimmed.Entities;
 
 namespace SlimDownYourAggregates.Tests.Slimmed.Events;
 
-public record ChapterAddedEvent(Guid BookId, Chapter Chapter): IDomainEvent;
+public record ChapterAddedEvent(BookId BookId, Chapter Chapter): IDomainEvent;

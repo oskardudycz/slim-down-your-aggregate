@@ -1,5 +1,6 @@
 using SlimDownYourAggregates.Tests.Slimmed.Core;
+using SlimDownYourAggregates.Tests.Slimmed.Entities;
 
 namespace SlimDownYourAggregates.Tests.Slimmed.Events;
 
-public record BookMovedToEditingEvent(Guid BookId): IDomainEvent;
+public record BookMovedToEditingEvent(BookId BookId): IDomainEvent;

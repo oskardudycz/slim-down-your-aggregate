@@ -1,8 +1,7 @@
 package io.eventdriven.slimdownaggregates.original.events;
 
 import io.eventdriven.slimdownaggregates.original.core.IDomainEvent;
+import io.eventdriven.slimdownaggregates.original.entities.BookId;
 
-import java.util.UUID;
-
-public record BookMovedToEditingEvent(UUID bookId) implements IDomainEvent {
+public record BookMovedToEditingEvent(BookId bookId) implements IDomainEvent {
 }

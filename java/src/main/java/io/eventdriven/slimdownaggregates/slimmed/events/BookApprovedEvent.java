@@ -2,8 +2,7 @@ package io.eventdriven.slimdownaggregates.slimmed.events;
 
 import io.eventdriven.slimdownaggregates.slimmed.core.IDomainEvent;
 import io.eventdriven.slimdownaggregates.slimmed.entities.BookId;
+import io.eventdriven.slimdownaggregates.slimmed.entities.CommitteeApproval;
 
-import java.util.UUID;
-
-public record BookMovedToEditingEvent(BookId bookId) implements IDomainEvent {
+public record BookApprovedEvent(BookId id, CommitteeApproval committeeApproval) implements IDomainEvent {
 }

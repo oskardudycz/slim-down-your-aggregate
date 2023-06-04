@@ -56,7 +56,7 @@ public class Book: Aggregate
         var chapter = new Chapter(title, content);
         _chapters.Add(chapter);
 
-        AddDomainEvent(new ChapterAddedEvent(Id, chapter));
+        AddDomainEvent(new ChapterAddedEvent(BookId, chapter));
     }
 
     public void Approve(CommitteeApproval committeeApproval)
@@ -69,6 +69,8 @@ public class Book: Aggregate
                 "A book cannot be approved unless it has been reviewed by at least three reviewers.");
 
         _committeeApproval = committeeApproval;
+
+        AddDomainEvent(new BookApprovedEvent(BookId, committeeApproval));
     }
 
     public void MoveToEditing()
@@ -81,7 +83,7 @@ public class Book: Aggregate
 
         _currentState = State.Editing;
 
-        AddDomainEvent(new BookMovedToEditingEvent(Id));
+        AddDomainEvent(new BookMovedToEditingEvent(BookId));
     }
 
     public void MoveToPrinting()
@@ -100,8 +102,9 @@ public class Book: Aggregate
             throw new InvalidOperationException("Cannot move to the Printing state until the genre limit is reached.");
 
         _currentState = State.Printing;
-    }
 
+        AddDomainEvent(new BookMovedToPrintingEvent(BookId));
+    }
 
     public void MoveToPublished()
     {
@@ -114,7 +117,7 @@ public class Book: Aggregate
 
         _currentState = State.Published;
 
-        AddDomainEvent(new BookPublishedEvent(Id, ISBN, Title, Author));
+        AddDomainEvent(new BookPublishedEvent(BookId, ISBN, Title, Author));
     }
 
     public void MoveToOutOfPrint()
@@ -129,6 +132,8 @@ public class Book: Aggregate
                 "Cannot move to Out of Print state if more than 10% of total copies are unsold.");
 
         _currentState = State.OutOfPrint;
+
+        AddDomainEvent(new BookMovedToOutOfPrintEvent(BookId));
     }
 
     public void AddTranslation(Translation translation)
@@ -137,6 +142,8 @@ public class Book: Aggregate
             throw new InvalidOperationException("Cannot add more translations. Maximum 5 translations are allowed.");
 
         _translations.Add(translation);
+
+        AddDomainEvent(new TranslationAddedEvent(BookId, translation));
     }
 
     public void AddFormat(Format format)
@@ -145,14 +152,18 @@ public class Book: Aggregate
             throw new InvalidOperationException($"Format {format.FormatType} already exists.");
 
         _formats.Add(format);
+
+        AddDomainEvent(new FormatAddedEvent(BookId, format));
     }
 
-    public void RemoveFormat(string formatType)
+    public void RemoveFormat(Format format)
     {
-        var format = _formats.FirstOrDefault(f => f.FormatType == formatType);
-        if (format == null)
-            throw new InvalidOperationException($"Format {formatType} does not exist.");
+        var existingFormat = _formats.FirstOrDefault(f => f.FormatType == format.FormatType);
+        if (existingFormat == null)
+            throw new InvalidOperationException($"Format {format.FormatType} does not exist.");
 
-        _formats.Remove(format);
+        _formats.Remove(existingFormat);
+
+        AddDomainEvent(new FormatAddedEvent(BookId, format));
     }
 }

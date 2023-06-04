@@ -2,12 +2,9 @@ package io.eventdriven.slimdownaggregates.slimmed;
 
 import io.eventdriven.slimdownaggregates.slimmed.core.Aggregate;
 import io.eventdriven.slimdownaggregates.slimmed.entities.*;
-import io.eventdriven.slimdownaggregates.slimmed.events.BookMovedToEditingEvent;
-import io.eventdriven.slimdownaggregates.slimmed.events.BookPublishedEvent;
-import io.eventdriven.slimdownaggregates.slimmed.events.ChapterAddedEvent;
+import io.eventdriven.slimdownaggregates.slimmed.events.*;
 import io.eventdriven.slimdownaggregates.slimmed.services.IPublishingHouse;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -20,7 +17,7 @@ public class Book extends Aggregate {
   private List<Format> formats = new ArrayList<>();
   private State currentState = State.WRITING;
 
-  public enum State { WRITING, EDITING, PRINTING, PUBLISHED, OUT_OF_PRINT }
+  public enum State {WRITING, EDITING, PRINTING, PUBLISHED, OUT_OF_PRINT}
 
   // Properties
   private BookId bookId;
@@ -31,9 +28,7 @@ public class Book extends Aggregate {
   private ISBN isbn;
 
   public Book(BookId bookId, Title title, Author author, Genre genre, List<Reviewer> reviewers,
-              IPublishingHouse publishingHouse, Publisher publisher, ISBN isbn,
-              LocalDate publicationDate, int edition, int totalPages, int numberOfIllustrations,
-              String bindingType, String summary) {
+              IPublishingHouse publishingHouse, ISBN isbn) {
     super(bookId.getValue());
 
     this.bookId = bookId;
@@ -50,14 +45,15 @@ public class Book extends Aggregate {
       throw new IllegalStateException("Chapter with the same title already exists.");
     }
 
-    if (!chapters.isEmpty() && !chapters.get(chapters.size() - 1).getTitle().equals("Chapter " + chapters.size())) {
+    if (!chapters.isEmpty() && !chapters.get(chapters.size() - 1).getTitle().getValue().equals("Chapter " + chapters.size())) {
       throw new IllegalStateException(
         "Chapter should be added in sequence. The title of the next chapter should be 'Chapter " + (chapters.size() + 1) + "'.");
     }
 
-    Chapter chapter = new Chapter(title, content);
+    var chapter = new Chapter(title, content);
     chapters.add(chapter);
-    addDomainEvent(new ChapterAddedEvent(this.id, chapter));
+
+    addDomainEvent(new ChapterAddedEvent(this.bookId, chapter));
   }
 
   public void approve(CommitteeApproval committeeApproval) {
@@ -69,6 +65,8 @@ public class Book extends Aggregate {
         "A book cannot be approved unless it has been reviewed by at least three reviewers.");
 
     this.committeeApproval = committeeApproval;
+
+    addDomainEvent(new BookApprovedEvent(this.bookId, committeeApproval));
   }
 
   public void moveToEditing() {
@@ -79,19 +77,8 @@ public class Book extends Aggregate {
       throw new IllegalStateException("A book must have at least one chapter to move to the Editing state.");
 
     currentState = State.EDITING;
-    addDomainEvent(new BookMovedToEditingEvent(this.id));
-  }
 
-  public void moveToPublished() {
-    if (currentState != State.PRINTING || translations.size() < 5)
-      throw new IllegalStateException("Cannot move to Published state from the current state.");
-
-    if (reviewers.size() < 3)
-      throw new IllegalStateException(
-        "A book cannot be moved to the Published state unless it has been reviewed by at least three reviewers.");
-
-    currentState = State.PUBLISHED;
-    addDomainEvent(new BookPublishedEvent(this.id, isbn, title, author));
+    addDomainEvent(new BookMovedToEditingEvent(this.bookId));
   }
 
   public void moveToPrinting() throws Exception {
@@ -113,8 +100,22 @@ public class Book extends Aggregate {
     }
 
     this.currentState = State.PRINTING;
+
+    addDomainEvent(new BookMovedToPrintingEvent(this.bookId));
   }
 
+  public void moveToPublished() {
+    if (currentState != State.PRINTING || translations.size() < 5)
+      throw new IllegalStateException("Cannot move to Published state from the current state.");
+
+    if (reviewers.size() < 3)
+      throw new IllegalStateException(
+        "A book cannot be moved to the Published state unless it has been reviewed by at least three reviewers.");
+
+    currentState = State.PUBLISHED;
+
+    addDomainEvent(new BookPublishedEvent(this.bookId, isbn, title, author));
+  }
 
   public void moveToOutOfPrint() {
     if (currentState != State.PUBLISHED)
@@ -127,6 +128,8 @@ public class Book extends Aggregate {
         "Cannot move to Out of Print state if more than 10% of total copies are unsold.");
 
     currentState = State.OUT_OF_PRINT;
+
+    addDomainEvent(new BookMovedToOutOfPrintEvent(this.bookId));
   }
 
   public void addTranslation(Translation translation) {
@@ -134,6 +137,8 @@ public class Book extends Aggregate {
       throw new IllegalStateException("Cannot add more translations. Maximum 5 translations are allowed.");
 
     translations.add(translation);
+
+    addDomainEvent(new TranslationAddedEvent(this.bookId, translation));
   }
 
   public void addFormat(Format format) {
@@ -141,13 +146,17 @@ public class Book extends Aggregate {
       throw new IllegalStateException("Format " + format.getFormatType() + " already exists.");
 
     formats.add(format);
+
+    addDomainEvent(new FormatAddedEvent(this.bookId, format));
   }
 
-  public void removeFormat(String formatType) {
-    if (formats.stream().noneMatch(f -> f.getFormatType().equals(formatType)))
-      throw new IllegalStateException("Format " + formatType + " does not exist.");
+  public void removeFormat(Format format) {
+    if (formats.stream().noneMatch(f -> f.getFormatType().equals(format.getFormatType())))
+      throw new IllegalStateException("Format " + format.getFormatType() + " does not exist.");
 
-    formats.removeIf(f -> f.getFormatType().equals(formatType));
+    formats.removeIf(f -> f.getFormatType().equals(format.getFormatType()));
+
+    addDomainEvent(new FormatRemovedEvent(this.bookId, format));
   }
 
   // Getter methods
