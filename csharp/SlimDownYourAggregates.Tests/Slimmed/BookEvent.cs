@@ -1,4 +1,4 @@
-﻿using SlimDownYourAggregates.Tests.Original.Core;
+﻿using SlimDownYourAggregates.Tests.Slimmed.Core;
 using SlimDownYourAggregates.Tests.Slimmed.Entities;
 
 namespace SlimDownYourAggregates.Tests.Slimmed;

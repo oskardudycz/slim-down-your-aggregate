@@ -2,8 +2,9 @@ package io.eventdriven.slimdownaggregates.slimmed;
 
 import io.eventdriven.slimdownaggregates.slimmed.core.Aggregate;
 import io.eventdriven.slimdownaggregates.slimmed.entities.*;
-import io.eventdriven.slimdownaggregates.slimmed.events.*;
 import io.eventdriven.slimdownaggregates.slimmed.services.IPublishingHouse;
+
+import static io.eventdriven.slimdownaggregates.slimmed.BookEvent.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
