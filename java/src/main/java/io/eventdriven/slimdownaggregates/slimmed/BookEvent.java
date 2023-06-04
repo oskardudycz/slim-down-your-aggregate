@@ -4,30 +4,30 @@ import io.eventdriven.slimdownaggregates.slimmed.core.IDomainEvent;
 import io.eventdriven.slimdownaggregates.slimmed.entities.*;
 
 public sealed interface BookEvent extends IDomainEvent {
-  record ChapterAddedEvent(
+  record ChapterAdded(
     BookId BookId,
     Chapter Chapter
   ) implements BookEvent {
   }
 
-  record BookApprovedEvent(
+  record Approved(
     BookId BookId,
     CommitteeApproval CommitteeApproval
   ) implements BookEvent {
   }
 
-  record BookMovedToEditingEvent(
+  record MovedToEditing(
     BookId BookId
   ) implements BookEvent {
   }
 
-  record BookMovedToPrintingEvent
+  record MovedToPrinting
     (
       BookId BookId
     ) implements BookEvent {
   }
 
-  record BookPublishedEvent(
+  record Published(
     BookId BookId,
     ISBN ISBN,
     Title Title,
@@ -41,19 +41,19 @@ public sealed interface BookEvent extends IDomainEvent {
     ) implements BookEvent {
   }
 
-  record FormatAddedEvent(
+  record FormatAdded(
     BookId BookId,
     Format Translation
   ) implements BookEvent {
   }
 
-  record FormatRemovedEvent(
+  record FormatRemoved(
     BookId BookId,
     Format Translation
   ) implements BookEvent {
   }
 
-  record TranslationAddedEvent(
+  record TranslationAdded(
     BookId BookId,
     Translation Translation
   ) implements BookEvent {

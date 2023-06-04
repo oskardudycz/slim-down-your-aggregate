@@ -54,7 +54,7 @@ public class Book extends Aggregate {
     var chapter = new Chapter(title, content);
     chapters.add(chapter);
 
-    addDomainEvent(new ChapterAddedEvent(this.bookId, chapter));
+    addDomainEvent(new ChapterAdded(this.bookId, chapter));
   }
 
   public void approve(CommitteeApproval committeeApproval) {
@@ -67,7 +67,7 @@ public class Book extends Aggregate {
 
     this.committeeApproval = committeeApproval;
 
-    addDomainEvent(new BookApprovedEvent(this.bookId, committeeApproval));
+    addDomainEvent(new Approved(this.bookId, committeeApproval));
   }
 
   public void moveToEditing() {
@@ -79,7 +79,7 @@ public class Book extends Aggregate {
 
     currentState = State.EDITING;
 
-    addDomainEvent(new BookMovedToEditingEvent(this.bookId));
+    addDomainEvent(new MovedToEditing(this.bookId));
   }
 
   public void moveToPrinting() throws Exception {
@@ -102,7 +102,7 @@ public class Book extends Aggregate {
 
     this.currentState = State.PRINTING;
 
-    addDomainEvent(new BookMovedToPrintingEvent(this.bookId));
+    addDomainEvent(new MovedToPrinting(this.bookId));
   }
 
   public void moveToPublished() {
@@ -115,7 +115,7 @@ public class Book extends Aggregate {
 
     currentState = State.PUBLISHED;
 
-    addDomainEvent(new BookPublishedEvent(this.bookId, isbn, title, author));
+    addDomainEvent(new Published(this.bookId, isbn, title, author));
   }
 
   public void moveToOutOfPrint() {
@@ -139,7 +139,7 @@ public class Book extends Aggregate {
 
     translations.add(translation);
 
-    addDomainEvent(new TranslationAddedEvent(this.bookId, translation));
+    addDomainEvent(new TranslationAdded(this.bookId, translation));
   }
 
   public void addFormat(Format format) {
@@ -148,7 +148,7 @@ public class Book extends Aggregate {
 
     formats.add(format);
 
-    addDomainEvent(new FormatAddedEvent(this.bookId, format));
+    addDomainEvent(new FormatAdded(this.bookId, format));
   }
 
   public void removeFormat(Format format) {
@@ -157,7 +157,7 @@ public class Book extends Aggregate {
 
     formats.removeIf(f -> f.getFormatType().equals(format.getFormatType()));
 
-    addDomainEvent(new FormatRemovedEvent(this.bookId, format));
+    addDomainEvent(new FormatRemoved(this.bookId, format));
   }
 
   // Getter methods

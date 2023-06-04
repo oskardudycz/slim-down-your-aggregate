@@ -57,7 +57,7 @@ public class Book: Aggregate
         var chapter = new Chapter(title, content);
         _chapters.Add(chapter);
 
-        AddDomainEvent(new ChapterAddedEvent(BookId, chapter));
+        AddDomainEvent(new ChapterAdded(BookId, chapter));
     }
 
     public void Approve(CommitteeApproval committeeApproval)
@@ -71,7 +71,7 @@ public class Book: Aggregate
 
         _committeeApproval = committeeApproval;
 
-        AddDomainEvent(new BookApprovedEvent(BookId, committeeApproval));
+        AddDomainEvent(new Approved(BookId, committeeApproval));
     }
 
     public void MoveToEditing()
@@ -84,7 +84,7 @@ public class Book: Aggregate
 
         _currentState = State.Editing;
 
-        AddDomainEvent(new BookMovedToEditingEvent(BookId));
+        AddDomainEvent(new MovedToEditing(BookId));
     }
 
     public void MoveToPrinting()
@@ -104,7 +104,7 @@ public class Book: Aggregate
 
         _currentState = State.Printing;
 
-        AddDomainEvent(new BookMovedToPrintingEvent(BookId));
+        AddDomainEvent(new MovedToPrinting(BookId));
     }
 
     public void MoveToPublished()
@@ -118,7 +118,7 @@ public class Book: Aggregate
 
         _currentState = State.Published;
 
-        AddDomainEvent(new BookPublishedEvent(BookId, ISBN, Title, Author));
+        AddDomainEvent(new Published(BookId, ISBN, Title, Author));
     }
 
     public void MoveToOutOfPrint()
@@ -134,7 +134,7 @@ public class Book: Aggregate
 
         _currentState = State.OutOfPrint;
 
-        AddDomainEvent(new BookMovedToOutOfPrintEvent(BookId));
+        AddDomainEvent(new MovedToOutOfPrint(BookId));
     }
 
     public void AddTranslation(Translation translation)
@@ -147,7 +147,7 @@ public class Book: Aggregate
 
         _translations.Add(translation);
 
-        AddDomainEvent(new TranslationAddedEvent(BookId, translation));
+        AddDomainEvent(new TranslationAdded(BookId, translation));
     }
 
     public void AddFormat(Format format)
@@ -160,7 +160,7 @@ public class Book: Aggregate
 
         _formats.Add(format);
 
-        AddDomainEvent(new FormatAddedEvent(BookId, format));
+        AddDomainEvent(new FormatAdded(BookId, format));
     }
 
     public void RemoveFormat(Format format)
@@ -174,6 +174,6 @@ public class Book: Aggregate
 
         _formats.Remove(existingFormat);
 
-        AddDomainEvent(new FormatAddedEvent(BookId, format));
+        AddDomainEvent(new FormatAdded(BookId, format));
     }
 }
