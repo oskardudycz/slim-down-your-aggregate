@@ -2,6 +2,8 @@ package io.eventdriven.slimdownaggregates.original;
 
 import io.eventdriven.slimdownaggregates.original.core.Aggregate;
 import io.eventdriven.slimdownaggregates.original.entities.*;
+import io.eventdriven.slimdownaggregates.original.events.BookMovedToEditingEvent;
+import io.eventdriven.slimdownaggregates.original.events.BookPublishedEvent;
 import io.eventdriven.slimdownaggregates.original.services.IPublishingHouse;
 
 import java.time.LocalDate;
@@ -89,7 +91,7 @@ public class Book extends Aggregate {
       throw new IllegalStateException("A book must have at least one chapter to move to the Editing state.");
 
     currentState = State.EDITING;
-    // AddDomainEvent(new BookMovedToEditingEvent(this.id));
+    addDomainEvent(new BookMovedToEditingEvent(this.id));
   }
 
   public void moveToPublished() {
@@ -101,8 +103,30 @@ public class Book extends Aggregate {
         "A book cannot be moved to the Published state unless it has been reviewed by at least three reviewers.");
 
     currentState = State.PUBLISHED;
-    // AddDomainEvent(new BookPublishedEvent(this.id, isbn, title, author));
+    addDomainEvent(new BookPublishedEvent(this.id, isbn, title, author));
   }
+
+  public void moveToPrinting() throws Exception {
+    if (this.currentState != State.EDITING) {
+      throw new Exception("Cannot move to Printing state from the current state.");
+    }
+
+    if (this.committeeApproval == null) {
+      throw new Exception("Cannot move to the Printing state until the book has been approved.");
+    }
+
+    if (this.reviewers.size() < 3) {
+      throw new Exception(
+        "A book cannot be moved to the Printing state unless it has been reviewed by at least three reviewers.");
+    }
+
+    if (!this.publishingHouse.isGenreLimitReached(this.genre)) {
+      throw new Exception("Cannot move to the Printing state until the genre limit is reached.");
+    }
+
+    this.currentState = State.PRINTING;
+  }
+
 
   public void moveToOutOfPrint() {
     if (currentState != State.PUBLISHED)

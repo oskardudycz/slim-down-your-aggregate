@@ -109,6 +109,25 @@ public class Book: Aggregate
         AddDomainEvent(new BookMovedToEditingEvent(Id));
     }
 
+    public void MoveToPrinting()
+    {
+        if (_currentState != State.Editing)
+            throw new InvalidOperationException("Cannot move to Printing state from the current state.");
+
+        if (_committeeApproval == null)
+            throw new InvalidOperationException("Cannot move to the Printing state until the book has been approved.");
+
+        if (Reviewers.Count < 3)
+            throw new InvalidOperationException(
+                "A book cannot be moved to the Printing state unless it has been reviewed by at least three reviewers.");
+
+        if (!_publishingHouse.IsGenreLimitReached(Genre))
+            throw new InvalidOperationException("Cannot move to the Printing state until the genre limit is reached.");
+
+        _currentState = State.Printing;
+    }
+
+
     public void MoveToPublished()
     {
         if (_currentState != State.Printing || _translations.Count < 5)
