@@ -5,48 +5,48 @@ namespace SlimDownYourAggregates.Tests.Slimmed;
 
 public abstract record BookEvent: IDomainEvent
 {
-    public record ChapterAddedEvent(
+    public record ChapterAdded(
         BookId BookId,
         Chapter Chapter
     ): BookEvent;
 
-    public record BookApprovedEvent(
+    public record Approved(
         BookId BookId,
         CommitteeApproval CommitteeApproval
     ): BookEvent;
 
-    public record BookMovedToEditingEvent(
+    public record MovedToEditing(
         BookId BookId
     ): BookEvent;
 
-    public record BookMovedToPrintingEvent
+    public record MovedToPrinting
     (
         BookId BookId
     ): BookEvent;
 
-    public record BookPublishedEvent(
+    public record Published(
         BookId BookId,
         ISBN ISBN,
         Title Title,
         Author Author
     ): BookEvent;
 
-    public record BookMovedToOutOfPrintEvent
+    public record MovedToOutOfPrint
     (
         BookId BookId
     ): BookEvent;
 
-    public record FormatAddedEvent(
+    public record FormatAdded(
         BookId BookId,
         Format Translation
     ): BookEvent;
 
-    public record FormatRemovedEvent(
+    public record FormatRemoved(
         BookId BookId,
         Format Translation
     ): BookEvent;
 
-    public record TranslationAddedEvent(
+    public record TranslationAdded(
         BookId BookId,
         Translation Translation
     ): BookEvent;
