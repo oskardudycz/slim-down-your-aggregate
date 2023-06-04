@@ -37,3 +37,7 @@ We'll be doing multiple transitions step by step to make it more focused on the 
 2. Install Java JDK 17 (or later) - https://www.oracle.com/java/technologies/downloads/.
 3. Install IntelliJ, Eclipse, VSCode or other preferred IDE.
 4. Open [java](./java/) folder as project.
+## Steps
+
+1. Find the data that is used in IF statements or passed to events.
+2. Remove all the other data
