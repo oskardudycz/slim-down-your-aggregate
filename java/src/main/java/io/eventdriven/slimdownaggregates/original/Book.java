@@ -4,6 +4,7 @@ import io.eventdriven.slimdownaggregates.original.core.Aggregate;
 import io.eventdriven.slimdownaggregates.original.entities.*;
 import io.eventdriven.slimdownaggregates.original.events.BookMovedToEditingEvent;
 import io.eventdriven.slimdownaggregates.original.events.BookPublishedEvent;
+import io.eventdriven.slimdownaggregates.original.events.ChapterAddedEvent;
 import io.eventdriven.slimdownaggregates.original.services.IPublishingHouse;
 
 import java.time.LocalDate;
@@ -69,7 +70,7 @@ public class Book extends Aggregate {
 
     Chapter chapter = new Chapter(title, content);
     chapters.add(chapter);
-    // AddDomainEvent(new ChapterAddedEvent(this.id, chapter));
+    addDomainEvent(new ChapterAddedEvent(this.id, chapter));
   }
 
   public void approve(CommitteeApproval committeeApproval) {

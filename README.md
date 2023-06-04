@@ -40,6 +40,6 @@ We'll be doing multiple transitions step by step to make it more focused on the 
 ## Steps
 
 1. Find the data that is used in IF statements or passed to events.
-2. Copy the Book aggregate and rename it into BookModel.
+2. Copy the Book aggregate and rename it into BookModel, this will be our storage model, we still need to keep the backward compatibility.
 3. Remove all methods from it, just keep state, we'll use it as a reference and need that for later.
-4. Remove all the other data.
+4. Remove all the data that we don't need for IFs from Book aggregate.
