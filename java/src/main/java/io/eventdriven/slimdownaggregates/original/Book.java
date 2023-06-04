@@ -41,7 +41,6 @@ public class Book extends Aggregate {
               String bindingType, String summary) {
     super(bookId.getValue());
 
-    // Properties initialization
     this.bookId = bookId;
     this.title = title;
     this.author = author;

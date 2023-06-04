@@ -28,14 +28,7 @@ public class Book extends Aggregate {
   private Author author;
   private Genre genre;
   private List<Reviewer> reviewers;
-  private Publisher publisher;
   private ISBN isbn;
-  private LocalDate publicationDate;
-  private int edition;
-  private int totalPages;
-  private int numberOfIllustrations;
-  private String bindingType;
-  private String summary;
 
   public Book(BookId bookId, Title title, Author author, Genre genre, List<Reviewer> reviewers,
               IPublishingHouse publishingHouse, Publisher publisher, ISBN isbn,
@@ -43,21 +36,13 @@ public class Book extends Aggregate {
               String bindingType, String summary) {
     super(bookId.getValue());
 
-    // Properties initialization
     this.bookId = bookId;
     this.title = title;
     this.author = author;
     this.genre = genre;
     this.reviewers = reviewers;
     this.publishingHouse = publishingHouse;
-    this.publisher = publisher;
     this.isbn = isbn;
-    this.publicationDate = publicationDate;
-    this.edition = edition;
-    this.totalPages = totalPages;
-    this.numberOfIllustrations = numberOfIllustrations;
-    this.bindingType = bindingType;
-    this.summary = summary;
   }
 
   public void addChapter(ChapterTitle title, ChapterContent content) {
@@ -186,36 +171,8 @@ public class Book extends Aggregate {
     return Collections.unmodifiableList(reviewers);
   }
 
-  public Publisher getPublisher() {
-    return publisher;
-  }
-
   public ISBN getIsbn() {
     return isbn;
-  }
-
-  public LocalDate getPublicationDate() {
-    return publicationDate;
-  }
-
-  public int getEdition() {
-    return edition;
-  }
-
-  public int getTotalPages() {
-    return totalPages;
-  }
-
-  public int getNumberOfIllustrations() {
-    return numberOfIllustrations;
-  }
-
-  public String getBindingType() {
-    return bindingType;
-  }
-
-  public String getSummary() {
-    return summary;
   }
 
   public List<Chapter> getChapters() {
@@ -233,7 +190,5 @@ public class Book extends Aggregate {
   public List<Format> getFormats() {
     return Collections.unmodifiableList(formats);
   }
-
-
 }
 

@@ -24,14 +24,7 @@ public class Book: Aggregate
         Genre genre,
         List<Reviewer> reviewers,
         IPublishingHouse publishingHouse,
-        Publisher publisher,
-        ISBN isbn,
-        DateTime publicationDate,
-        int edition,
-        int totalPages,
-        int numberOfIllustrations,
-        string bindingType,
-        string summary
+        ISBN isbn
     ): base(bookId.Value)
     {
         BookId = bookId;
@@ -40,14 +33,7 @@ public class Book: Aggregate
         Genre = genre;
         Reviewers = reviewers;
         _publishingHouse = publishingHouse;
-        Publisher = publisher;
         ISBN = isbn;
-        PublicationDate = publicationDate;
-        Edition = edition;
-        TotalPages = totalPages;
-        NumberOfIllustrations = numberOfIllustrations;
-        BindingType = bindingType;
-        Summary = summary;
     }
 
     public BookId BookId { get; }
@@ -56,18 +42,7 @@ public class Book: Aggregate
     public Author Author { get; }
     public Genre Genre { get; }
     public List<Reviewer> Reviewers { get; }
-    public IReadOnlyList<Chapter> Chapters => _chapters.AsReadOnly();
-    public CommitteeApproval? CommitteeApproval => _committeeApproval;
-    public Publisher Publisher { get; }
     public ISBN ISBN { get; }
-    public DateTime PublicationDate { get; }
-    public int Edition { get; }
-    public int TotalPages { get; }
-    public int NumberOfIllustrations { get; }
-    public string BindingType { get; }
-    public string Summary { get; }
-    public IReadOnlyList<Translation> Translations => _translations.AsReadOnly();
-    public IReadOnlyList<Format> Formats => _formats.AsReadOnly();
 
     public void AddChapter(ChapterTitle title, ChapterContent content)
     {
