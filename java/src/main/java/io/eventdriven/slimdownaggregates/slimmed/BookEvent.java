@@ -9,14 +9,32 @@ public sealed interface BookEvent {
   ) implements BookEvent {
   }
 
-  record Approved(
-    BookId BookId,
-    CommitteeApproval CommitteeApproval
+  record MovedToEditing(
+    BookId BookId
   ) implements BookEvent {
   }
 
-  record MovedToEditing(
-    BookId BookId
+  record FormatAdded(
+    BookId BookId,
+    Format Translation
+  ) implements BookEvent {
+  }
+
+  record FormatRemoved(
+    BookId BookId,
+    Format Translation
+  ) implements BookEvent {
+  }
+
+  record TranslationAdded(
+    BookId BookId,
+    Translation Translation
+  ) implements BookEvent {
+  }
+
+  record Approved(
+    BookId BookId,
+    CommitteeApproval CommitteeApproval
   ) implements BookEvent {
   }
 
@@ -38,23 +56,5 @@ public sealed interface BookEvent {
     (
       BookId BookId
     ) implements BookEvent {
-  }
-
-  record FormatAdded(
-    BookId BookId,
-    Format Translation
-  ) implements BookEvent {
-  }
-
-  record FormatRemoved(
-    BookId BookId,
-    Format Translation
-  ) implements BookEvent {
-  }
-
-  record TranslationAdded(
-    BookId BookId,
-    Translation Translation
-  ) implements BookEvent {
   }
 }

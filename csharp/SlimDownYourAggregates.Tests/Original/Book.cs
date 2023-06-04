@@ -84,18 +84,6 @@ public class Book: Aggregate
         AddDomainEvent(new ChapterAddedEvent(BookId, chapter));
     }
 
-    public void Approve(CommitteeApproval committeeApproval)
-    {
-        if (_currentState != State.Editing)
-            throw new InvalidOperationException("Cannot approve a book that is not in the Editing state.");
-
-        if (Reviewers.Count < 3)
-            throw new InvalidOperationException(
-                "A book cannot be approved unless it has been reviewed by at least three reviewers.");
-
-        _committeeApproval = committeeApproval;
-    }
-
     public void MoveToEditing()
     {
         if (_currentState != State.Writing)
@@ -107,6 +95,52 @@ public class Book: Aggregate
         _currentState = State.Editing;
 
         AddDomainEvent(new BookMovedToEditingEvent(BookId));
+    }
+
+    public void AddTranslation(Translation translation)
+    {
+        if (_currentState != State.Editing)
+            throw new InvalidOperationException("Cannot add translation of a book that is not in the Editing state.");
+
+        if (_translations.Count >= 5)
+            throw new InvalidOperationException("Cannot add more translations. Maximum 5 translations are allowed.");
+
+        _translations.Add(translation);
+    }
+
+    public void AddFormat(Format format)
+    {
+        if (_currentState != State.Editing)
+            throw new InvalidOperationException("Cannot add format of a book that is not in the Editing state.");
+
+        if (_formats.Any(f => f.FormatType == format.FormatType))
+            throw new InvalidOperationException($"Format {format.FormatType} already exists.");
+
+        _formats.Add(format);
+    }
+
+    public void RemoveFormat(Format format)
+    {
+        if (_currentState != State.Editing)
+            throw new InvalidOperationException("Cannot remove format of a book that is not in the Editing state.");
+
+        var existingFormat = _formats.FirstOrDefault(f => f.FormatType == format.FormatType);
+        if (existingFormat == null)
+            throw new InvalidOperationException($"Format {format.FormatType} does not exist.");
+
+        _formats.Remove(existingFormat);
+    }
+
+    public void Approve(CommitteeApproval committeeApproval)
+    {
+        if (_currentState != State.Editing)
+            throw new InvalidOperationException("Cannot approve a book that is not in the Editing state.");
+
+        if (Reviewers.Count < 3)
+            throw new InvalidOperationException(
+                "A book cannot be approved unless it has been reviewed by at least three reviewers.");
+
+        _committeeApproval = committeeApproval;
     }
 
     public void MoveToPrinting()
@@ -153,39 +187,5 @@ public class Book: Aggregate
                 "Cannot move to Out of Print state if more than 10% of total copies are unsold.");
 
         _currentState = State.OutOfPrint;
-    }
-
-    public void AddTranslation(Translation translation)
-    {
-        if (_currentState != State.Editing)
-            throw new InvalidOperationException("Cannot add translation of a book that is not in the Editing state.");
-
-        if (_translations.Count >= 5)
-            throw new InvalidOperationException("Cannot add more translations. Maximum 5 translations are allowed.");
-
-        _translations.Add(translation);
-    }
-
-    public void AddFormat(Format format)
-    {
-        if (_currentState != State.Editing)
-            throw new InvalidOperationException("Cannot add format of a book that is not in the Editing state.");
-
-        if (_formats.Any(f => f.FormatType == format.FormatType))
-            throw new InvalidOperationException($"Format {format.FormatType} already exists.");
-
-        _formats.Add(format);
-    }
-
-    public void RemoveFormat(Format format)
-    {
-        if (_currentState != State.Editing)
-            throw new InvalidOperationException("Cannot remove format of a book that is not in the Editing state.");
-
-        var existingFormat = _formats.FirstOrDefault(f => f.FormatType == format.FormatType);
-        if (existingFormat == null)
-            throw new InvalidOperationException($"Format {format.FormatType} does not exist.");
-
-        _formats.Remove(existingFormat);
     }
 }

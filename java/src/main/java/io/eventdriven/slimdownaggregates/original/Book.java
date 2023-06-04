@@ -73,17 +73,6 @@ public class Book extends Aggregate {
     addDomainEvent(new ChapterAddedEvent(this.bookId, chapter));
   }
 
-  public void approve(CommitteeApproval committeeApproval) {
-    if (currentState != State.EDITING)
-      throw new IllegalStateException("Cannot approve a book that is not in the Editing state.");
-
-    if (reviewers.size() < 3)
-      throw new IllegalStateException(
-        "A book cannot be approved unless it has been reviewed by at least three reviewers.");
-
-    this.committeeApproval = committeeApproval;
-  }
-
   public void moveToEditing() {
     if (currentState != State.WRITING)
       throw new IllegalStateException("Cannot move to Editing state from the current state.");
@@ -94,6 +83,47 @@ public class Book extends Aggregate {
     currentState = State.EDITING;
 
     addDomainEvent(new BookMovedToEditingEvent(this.bookId));
+  }
+
+  public void addTranslation(Translation translation) {
+    if (currentState != State.EDITING)
+      throw new IllegalStateException("Cannot add translation of a book that is not in the Editing state.");
+
+    if (translations.size() >= 5)
+      throw new IllegalStateException("Cannot add more translations. Maximum 5 translations are allowed.");
+
+    translations.add(translation);
+  }
+
+  public void addFormat(Format format) {
+    if (currentState != State.EDITING)
+      throw new IllegalStateException("Cannot add format of a book that is not in the Editing state.");
+
+    if (formats.stream().anyMatch(f -> f.getFormatType().equals(format.getFormatType())))
+      throw new IllegalStateException("Format " + format.getFormatType() + " already exists.");
+
+    formats.add(format);
+  }
+
+  public void removeFormat(Format format) {
+    if (currentState != State.EDITING)
+      throw new IllegalStateException("Cannot remove format of a book that is not in the Editing state.");
+
+    if (formats.stream().noneMatch(f -> f.getFormatType().equals(format.getFormatType())))
+      throw new IllegalStateException("Format " + format.getFormatType() + " does not exist.");
+
+    formats.removeIf(f -> f.getFormatType().equals(format.getFormatType()));
+  }
+
+  public void approve(CommitteeApproval committeeApproval) {
+    if (currentState != State.EDITING)
+      throw new IllegalStateException("Cannot approve a book that is not in the Editing state.");
+
+    if (reviewers.size() < 3)
+      throw new IllegalStateException(
+        "A book cannot be approved unless it has been reviewed by at least three reviewers.");
+
+    this.committeeApproval = committeeApproval;
   }
 
   public void moveToPrinting() throws Exception {
@@ -141,36 +171,6 @@ public class Book extends Aggregate {
         "Cannot move to Out of Print state if more than 10% of total copies are unsold.");
 
     currentState = State.OUT_OF_PRINT;
-  }
-
-  public void addTranslation(Translation translation) {
-    if (currentState != State.EDITING)
-      throw new IllegalStateException("Cannot add translation of a book that is not in the Editing state.");
-
-    if (translations.size() >= 5)
-      throw new IllegalStateException("Cannot add more translations. Maximum 5 translations are allowed.");
-
-    translations.add(translation);
-  }
-
-  public void addFormat(Format format) {
-    if (currentState != State.EDITING)
-      throw new IllegalStateException("Cannot add format of a book that is not in the Editing state.");
-
-    if (formats.stream().anyMatch(f -> f.getFormatType().equals(format.getFormatType())))
-      throw new IllegalStateException("Format " + format.getFormatType() + " already exists.");
-
-    formats.add(format);
-  }
-
-  public void removeFormat(Format format) {
-    if (currentState != State.EDITING)
-      throw new IllegalStateException("Cannot remove format of a book that is not in the Editing state.");
-
-    if (formats.stream().noneMatch(f -> f.getFormatType().equals(format.getFormatType())))
-      throw new IllegalStateException("Format " + format.getFormatType() + " does not exist.");
-
-    formats.removeIf(f -> f.getFormatType().equals(format.getFormatType()));
   }
 
   // Getter methods
