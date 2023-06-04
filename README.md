@@ -44,3 +44,4 @@ We'll be doing multiple transitions step by step to make it more focused on the 
 3. Remove all methods from it, just keep state, we'll use it as a reference and need that for later.
 4. Remove all the data that we don't need for IFs from Book aggregate.
 5. Add missing events.
+6. Group them in the same file to make it more readable (as they're form of documentation) and make managing it less tedious.
