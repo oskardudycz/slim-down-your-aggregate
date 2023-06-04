@@ -81,7 +81,7 @@ public class Book: Aggregate
         var chapter = new Chapter(title, content);
         _chapters.Add(chapter);
 
-        AddDomainEvent(new ChapterAddedEvent(Id, chapter));
+        AddDomainEvent(new ChapterAddedEvent(BookId, chapter));
     }
 
     public void Approve(CommitteeApproval committeeApproval)
@@ -106,7 +106,7 @@ public class Book: Aggregate
 
         _currentState = State.Editing;
 
-        AddDomainEvent(new BookMovedToEditingEvent(Id));
+        AddDomainEvent(new BookMovedToEditingEvent(BookId));
     }
 
     public void MoveToPrinting()
@@ -127,7 +127,6 @@ public class Book: Aggregate
         _currentState = State.Printing;
     }
 
-
     public void MoveToPublished()
     {
         if (_currentState != State.Printing || _translations.Count < 5)
@@ -139,7 +138,7 @@ public class Book: Aggregate
 
         _currentState = State.Published;
 
-        AddDomainEvent(new BookPublishedEvent(Id, ISBN, Title, Author));
+        AddDomainEvent(new BookPublishedEvent(BookId, ISBN, Title, Author));
     }
 
     public void MoveToOutOfPrint()
@@ -172,12 +171,12 @@ public class Book: Aggregate
         _formats.Add(format);
     }
 
-    public void RemoveFormat(string formatType)
+    public void RemoveFormat(Format format)
     {
-        var format = _formats.FirstOrDefault(f => f.FormatType == formatType);
-        if (format == null)
-            throw new InvalidOperationException($"Format {formatType} does not exist.");
+        var existingFormat = _formats.FirstOrDefault(f => f.FormatType == format.FormatType);
+        if (existingFormat == null)
+            throw new InvalidOperationException($"Format {format.FormatType} does not exist.");
 
-        _formats.Remove(format);
+        _formats.Remove(existingFormat);
     }
 }

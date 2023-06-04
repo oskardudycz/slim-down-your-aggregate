@@ -62,14 +62,15 @@ public class Book extends Aggregate {
       throw new IllegalStateException("Chapter with the same title already exists.");
     }
 
-    if (!chapters.isEmpty() && !chapters.get(chapters.size() - 1).getTitle().equals("Chapter " + chapters.size())) {
+    if (!chapters.isEmpty() && !chapters.get(chapters.size() - 1).getTitle().getValue().equals("Chapter " + chapters.size())) {
       throw new IllegalStateException(
         "Chapter should be added in sequence. The title of the next chapter should be 'Chapter " + (chapters.size() + 1) + "'.");
     }
 
-    Chapter chapter = new Chapter(title, content);
+    var chapter = new Chapter(title, content);
     chapters.add(chapter);
-    addDomainEvent(new ChapterAddedEvent(this.id, chapter));
+
+    addDomainEvent(new ChapterAddedEvent(this.bookId, chapter));
   }
 
   public void approve(CommitteeApproval committeeApproval) {
@@ -91,19 +92,8 @@ public class Book extends Aggregate {
       throw new IllegalStateException("A book must have at least one chapter to move to the Editing state.");
 
     currentState = State.EDITING;
-    addDomainEvent(new BookMovedToEditingEvent(this.id));
-  }
 
-  public void moveToPublished() {
-    if (currentState != State.PRINTING || translations.size() < 5)
-      throw new IllegalStateException("Cannot move to Published state from the current state.");
-
-    if (reviewers.size() < 3)
-      throw new IllegalStateException(
-        "A book cannot be moved to the Published state unless it has been reviewed by at least three reviewers.");
-
-    currentState = State.PUBLISHED;
-    addDomainEvent(new BookPublishedEvent(this.id, isbn, title, author));
+    addDomainEvent(new BookMovedToEditingEvent(this.bookId));
   }
 
   public void moveToPrinting() throws Exception {
@@ -127,6 +117,18 @@ public class Book extends Aggregate {
     this.currentState = State.PRINTING;
   }
 
+  public void moveToPublished() {
+    if (currentState != State.PRINTING || translations.size() < 5)
+      throw new IllegalStateException("Cannot move to Published state from the current state.");
+
+    if (reviewers.size() < 3)
+      throw new IllegalStateException(
+        "A book cannot be moved to the Published state unless it has been reviewed by at least three reviewers.");
+
+    currentState = State.PUBLISHED;
+
+    addDomainEvent(new BookPublishedEvent(this.bookId, isbn, title, author));
+  }
 
   public void moveToOutOfPrint() {
     if (currentState != State.PUBLISHED)
@@ -155,11 +157,11 @@ public class Book extends Aggregate {
     formats.add(format);
   }
 
-  public void removeFormat(String formatType) {
-    if (formats.stream().noneMatch(f -> f.getFormatType().equals(formatType)))
-      throw new IllegalStateException("Format " + formatType + " does not exist.");
+  public void removeFormat(Format format) {
+    if (formats.stream().noneMatch(f -> f.getFormatType().equals(format.getFormatType())))
+      throw new IllegalStateException("Format " + format.getFormatType() + " does not exist.");
 
-    formats.removeIf(f -> f.getFormatType().equals(formatType));
+    formats.removeIf(f -> f.getFormatType().equals(format.getFormatType()));
   }
 
   // Getter methods

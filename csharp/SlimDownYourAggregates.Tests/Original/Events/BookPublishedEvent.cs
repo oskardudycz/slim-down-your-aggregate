@@ -3,4 +3,4 @@ using SlimDownYourAggregates.Tests.Original.Entities;
 
 namespace SlimDownYourAggregates.Tests.Original.Events;
 
-public record BookPublishedEvent(Guid BookId, ISBN ISBN, Title Title, Author Author): IDomainEvent;
+public record BookPublishedEvent(BookId BookId, ISBN ISBN, Title Title, Author Author): IDomainEvent;
