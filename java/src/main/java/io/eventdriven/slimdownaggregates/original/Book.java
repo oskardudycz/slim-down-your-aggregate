@@ -190,6 +190,14 @@ public class Book extends Aggregate {
     return genre;
   }
 
+  public State getCurrentState() {
+    return currentState;
+  }
+
+  public IPublishingHouse getPublishingHouse() {
+    return publishingHouse;
+  }
+
   public List<Reviewer> getReviewers() {
     return Collections.unmodifiableList(reviewers);
   }
