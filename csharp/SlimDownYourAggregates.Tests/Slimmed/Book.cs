@@ -1,56 +1,123 @@
 using SlimDownYourAggregates.Tests.Slimmed.Entities;
-using SlimDownYourAggregates.Tests.Slimmed.Services;
 using static SlimDownYourAggregates.Tests.Slimmed.BookEvent;
 
 namespace SlimDownYourAggregates.Tests.Slimmed;
 
-public record Book(
-    BookId BookId,
-    Title Title,
-    Author Author,
-    Genre Genre,
-    int ReviewersCount,
-    IPublishingHouse PublishingHouse,
-    ISBN ISBN,
-    List<string> ChapterTitles,
-    int TranslationsCount,
-    List<Format> Formats,
-    bool IsApproved,
-    Book.State CurrentState = Book.State.Writing
-)
+public abstract record Book
 {
-    public enum State { Writing, Editing, Printing, Published, OutOfPrint }
+    public record InWriting(
+        BookId BookId,
+        Genre Genre,
+        Title Title,
+        Author Author,
+        ISBN Isbn,
+        List<String> ChapterTitles
+    ): Book;
 
-    public Book Evolve<T>(Book book, T @event) where T : BookEvent
+    public record InEditing(
+        BookId BookId,
+        Genre Genre,
+        Title Title,
+        Author Author,
+        ISBN Isbn,
+        List<Format> Formats,
+        int TranslationsCount,
+        int ReviewersCount,
+        bool IsApproved
+    ): Book;
+
+
+    public record InPrinting(
+        BookId BookId,
+        Title Title,
+        Author Author,
+        ISBN ISBN,
+        List<Format> Formats,
+        int ReviewersCount,
+        int TranslationsCount
+    ): Book;
+
+    public record InPublishing(
+        BookId BookId,
+        List<Format> Formats
+    ): Book;
+
+    public record OutOfPrint: Book;
+
+    public static Book Evolve<T>(Book book, T @event) where T : BookEvent
     {
         return @event switch
         {
             ChapterAdded chapterAdded =>
-                book with { ChapterTitles = ChapterTitles.Union(new[] { chapterAdded.Chapter.Title.Value }).ToList() },
+                book is InWriting inWriting
+                    ? inWriting with
+                    {
+                        ChapterTitles = inWriting.ChapterTitles.Union(new[] { chapterAdded.Chapter.Title.Value })
+                            .ToList()
+                    }
+                    : book,
 
             MovedToEditing ignore =>
-                book with { CurrentState = State.Editing },
+                book is InWriting inWriting
+                    ? new InEditing(
+                        inWriting.BookId,
+                        inWriting.Genre,
+                        inWriting.Title,
+                        inWriting.Author,
+                        inWriting.Isbn,
+                        new List<Format>(),
+                        0,
+                        0,
+                        false
+                    )
+                    : book,
 
             FormatAdded formatAdded =>
-                book with { Formats = Formats.Union(new[] { formatAdded.Format }).ToList() },
+                book is InEditing inEditing
+                    ? inEditing with { Formats = inEditing.Formats.Union(new[] { formatAdded.Format }).ToList() }
+                    : book,
 
             FormatRemoved formatRemoved =>
-                book with { Formats = Formats.Where(f => f.FormatType != formatRemoved.Format.FormatType).ToList() },
+                book is InEditing inEditing
+                    ? inEditing with
+                    {
+                        Formats = inEditing.Formats.Where(f => f.FormatType != formatRemoved.Format.FormatType)
+                            .ToList()
+                    }
+                    : book,
 
             TranslationAdded translationAdded =>
-                book with { TranslationsCount = TranslationsCount + 1},
+                book is InEditing inEditing
+                    ? inEditing with { TranslationsCount = inEditing.TranslationsCount + 1 }
+                    : book,
 
             Approved approved =>
-                book with { IsApproved = true },
+                book is InEditing inEditing
+                    ? inEditing with { IsApproved = true }
+                    : book,
 
             MovedToPrinting ignore =>
-                book with { CurrentState = State.Printing },
+                book is InEditing inEditing
+                    ? new InPrinting(
+                        inEditing.BookId,
+                        inEditing.Title,
+                        inEditing.Author,
+                        inEditing.Isbn,
+                        inEditing.Formats,
+                        inEditing.ReviewersCount,
+                        inEditing.TranslationsCount
+                    )
+                    : book,
 
             Published ignore =>
-                book with { CurrentState = State.Published },
+                book is InPrinting inEditing
+                    ? new InPublishing(inEditing.BookId, inEditing.Formats)
+                    : book,
 
             MovedToOutOfPrint ignore =>
-                book with { CurrentState = State.OutOfPrint },
+                book is InPublishing inPublishing
+                    ? new OutOfPrint()
+                    : book,
 
             _ => book
         };

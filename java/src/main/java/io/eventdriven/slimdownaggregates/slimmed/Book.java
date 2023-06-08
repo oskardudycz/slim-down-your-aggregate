@@ -46,7 +46,7 @@ public sealed interface Book {
   ) implements Book {
   }
 
-  record Published(
+  record InPublishing(
     BookId bookId,
     List<Format> formats
   ) implements Book {
@@ -167,18 +167,18 @@ public sealed interface Book {
           bookInEditing.translationsCount
         );
       }
-      case BookEvent.Published ignore: {
+      case Published ignore: {
         if (!(state instanceof Book.InPrinting bookInPrinting)) {
           yield state;
         }
 
-        yield new Book.Published(
+        yield new InPublishing(
           bookInPrinting.bookId,
           bookInPrinting.formats()
         );
       }
       case MovedToOutOfPrint ignore: {
-        if (!(state instanceof Book.Published)) {
+        if (!(state instanceof InPublishing)) {
           yield state;
         }
         yield new Book.OutOfPrint();

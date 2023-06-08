@@ -47,3 +47,7 @@ We'll be doing multiple transitions step by step to make it more focused on the 
 6. Group them in the same file to make it more readable (as they're form of documentation) and make managing it less tedious.
 7. Return events as the result of the method, and remove aggregates.
 8. Add evolve method that will take the event, update the state and return the event. Thanks to that we're getting the split between business logic and state apply.
+9. Make evolve static to take aggregate.
+10. Add commands and use them in the service methods instead of multiple parameters.
+11. Simplify the structure based on the if conditions, e.g. instead of keeping the transaction list, just take transactions count.
+12. Add union type for state, updating evolve method and service logic.
