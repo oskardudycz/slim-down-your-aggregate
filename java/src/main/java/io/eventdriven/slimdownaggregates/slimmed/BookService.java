@@ -2,11 +2,73 @@ package io.eventdriven.slimdownaggregates.slimmed;
 
 import io.eventdriven.slimdownaggregates.slimmed.entities.*;
 
+import static io.eventdriven.slimdownaggregates.slimmed.Book.State;
 import static io.eventdriven.slimdownaggregates.slimmed.BookEvent.*;
-import static io.eventdriven.slimdownaggregates.slimmed.Book.*;
+import static io.eventdriven.slimdownaggregates.slimmed.BookService.BookCommand.*;
 
 public final class BookService {
-  public static ChapterAdded addChapter(ChapterTitle title, ChapterContent content, Book state) {
+  public sealed interface BookCommand {
+    record AddChapter(
+      BookId bookId,
+      ChapterTitle title,
+      ChapterContent content
+    ) implements BookCommand {
+    }
+
+    record AddFormat(
+      BookId bookId,
+      Format format
+    ) implements BookCommand {
+    }
+
+    record RemoveFormat(
+      BookId bookId,
+      Format format
+    ) implements BookCommand {
+    }
+
+    record AddTranslation(
+      BookId bookId,
+      Translation translation
+    ) implements BookCommand {
+    }
+
+    record Edit(
+      BookId bookId
+    ) implements BookCommand {
+    }
+
+    record Approve(
+      BookId bookId,
+      CommitteeApproval committeeApproval
+    ) implements BookCommand {
+    }
+
+    record Print
+      (
+        BookId bookId
+      ) implements BookCommand {
+    }
+
+    record Publish(
+      BookId bookId,
+      ISBN isbn,
+      Title title,
+      Author author
+    ) implements BookCommand {
+    }
+
+    record MoveToOutOfPrint
+      (
+        BookId bookId
+      ) implements BookCommand {
+    }
+  }
+
+  public static ChapterAdded addChapter(AddChapter command, Book state) {
+    var title = command.title();
+    var content = command.content();
+
     if (state.chapters().stream().anyMatch(chap -> chap.getTitle().equals(title))) {
       throw new IllegalStateException("chapter with the same title already exists.");
     }
@@ -21,7 +83,7 @@ public final class BookService {
     return new ChapterAdded(state.bookId(), chapter);
   }
 
-  public static MovedToEditing moveToEditing(Book state) {
+  public static MovedToEditing moveToEditing(Edit command, Book state) {
     if (state.currentState() != State.WRITING)
       throw new IllegalStateException("Cannot move to Editing state from the current state.");
 
@@ -31,37 +93,40 @@ public final class BookService {
     return new MovedToEditing(state.bookId());
   }
 
-  public static TranslationAdded addTranslation(Translation translation, Book state) {
+  public static TranslationAdded addTranslation(AddTranslation command, Book state) {
     if (state.currentState() != State.EDITING)
       throw new IllegalStateException("Cannot add translation of a book that is not in the Editing state.");
 
     if (state.translations().size() >= 5)
       throw new IllegalStateException("Cannot add more state.translations(). Maximum 5 state.translations() are allowed.");
 
-    return new TranslationAdded(state.bookId(), translation);
+    return new TranslationAdded(state.bookId(), command.translation());
   }
 
-  public static FormatAdded addFormat(Format format, Book state) {
+  public static FormatAdded addFormat(AddFormat command, Book state) {
+    var format = command.format();
+
     if (state.currentState() != State.EDITING)
       throw new IllegalStateException("Cannot add format of a book that is not in the Editing state.");
 
     if (state.formats().stream().anyMatch(f -> f.getFormatType().equals(format.getFormatType())))
-      throw new IllegalStateException("Format " + format.getFormatType() + " already exists.");
+      throw new IllegalStateException("format " + format.getFormatType() + " already exists.");
 
     return new FormatAdded(state.bookId(), format);
   }
 
-  public static FormatRemoved removeFormat(Format format, Book state) {
+  public static FormatRemoved removeFormat(RemoveFormat command, Book state) {
+    var format = command.format();
     if (state.currentState() != State.EDITING)
       throw new IllegalStateException("Cannot remove format of a book that is not in the Editing state.");
 
     if (state.formats().stream().noneMatch(f -> f.getFormatType().equals(format.getFormatType())))
-      throw new IllegalStateException("Format " + format.getFormatType() + " does not exist.");
+      throw new IllegalStateException("format " + format.getFormatType() + " does not exist.");
 
     return new FormatRemoved(state.bookId(), format);
   }
 
-  public static Approved approve(CommitteeApproval committeeApproval, Book state) {
+  public static Approved approve(Approve command, Book state) {
     if (state.currentState() != State.EDITING)
       throw new IllegalStateException("Cannot approve a book that is not in the Editing state.");
 
@@ -69,10 +134,10 @@ public final class BookService {
       throw new IllegalStateException(
         "A book cannot be approved unless it has been reviewed by at least three reviewers.");
 
-    return new Approved(state.bookId(), committeeApproval);
+    return new Approved(state.bookId(), command.committeeApproval());
   }
 
-  public static MovedToPrinting moveToPrinting(Book state) throws Exception {
+  public static MovedToPrinting moveToPrinting(Print command, Book state) throws Exception {
     if (state.currentState() != State.EDITING) {
       throw new Exception("Cannot move to Printing state from the current state.");
     }
@@ -93,7 +158,7 @@ public final class BookService {
     return new MovedToPrinting(state.bookId());
   }
 
-  public static Published moveToPublished(Book state) {
+  public static Published moveToPublished(Publish command, Book state) {
     if (state.currentState() != State.PRINTING || state.translations().size() < 5)
       throw new IllegalStateException("Cannot move to Published state from the current state.");
 
@@ -104,7 +169,7 @@ public final class BookService {
     return new Published(state.bookId(), state.isbn(), state.title(), state.author());
   }
 
-  public static MovedToOutOfPrint moveToOutOfPrint(Book state) {
+  public static MovedToOutOfPrint moveToOutOfPrint(MoveToOutOfPrint command, Book state) {
     if (state.currentState() != State.PUBLISHED)
       throw new IllegalStateException("Cannot move to Out of Print state from the current state.");
 
