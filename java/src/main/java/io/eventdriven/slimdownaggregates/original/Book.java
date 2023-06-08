@@ -90,7 +90,7 @@ public class Book extends Aggregate {
       throw new IllegalStateException("Cannot add translation of a book that is not in the Editing state.");
 
     if (translations.size() >= 5)
-      throw new IllegalStateException("Cannot add more translations. Maximum 5 translations are allowed.");
+      throw new IllegalStateException("Cannot add more translationsCount. Maximum 5 translationsCount are allowed.");
 
     translations.add(translation);
   }
@@ -121,7 +121,7 @@ public class Book extends Aggregate {
 
     if (reviewers.size() < 3)
       throw new IllegalStateException(
-        "A book cannot be approved unless it has been reviewed by at least three reviewers.");
+        "A book cannot be approved unless it has been reviewed by at least three reviewersCount.");
 
     this.committeeApproval = committeeApproval;
   }
@@ -137,7 +137,7 @@ public class Book extends Aggregate {
 
     if (this.reviewers.size() < 3) {
       throw new Exception(
-        "A book cannot be moved to the Printing state unless it has been reviewed by at least three reviewers.");
+        "A book cannot be moved to the Printing state unless it has been reviewed by at least three reviewersCount.");
     }
 
     if (!this.publishingHouse.isGenreLimitReached(this.genre)) {
@@ -153,7 +153,7 @@ public class Book extends Aggregate {
 
     if (reviewers.size() < 3)
       throw new IllegalStateException(
-        "A book cannot be moved to the Published state unless it has been reviewed by at least three reviewers.");
+        "A book cannot be moved to the Published state unless it has been reviewed by at least three reviewersCount.");
 
     currentState = State.PUBLISHED;
 

@@ -9,14 +9,14 @@ public record Book(
     Title Title,
     Author Author,
     Genre Genre,
-    List<Reviewer> Reviewers,
+    int ReviewersCount,
     IPublishingHouse PublishingHouse,
     ISBN ISBN,
-    List<Chapter> Chapters,
-    List<Translation> Translations,
+    List<string> ChapterTitles,
+    int TranslationsCount,
     List<Format> Formats,
-    Book.State CurrentState = Book.State.Writing,
-    CommitteeApproval? CommitteeApproval = null
+    bool IsApproved,
+    Book.State CurrentState = Book.State.Writing
 )
 {
     public enum State { Writing, Editing, Printing, Published, OutOfPrint }
@@ -26,7 +26,7 @@ public record Book(
         return @event switch
         {
             ChapterAdded chapterAdded =>
-                book with { Chapters = Chapters.Union(new[] { chapterAdded.Chapter }).ToList() },
+                book with { ChapterTitles = ChapterTitles.Union(new[] { chapterAdded.Chapter.Title.Value }).ToList() },
 
             MovedToEditing ignore =>
                 book with { CurrentState = State.Editing },
@@ -38,10 +38,10 @@ public record Book(
                 book with { Formats = Formats.Where(f => f.FormatType != formatRemoved.Format.FormatType).ToList() },
 
             TranslationAdded translationAdded =>
-                book with { Translations = Translations.Union(new[] { translationAdded.Translation }).ToList() },
+                book with { TranslationsCount = TranslationsCount + 1},
 
             Approved approved =>
-                book with { CommitteeApproval = approved.CommitteeApproval },
+                book with { IsApproved = true },
 
             MovedToPrinting ignore =>
                 book with { CurrentState = State.Printing },
