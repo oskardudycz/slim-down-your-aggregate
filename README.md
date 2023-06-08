@@ -1,4 +1,11 @@
-# slim-down-your-aggregate
+# Slim Down Your Aggregate
+
+Let's slim down some complex aggregate implementation. It's an aggregate responsible for managing the book writing, editing and publishing process. 
+See the original implementation in the:
+- [C#](https://github.com/oskardudycz/slim-down-your-aggregate/blob/main/csharp/SlimDownYourAggregates.Tests/Original/Book.cs)
+- [Java](https://github.com/oskardudycz/slim-down-your-aggregate/blob/main/java/src/main/java/io/eventdriven/slimdownaggregates/original/Book.java)
+
+We'll be doing multiple transitions step by step to make it more focused on the business logic and make it smaller but more precise.
 
 ## Business Rules:
 
@@ -6,11 +13,27 @@
 2. A book's author cannot be empty or null.
 3. A book's genre cannot be empty or null.
 4. A book has a list of reviewers.
-5. The book must pass the committee approval before moving to printing.
+5. The book must pass the committee's approval before moving to printing.
 6. A book can be moved from one state to another only in the order of Writing, Editing, Printing, Published, OutOfPrint.
-7. A book cannot be moved to the Printing state if it is not approved by the committee.
-8. A book cannot be moved to the Published state if it does not have at least five translations.
+7. A book cannot be moved to the Printing state if the committee does not approve it.
+8. A book can only be moved to the Published state if it has at least five translations.
 9. A book cannot move to the OutOfPrint state if more than 10% of total copies across all formats are unsold.
-10. A book cannot have more than five translations.
+10. A book can have up to five translations.
 11. Each format of a book should be unique. A format can be added only if it does not already exist in the list of formats.
 12. A format can be removed only if it exists in the list of formats.
+
+## Prerequisities
+
+### C#
+
+1. Clone this repository.
+2. Install .NET 7 - https://dotnet.microsoft.com/en-us/download/dotnet/7.0.
+3. Install Rider, Visual Sturdio, VSCode or other preferred IDE.
+4. Open [csharp](./csharp/) folder as project.
+
+### Java
+
+1. Clone this repository.
+2. Install Java JDK 17 (or later) - https://www.oracle.com/java/technologies/downloads/.
+3. Install IntelliJ, Eclipse, VSCode or other preferred IDE.
+4. Open [java](./java/) folder as project.
