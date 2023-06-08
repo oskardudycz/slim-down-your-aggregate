@@ -1,26 +1,25 @@
 package io.eventdriven.slimdownaggregates.slimmed;
 
 import io.eventdriven.slimdownaggregates.slimmed.entities.*;
-import io.eventdriven.slimdownaggregates.slimmed.services.IPublishingHouse;
 
 import java.util.List;
 
 import static io.eventdriven.slimdownaggregates.slimmed.BookEvent.*;
-import static io.eventdriven.slimdownaggregates.slimmed.core.ListExtensions.*;
+import static io.eventdriven.slimdownaggregates.slimmed.core.ListExtensions.except;
+import static io.eventdriven.slimdownaggregates.slimmed.core.ListExtensions.union;
 
 public record Book(
   BookId bookId,
   Title title,
   Author author,
   Genre genre,
-  List<Reviewer> reviewers,
-  IPublishingHouse publishingHouse,
+  int reviewersCount,
   ISBN isbn,
-  List<Chapter> chapters,
-  List<Translation> translations,
+  List<String> chapterTitles,
+  int translationsCount,
   List<Format> formats,
   Book.State currentState,
-  CommitteeApproval committeeApproval
+  boolean isApproved
 ) {
   public enum State {WRITING, EDITING, PRINTING, PUBLISHED, OUT_OF_PRINT}
 
@@ -32,14 +31,13 @@ public record Book(
           state.title,
           state.author,
           state.genre,
-          state.reviewers,
-          state.publishingHouse,
+          state.reviewersCount,
           state.isbn,
-          union(state.chapters, chapterAdded.chapter()),
-          state.translations,
+          union(state.chapterTitles, chapterAdded.chapter().getTitle().getValue()),
+          state.translationsCount,
           state.formats,
           state.currentState,
-          state.committeeApproval
+          state.isApproved
         );
       }
       case MovedToEditing ignore: {
@@ -48,14 +46,13 @@ public record Book(
           state.title,
           state.author,
           state.genre,
-          state.reviewers,
-          state.publishingHouse,
+          state.reviewersCount,
           state.isbn,
-          state.chapters,
-          state.translations,
+          state.chapterTitles,
+          state.translationsCount,
           state.formats,
           State.WRITING,
-          state.committeeApproval
+          state.isApproved
         );
       }
       case FormatAdded formatAdded: {
@@ -64,14 +61,13 @@ public record Book(
           state.title,
           state.author,
           state.genre,
-          state.reviewers,
-          state.publishingHouse,
+          state.reviewersCount,
           state.isbn,
-          state.chapters,
-          state.translations,
+          state.chapterTitles,
+          state.translationsCount,
           union(state.formats, formatAdded.format()),
           state.currentState,
-          state.committeeApproval
+          state.isApproved
         );
       }
       case FormatRemoved formatRemoved: {
@@ -80,14 +76,13 @@ public record Book(
           state.title,
           state.author,
           state.genre,
-          state.reviewers,
-          state.publishingHouse,
+          state.reviewersCount,
           state.isbn,
-          state.chapters,
-          state.translations,
+          state.chapterTitles,
+          state.translationsCount,
           except(state.formats, f -> f.getFormatType().equals(formatRemoved.format().getFormatType())),
           state.currentState,
-          state.committeeApproval
+          state.isApproved
         );
       }
       case TranslationAdded translationAdded: {
@@ -96,14 +91,13 @@ public record Book(
           state.title,
           state.author,
           state.genre,
-          state.reviewers,
-          state.publishingHouse,
+          state.reviewersCount,
           state.isbn,
-          state.chapters,
-          union(state.translations, translationAdded.translation()),
+          state.chapterTitles,
+          state.translationsCount + 1,
           state.formats,
           state.currentState,
-          state.committeeApproval
+          state.isApproved
         );
       }
       case Approved approved: {
@@ -112,14 +106,13 @@ public record Book(
           state.title,
           state.author,
           state.genre,
-          state.reviewers,
-          state.publishingHouse,
+          state.reviewersCount,
           state.isbn,
-          state.chapters,
-          state.translations,
+          state.chapterTitles,
+          state.translationsCount,
           state.formats,
           state.currentState,
-          approved.committeeApproval()
+          true
         );
       }
       case MovedToPrinting ignore: {
@@ -128,14 +121,13 @@ public record Book(
           state.title,
           state.author,
           state.genre,
-          state.reviewers,
-          state.publishingHouse,
+          state.reviewersCount,
           state.isbn,
-          state.chapters,
-          state.translations,
+          state.chapterTitles,
+          state.translationsCount,
           state.formats,
           State.EDITING,
-          state.committeeApproval
+          state.isApproved
         );
       }
       case Published ignore: {
@@ -144,14 +136,13 @@ public record Book(
           state.title,
           state.author,
           state.genre,
-          state.reviewers,
-          state.publishingHouse,
+          state.reviewersCount,
           state.isbn,
-          state.chapters,
-          state.translations,
+          state.chapterTitles,
+          state.translationsCount,
           state.formats,
           State.PRINTING,
-          state.committeeApproval
+          state.isApproved
         );
       }
       case MovedToOutOfPrint ignore: {
@@ -160,14 +151,13 @@ public record Book(
           state.title,
           state.author,
           state.genre,
-          state.reviewers,
-          state.publishingHouse,
+          state.reviewersCount,
           state.isbn,
-          state.chapters,
-          state.translations,
+          state.chapterTitles,
+          state.translationsCount,
           state.formats,
           State.OUT_OF_PRINT,
-          state.committeeApproval
+          state.isApproved
         );
       }
     };

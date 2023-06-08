@@ -64,12 +64,12 @@ public static class BookService
     {
         var (_, title, content) = command;
 
-        if (state.Chapters.Any(chap => chap.Title.Value == title.Value))
+        if (state.ChapterTitles.Any(chap => chap == title.Value))
             throw new InvalidOperationException($"Chapter with title {title.Value} already exists.");
 
-        if (state.Chapters.Count > 0 && state.Chapters.Last().Title.Value != "Chapter " + (state.Chapters.Count))
+        if (title.Value != $"Chapter {state.ChapterTitles.Count}")
             throw new InvalidOperationException(
-                $"Chapter should be added in sequence. The title of the next chapter should be 'Chapter {state.Chapters.Count + 1}'");
+                $"Chapter should be added in sequence. The title of the next chapter should be 'Chapter {state.ChapterTitles.Count}'");
 
         var chapter = new Chapter(title, content);
 
@@ -81,7 +81,7 @@ public static class BookService
         if (state.CurrentState != State.Writing)
             throw new InvalidOperationException("Cannot move to Editing state from the current state.");
 
-        if (state.Chapters.Count < 1)
+        if (state.ChapterTitles.Count < 1)
             throw new InvalidOperationException("A book must have at least one chapter to move to the Editing state.");
 
         return new MovedToEditing(state.BookId);
@@ -92,7 +92,7 @@ public static class BookService
         if (state.CurrentState != State.Editing)
             throw new InvalidOperationException("Cannot add translation of a book that is not in the Editing state.");
 
-        if (state.Translations.Count >= 5)
+        if (state.ChapterTitles.Count >= 5)
             throw new InvalidOperationException("Cannot add more translations. Maximum 5 translations are allowed.");
 
         return new TranslationAdded(state.BookId, command.Translation);
@@ -130,7 +130,7 @@ public static class BookService
         if (state.CurrentState != State.Editing)
             throw new InvalidOperationException("Cannot approve a book that is not in the Editing state.");
 
-        if (state.Reviewers.Count < 3)
+        if (state.ReviewersCount < 3)
             throw new InvalidOperationException(
                 "A book cannot be approved unless it has been reviewed by at least three reviewers.");
 
@@ -142,10 +142,10 @@ public static class BookService
         if (state.CurrentState != State.Editing)
             throw new InvalidOperationException("Cannot move to Printing state from the current state.");
 
-        if (state.CommitteeApproval == null)
+        if (!state.IsApproved)
             throw new InvalidOperationException("Cannot move to the Printing state until the book has been approved.");
 
-        if (state.Reviewers.Count < 3)
+        if (state.ReviewersCount < 3)
             throw new InvalidOperationException(
                 "A book cannot be moved to the Printing state unless it has been reviewed by at least three reviewers.");
 
@@ -157,10 +157,10 @@ public static class BookService
 
     public static Published MoveToPublished(Publish command, Book state)
     {
-        if (state.CurrentState != State.Printing || state.Translations.Count < 5)
+        if (state.CurrentState != State.Printing || state.TranslationsCount < 5)
             throw new InvalidOperationException("Cannot move to Published state from the current state.");
 
-        if (state.Reviewers.Count < 3)
+        if (state.ReviewersCount < 3)
             throw new InvalidOperationException(
                 "A book cannot be moved to the Published state unless it has been reviewed by at least three reviewers.");
 
