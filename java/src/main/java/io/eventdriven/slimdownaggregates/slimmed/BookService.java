@@ -3,6 +3,7 @@ package io.eventdriven.slimdownaggregates.slimmed;
 import io.eventdriven.slimdownaggregates.slimmed.entities.*;
 import io.eventdriven.slimdownaggregates.slimmed.services.IPublishingHouse;
 
+import static io.eventdriven.slimdownaggregates.slimmed.core.TypeExtensions.*;
 import static io.eventdriven.slimdownaggregates.slimmed.BookEvent.*;
 import static io.eventdriven.slimdownaggregates.slimmed.BookService.BookCommand.*;
 
@@ -64,7 +65,24 @@ public final class BookService {
     }
   }
 
-  public static ChapterAdded addChapter(AddChapter command, Book.InWriting state) {
+
+  public static BookEvent decide(IPublishingHouse publishingHouse, BookCommand command, Book state)
+  {
+    return switch (command)
+    {
+      case AddChapter addChapter -> handle(addChapter, ofType(state, Book.InWriting.class));
+      case Edit edit -> handle(edit, ofType(state, Book.InWriting.class));
+      case AddFormat addFormat -> handle(addFormat, ofType(state, Book.InEditing.class));
+      case RemoveFormat removeFormat -> handle(removeFormat, ofType(state, Book.InEditing.class));
+      case AddTranslation addTranslation -> handle(addTranslation, ofType(state, Book.InEditing.class));
+      case Approve approve -> handle(approve, ofType(state, Book.InEditing.class));
+      case Print print -> handle(publishingHouse, print, ofType(state, Book.InEditing.class));
+      case Publish publish -> handle(publish, ofType(state, Book.InPrinting.class));
+      case MoveToOutOfPrint moveToOutOfPrint -> handle(moveToOutOfPrint, ofType(state, Book.InPublishing.class));
+    };
+  }
+
+  public static ChapterAdded handle(AddChapter command, Book.InWriting state) {
     var title = command.title();
     var content = command.content();
 
@@ -82,21 +100,21 @@ public final class BookService {
     return new ChapterAdded(state.bookId(), chapter);
   }
 
-  public static MovedToEditing moveToEditing(Edit command, Book.InWriting state) {
+  public static MovedToEditing handle(Edit command, Book.InWriting state) {
     if (state.chapterTitles().size() < 1)
       throw new IllegalStateException("A book must have at least one chapter to move to the Editing state.");
 
     return new MovedToEditing(state.bookId());
   }
 
-  public static TranslationAdded addTranslation(AddTranslation command, Book.InEditing state) {
+  public static TranslationAdded handle(AddTranslation command, Book.InEditing state) {
     if (state.translationsCount() >= 5)
       throw new IllegalStateException("Cannot add more state.translationsCount(). Maximum 5 state.translationsCount() are allowed.");
 
     return new TranslationAdded(state.bookId(), command.translation());
   }
 
-  public static FormatAdded addFormat(AddFormat command, Book.InEditing state) {
+  public static FormatAdded handle(AddFormat command, Book.InEditing state) {
     var format = command.format();
 
     if (state.formats().stream().anyMatch(f -> f.getFormatType().equals(format.getFormatType())))
@@ -105,7 +123,7 @@ public final class BookService {
     return new FormatAdded(state.bookId(), format);
   }
 
-  public static FormatRemoved removeFormat(RemoveFormat command, Book.InEditing state) {
+  public static FormatRemoved handle(RemoveFormat command, Book.InEditing state) {
     var format = command.format();
     if (state.formats().stream().noneMatch(f -> f.getFormatType().equals(format.getFormatType())))
       throw new IllegalStateException("format " + format.getFormatType() + " does not exist.");
@@ -113,7 +131,7 @@ public final class BookService {
     return new FormatRemoved(state.bookId(), format);
   }
 
-  public static Approved approve(Approve command, Book.InEditing state) {
+  public static Approved handle(Approve command, Book.InEditing state) {
     if (state.reviewersCount() < 3)
       throw new IllegalStateException(
         "A book cannot be approved unless it has been reviewed by at least three reviewersCount.");
@@ -121,24 +139,24 @@ public final class BookService {
     return new Approved(state.bookId(), command.committeeApproval());
   }
 
-  public static MovedToPrinting moveToPrinting(IPublishingHouse publishingHouse, Print command, Book.InEditing state) throws Exception {
+  public static MovedToPrinting handle(IPublishingHouse publishingHouse, Print command, Book.InEditing state) {
     if (!state.isApproved()) {
-      throw new Exception("Cannot move to the Printing state until the book has been approved.");
+      throw new IllegalStateException("Cannot move to the Printing state until the book has been approved.");
     }
 
     if (state.reviewersCount() < 3) {
-      throw new Exception(
+      throw new IllegalStateException(
         "A book cannot be moved to the Printing state unless it has been reviewed by at least three reviewersCount.");
     }
 
     if (!publishingHouse.isGenreLimitReached(state.genre())) {
-      throw new Exception("Cannot move to the Printing state until the genre limit is reached.");
+      throw new IllegalStateException("Cannot move to the Printing state until the genre limit is reached.");
     }
 
     return new MovedToPrinting(state.bookId());
   }
 
-  public static Published moveToPublished(Publish command, Book.InPrinting state) {
+  public static Published handle(Publish command, Book.InPrinting state) {
     if (state.translationsCount() < 5)
       throw new IllegalStateException("Cannot move to Published state from the current state.");
 
@@ -149,7 +167,7 @@ public final class BookService {
     return new Published(state.bookId(), state.isbn(), state.title(), state.author());
   }
 
-  public static MovedToOutOfPrint moveToOutOfPrint(MoveToOutOfPrint command, Book.Published state) {
+  public static MovedToOutOfPrint handle(MoveToOutOfPrint command, Book.InPublishing state) {
     double totalCopies = state.formats().stream().mapToDouble(Format::getTotalCopies).sum();
     double totalSoldCopies = state.formats().stream().mapToDouble(Format::getSoldCopies).sum();
     if ((totalSoldCopies / totalCopies) > 0.1)
