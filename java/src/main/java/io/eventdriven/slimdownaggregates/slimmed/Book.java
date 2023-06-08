@@ -2,163 +2,186 @@ package io.eventdriven.slimdownaggregates.slimmed;
 
 import io.eventdriven.slimdownaggregates.slimmed.entities.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import static io.eventdriven.slimdownaggregates.slimmed.BookEvent.*;
 import static io.eventdriven.slimdownaggregates.slimmed.core.ListExtensions.except;
 import static io.eventdriven.slimdownaggregates.slimmed.core.ListExtensions.union;
 
-public record Book(
-  BookId bookId,
-  Title title,
-  Author author,
-  Genre genre,
-  int reviewersCount,
-  ISBN isbn,
-  List<String> chapterTitles,
-  int translationsCount,
-  List<Format> formats,
-  Book.State currentState,
-  boolean isApproved
-) {
-  public enum State {WRITING, EDITING, PRINTING, PUBLISHED, OUT_OF_PRINT}
+public sealed interface Book {
+  record InWriting(
+    BookId bookId,
+    Genre genre,
+    Title title,
+    Author author,
+    ISBN isbn,
+    List<String> chapterTitles
+  ) implements Book {
+  }
 
-  public static <T extends BookEvent> Book evolve(Book state, T event) {
+  record InEditing(
+    BookId bookId,
+    Genre genre,
+    Title title,
+    Author author,
+    ISBN isbn,
+    List<Format> formats,
+    int translationsCount,
+    int reviewersCount,
+    boolean isApproved
+  ) implements Book {
+  }
+
+
+  record InPrinting(
+    BookId bookId,
+    Title title,
+    Author author,
+    ISBN isbn,
+    List<Format> formats,
+    int reviewersCount,
+
+    int translationsCount
+  ) implements Book {
+  }
+
+  record Published(
+    BookId bookId,
+    List<Format> formats
+  ) implements Book {
+  }
+
+  record OutOfPrint() implements Book {
+
+  }
+
+  static <T extends BookEvent> Book evolve(Book state, T event) {
     return switch (event) {
       case ChapterAdded chapterAdded: {
-        yield new Book(
-          state.bookId,
-          state.title,
-          state.author,
-          state.genre,
-          state.reviewersCount,
-          state.isbn,
-          union(state.chapterTitles, chapterAdded.chapter().getTitle().getValue()),
-          state.translationsCount,
-          state.formats,
-          state.currentState,
-          state.isApproved
+        if (!(state instanceof Book.InWriting bookInWriting)) {
+          yield state;
+        }
+
+        yield new Book.InWriting(
+          bookInWriting.bookId(),
+          bookInWriting.genre(),
+          bookInWriting.title(),
+          bookInWriting.author(),
+          bookInWriting.isbn(),
+          union(bookInWriting.chapterTitles(), chapterAdded.chapter().getTitle().getValue())
         );
       }
       case MovedToEditing ignore: {
-        yield new Book(
-          state.bookId,
-          state.title,
-          state.author,
-          state.genre,
-          state.reviewersCount,
-          state.isbn,
-          state.chapterTitles,
-          state.translationsCount,
-          state.formats,
-          State.WRITING,
-          state.isApproved
+        if (!(state instanceof Book.InWriting bookInWriting)) {
+          yield state;
+        }
+        yield new Book.InEditing(
+          bookInWriting.bookId(),
+          bookInWriting.genre(),
+          bookInWriting.title(),
+          bookInWriting.author(),
+          bookInWriting.isbn(),
+          new ArrayList<>(),
+          0,
+          0,
+          false
         );
       }
       case FormatAdded formatAdded: {
-        yield new Book(
-          state.bookId,
-          state.title,
-          state.author,
-          state.genre,
-          state.reviewersCount,
-          state.isbn,
-          state.chapterTitles,
-          state.translationsCount,
-          union(state.formats, formatAdded.format()),
-          state.currentState,
-          state.isApproved
+        if (!(state instanceof Book.InEditing bookInEditing)) {
+          yield state;
+        }
+        yield new Book.InEditing(
+          bookInEditing.bookId(),
+          bookInEditing.genre(),
+          bookInEditing.title(),
+          bookInEditing.author(),
+          bookInEditing.isbn(),
+          union(bookInEditing.formats(), formatAdded.format()),
+          bookInEditing.translationsCount(),
+          bookInEditing.reviewersCount(),
+          bookInEditing.isApproved()
         );
       }
       case FormatRemoved formatRemoved: {
-        yield new Book(
-          state.bookId,
-          state.title,
-          state.author,
-          state.genre,
-          state.reviewersCount,
-          state.isbn,
-          state.chapterTitles,
-          state.translationsCount,
-          except(state.formats, f -> f.getFormatType().equals(formatRemoved.format().getFormatType())),
-          state.currentState,
-          state.isApproved
+        if (!(state instanceof Book.InEditing bookInEditing)) {
+          yield state;
+        }
+        yield new Book.InEditing(
+          bookInEditing.bookId(),
+          bookInEditing.genre(),
+          bookInEditing.title(),
+          bookInEditing.author(),
+          bookInEditing.isbn(),
+          except(bookInEditing.formats(), f -> f.getFormatType().equals(formatRemoved.format().getFormatType())),
+          bookInEditing.translationsCount(),
+          bookInEditing.reviewersCount(),
+          bookInEditing.isApproved()
         );
       }
       case TranslationAdded translationAdded: {
-        yield new Book(
-          state.bookId,
-          state.title,
-          state.author,
-          state.genre,
-          state.reviewersCount,
-          state.isbn,
-          state.chapterTitles,
-          state.translationsCount + 1,
-          state.formats,
-          state.currentState,
-          state.isApproved
+        if (!(state instanceof Book.InEditing bookInEditing)) {
+          yield state;
+        }
+        yield new Book.InEditing(
+          bookInEditing.bookId(),
+          bookInEditing.genre(),
+          bookInEditing.title(),
+          bookInEditing.author(),
+          bookInEditing.isbn(),
+          bookInEditing.formats(),
+          bookInEditing.translationsCount() + 1,
+          bookInEditing.reviewersCount(),
+          bookInEditing.isApproved()
         );
       }
       case Approved approved: {
-        yield new Book(
-          state.bookId,
-          state.title,
-          state.author,
-          state.genre,
-          state.reviewersCount,
-          state.isbn,
-          state.chapterTitles,
-          state.translationsCount,
-          state.formats,
-          state.currentState,
+        if (!(state instanceof Book.InEditing bookInEditing)) {
+          yield state;
+        }
+        yield new Book.InEditing(
+          bookInEditing.bookId(),
+          bookInEditing.genre(),
+          bookInEditing.title(),
+          bookInEditing.author(),
+          bookInEditing.isbn(),
+          bookInEditing.formats(),
+          bookInEditing.translationsCount() + 1,
+          bookInEditing.reviewersCount(),
           true
         );
       }
       case MovedToPrinting ignore: {
-        yield new Book(
-          state.bookId,
-          state.title,
-          state.author,
-          state.genre,
-          state.reviewersCount,
-          state.isbn,
-          state.chapterTitles,
-          state.translationsCount,
-          state.formats,
-          State.EDITING,
-          state.isApproved
+        if (!(state instanceof Book.InEditing bookInEditing)) {
+          yield state;
+        }
+
+        yield new Book.InPrinting(
+          bookInEditing.bookId(),
+          bookInEditing.title(),
+          bookInEditing.author(),
+          bookInEditing.isbn(),
+          bookInEditing.formats(),
+          bookInEditing.reviewersCount,
+          bookInEditing.translationsCount
         );
       }
-      case Published ignore: {
-        yield new Book(
-          state.bookId,
-          state.title,
-          state.author,
-          state.genre,
-          state.reviewersCount,
-          state.isbn,
-          state.chapterTitles,
-          state.translationsCount,
-          state.formats,
-          State.PRINTING,
-          state.isApproved
+      case BookEvent.Published ignore: {
+        if (!(state instanceof Book.InPrinting bookInPrinting)) {
+          yield state;
+        }
+
+        yield new Book.Published(
+          bookInPrinting.bookId,
+          bookInPrinting.formats()
         );
       }
       case MovedToOutOfPrint ignore: {
-        yield new Book(
-          state.bookId,
-          state.title,
-          state.author,
-          state.genre,
-          state.reviewersCount,
-          state.isbn,
-          state.chapterTitles,
-          state.translationsCount,
-          state.formats,
-          State.OUT_OF_PRINT,
-          state.isApproved
-        );
+        if (!(state instanceof Book.Published)) {
+          yield state;
+        }
+        yield new Book.OutOfPrint();
       }
     };
   }
