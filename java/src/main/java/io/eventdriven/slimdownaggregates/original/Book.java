@@ -100,7 +100,7 @@ public class Book extends Aggregate {
       throw new IllegalStateException("Cannot add format of a book that is not in the Editing state.");
 
     if (formats.stream().anyMatch(f -> f.getFormatType().equals(format.getFormatType())))
-      throw new IllegalStateException("Format " + format.getFormatType() + " already exists.");
+      throw new IllegalStateException("format " + format.getFormatType() + " already exists.");
 
     formats.add(format);
   }
@@ -110,7 +110,7 @@ public class Book extends Aggregate {
       throw new IllegalStateException("Cannot remove format of a book that is not in the Editing state.");
 
     if (formats.stream().noneMatch(f -> f.getFormatType().equals(format.getFormatType())))
-      throw new IllegalStateException("Format " + format.getFormatType() + " does not exist.");
+      throw new IllegalStateException("format " + format.getFormatType() + " does not exist.");
 
     formats.removeIf(f -> f.getFormatType().equals(format.getFormatType()));
   }

@@ -4,10 +4,66 @@ using static SlimDownYourAggregates.Tests.Slimmed.Book;
 
 namespace SlimDownYourAggregates.Tests.Slimmed;
 
+using static BookCommand;
+
+public abstract record BookCommand
+{
+    public record AddChapter(
+        BookId BookId,
+        ChapterTitle Title,
+        ChapterContent Content
+    ): BookCommand;
+
+    public record AddFormat(
+        BookId BookId,
+        Format Format
+    ): BookCommand;
+
+    public record RemoveFormat(
+        BookId BookId,
+        Format Format
+    ): BookCommand;
+
+    public record AddTranslation(
+        BookId BookId,
+        Translation Translation
+    ): BookCommand;
+
+    public record Edit(
+        BookId BookId
+    ): BookCommand;
+
+    public record Approve(
+        BookId BookId,
+        CommitteeApproval CommitteeApproval
+    ): BookCommand;
+
+    public record Print
+    (
+        BookId BookId
+    ): BookCommand;
+
+    public record Publish(
+        BookId BookId,
+        ISBN ISBN,
+        Title Title,
+        Author Author
+    ): BookCommand;
+
+    public record MoveToOutOfPrint
+    (
+        BookId BookId
+    ): BookCommand;
+
+    private BookCommand() { }
+}
+
 public static class BookService
 {
-    public static ChapterAdded AddChapter(ChapterTitle title, ChapterContent content, Book state)
+    public static ChapterAdded AddChapter(AddChapter command, Book state)
     {
+        var (_, title, content) = command;
+
         if (state.Chapters.Any(chap => chap.Title.Value == title.Value))
             throw new InvalidOperationException($"Chapter with title {title.Value} already exists.");
 
@@ -20,7 +76,7 @@ public static class BookService
         return new ChapterAdded(state.BookId, chapter);
     }
 
-    public static MovedToEditing MoveToEditing(Book state)
+    public static MovedToEditing MoveToEditing(Edit command, Book state)
     {
         if (state.CurrentState != State.Writing)
             throw new InvalidOperationException("Cannot move to Editing state from the current state.");
@@ -31,7 +87,7 @@ public static class BookService
         return new MovedToEditing(state.BookId);
     }
 
-    public static TranslationAdded AddTranslation(Translation translation, Book state)
+    public static TranslationAdded AddTranslation(AddTranslation command, Book state)
     {
         if (state.CurrentState != State.Editing)
             throw new InvalidOperationException("Cannot add translation of a book that is not in the Editing state.");
@@ -39,11 +95,13 @@ public static class BookService
         if (state.Translations.Count >= 5)
             throw new InvalidOperationException("Cannot add more translations. Maximum 5 translations are allowed.");
 
-        return new TranslationAdded(state.BookId, translation);
+        return new TranslationAdded(state.BookId, command.Translation);
     }
 
-    public static FormatAdded AddFormat(Format format, Book state)
+    public static FormatAdded AddFormat(AddFormat command, Book state)
     {
+        var format = command.Format;
+
         if (state.CurrentState != State.Editing)
             throw new InvalidOperationException("Cannot add format of a book that is not in the Editing state.");
 
@@ -53,8 +111,10 @@ public static class BookService
         return new FormatAdded(state.BookId, format);
     }
 
-    public static FormatRemoved RemoveFormat(Format format, Book state)
+    public static FormatRemoved RemoveFormat(RemoveFormat command, Book state)
     {
+        var format = command.Format;
+
         if (state.CurrentState != State.Editing)
             throw new InvalidOperationException("Cannot remove format of a book that is not in the Editing state.");
 
@@ -65,7 +125,7 @@ public static class BookService
         return new FormatRemoved(state.BookId, format);
     }
 
-    public static Approved Approve(CommitteeApproval committeeApproval, Book state)
+    public static Approved Approve(Approve command, Book state)
     {
         if (state.CurrentState != State.Editing)
             throw new InvalidOperationException("Cannot approve a book that is not in the Editing state.");
@@ -74,10 +134,10 @@ public static class BookService
             throw new InvalidOperationException(
                 "A book cannot be approved unless it has been reviewed by at least three reviewers.");
 
-        return new Approved(state.BookId, committeeApproval);
+        return new Approved(state.BookId, command.CommitteeApproval);
     }
 
-    public static MovedToPrinting MoveToPrinting(Book state)
+    public static MovedToPrinting MoveToPrinting(Print command, Book state)
     {
         if (state.CurrentState != State.Editing)
             throw new InvalidOperationException("Cannot move to Printing state from the current state.");
@@ -95,7 +155,7 @@ public static class BookService
         return new MovedToPrinting(state.BookId);
     }
 
-    public static Published MoveToPublished(Book state)
+    public static Published MoveToPublished(Publish command, Book state)
     {
         if (state.CurrentState != State.Printing || state.Translations.Count < 5)
             throw new InvalidOperationException("Cannot move to Published state from the current state.");
@@ -107,7 +167,7 @@ public static class BookService
         return new Published(state.BookId, state.ISBN, state.Title, state.Author);
     }
 
-    public static MovedToOutOfPrint MoveToOutOfPrint(Book state)
+    public static MovedToOutOfPrint MoveToOutOfPrint(MovedToOutOfPrint command, Book state)
     {
         if (state.CurrentState != State.Published)
             throw new InvalidOperationException("Cannot move to Out of Print state from the current state.");
