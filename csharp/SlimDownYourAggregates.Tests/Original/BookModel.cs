@@ -5,10 +5,11 @@ using SlimDownYourAggregates.Tests.Original.Services;
 
 namespace SlimDownYourAggregates.Tests.Original;
 
-public class Book: Aggregate
+public class BookModel: Aggregate
 {
     private List<Chapter> _chapters = new();
     private CommitteeApproval? _committeeApproval;
+    private readonly IPublishingHouse _publishingHouse;
     private readonly List<Translation> _translations = new();
     private readonly List<Format> _formats = new();
 
@@ -16,30 +17,57 @@ public class Book: Aggregate
 
     private State _currentState = State.Writing;
 
-    public Book(
+    public BookModel(
         BookId bookId,
         Title title,
         Author author,
         Genre genre,
         List<Reviewer> reviewers,
-        ISBN isbn
+        IPublishingHouse publishingHouse,
+        Publisher publisher,
+        ISBN isbn,
+        DateTime publicationDate,
+        int edition,
+        int totalPages,
+        int numberOfIllustrations,
+        string bindingType,
+        string summary
     ): base(bookId.Value)
     {
         BookId = bookId;
-        Reviewers = reviewers;
-        Genre = genre;
-        ISBN = isbn;
-        Author = author;
         Title = title;
+        Author = author;
+        Genre = genre;
+        Reviewers = reviewers;
+        _publishingHouse = publishingHouse;
+        Publisher = publisher;
+        ISBN = isbn;
+        PublicationDate = publicationDate;
+        Edition = edition;
+        TotalPages = totalPages;
+        NumberOfIllustrations = numberOfIllustrations;
+        BindingType = bindingType;
+        Summary = summary;
     }
 
-    private Genre Genre { get; }
-    private ISBN ISBN { get; }
+    public BookId BookId { get; }
+    public Title Title { get; }
 
-    private Author Author { get; }
-    private Title Title { get; }
-    private BookId BookId { get; }
-    private List<Reviewer> Reviewers { get; }
+    public Author Author { get; }
+    public Genre Genre { get; }
+    public List<Reviewer> Reviewers { get; }
+    public IReadOnlyList<Chapter> Chapters => _chapters.AsReadOnly();
+    public CommitteeApproval? CommitteeApproval => _committeeApproval;
+    public Publisher Publisher { get; }
+    public ISBN ISBN { get; }
+    public DateTime PublicationDate { get; }
+    public int Edition { get; }
+    public int TotalPages { get; }
+    public int NumberOfIllustrations { get; }
+    public string BindingType { get; }
+    public string Summary { get; }
+    public IReadOnlyList<Translation> Translations => _translations.AsReadOnly();
+    public IReadOnlyList<Format> Formats => _formats.AsReadOnly();
 
     public void AddChapter(ChapterTitle title, ChapterContent content)
     {
@@ -115,7 +143,7 @@ public class Book: Aggregate
         _committeeApproval = committeeApproval;
     }
 
-    public void MoveToPrinting(IPublishingHouse publishingHouse)
+    public void MoveToPrinting()
     {
         if (_currentState != State.Editing)
             throw new InvalidOperationException("Cannot move to Printing state from the current state.");
@@ -127,7 +155,7 @@ public class Book: Aggregate
             throw new InvalidOperationException(
                 "A book cannot be moved to the Printing state unless it has been reviewed by at least three reviewers.");
 
-        if (!publishingHouse.IsGenreLimitReached(Genre))
+        if (!_publishingHouse.IsGenreLimitReached(Genre))
             throw new InvalidOperationException("Cannot move to the Printing state until the genre limit is reached.");
 
         _currentState = State.Printing;
