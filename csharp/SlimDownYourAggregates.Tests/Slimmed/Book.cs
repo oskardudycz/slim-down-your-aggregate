@@ -5,6 +5,8 @@ namespace SlimDownYourAggregates.Tests.Slimmed;
 
 public abstract record Book
 {
+    public record Initial: Book;
+
     public record InWriting(
         BookId BookId,
         Genre Genre,
@@ -48,6 +50,18 @@ public abstract record Book
     {
         return @event switch
         {
+            WritingStarted writingStarted =>
+                book is Initial
+                    ? new InWriting(
+                        writingStarted.BookId,
+                        writingStarted.Genre,
+                        writingStarted.Title,
+                        writingStarted.Author,
+                        writingStarted.ISBN,
+                        new List<string>()
+                    )
+                    : book,
+
             ChapterAdded chapterAdded =>
                 book is InWriting inWriting
                     ? inWriting with

@@ -10,6 +10,10 @@ import static io.eventdriven.slimdownaggregates.slimmed.core.ListExtensions.exce
 import static io.eventdriven.slimdownaggregates.slimmed.core.ListExtensions.union;
 
 public sealed interface Book {
+  record Initial() implements Book {
+
+  }
+
   record InWriting(
     BookId bookId,
     Genre genre,
@@ -58,6 +62,20 @@ public sealed interface Book {
 
   static <T extends BookEvent> Book evolve(Book state, T event) {
     return switch (event) {
+      case WritingStarted writingStarted: {
+        if (!(state instanceof Book.Initial)) {
+          yield state;
+        }
+
+        yield new Book.InWriting(
+          writingStarted.bookId(),
+          writingStarted.genre(),
+          writingStarted.title(),
+          writingStarted.author(),
+          writingStarted.isbn(),
+          new ArrayList<>()
+        );
+      }
       case ChapterAdded chapterAdded: {
         if (!(state instanceof Book.InWriting bookInWriting)) {
           yield state;

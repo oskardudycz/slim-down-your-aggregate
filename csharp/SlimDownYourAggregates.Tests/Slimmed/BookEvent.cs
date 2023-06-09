@@ -4,6 +4,14 @@ namespace SlimDownYourAggregates.Tests.Slimmed;
 
 public abstract record BookEvent
 {
+    public record WritingStarted(
+        BookId BookId,
+        Genre Genre,
+        Title Title,
+        Author Author,
+        ISBN ISBN
+    ): BookEvent;
+
     public record ChapterAdded(
         BookId BookId,
         Chapter Chapter
