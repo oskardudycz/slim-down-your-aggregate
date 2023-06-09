@@ -5,6 +5,8 @@ using SlimDownYourAggregates.Tests.Original.Services;
 
 namespace SlimDownYourAggregates.Tests.Original;
 
+using static SlimDownYourAggregates.Tests.Original.BookEvent;
+
 public class Book: Aggregate
 {
     private List<Chapter> _chapters = new();
@@ -53,7 +55,7 @@ public class Book: Aggregate
         var chapter = new Chapter(title, content);
         _chapters.Add(chapter);
 
-        AddDomainEvent(new ChapterAddedEvent(BookId, chapter));
+        AddDomainEvent(new ChapterAdded(BookId, chapter));
     }
 
     public void MoveToEditing()
@@ -66,7 +68,7 @@ public class Book: Aggregate
 
         _currentState = State.Editing;
 
-        AddDomainEvent(new BookMovedToEditingEvent(BookId));
+        AddDomainEvent(new MovedToEditing(BookId));
     }
 
     public void AddTranslation(Translation translation)
@@ -78,6 +80,8 @@ public class Book: Aggregate
             throw new InvalidOperationException("Cannot add more translations. Maximum 5 translations are allowed.");
 
         _translations.Add(translation);
+
+        AddDomainEvent(new TranslationAdded(BookId, translation));
     }
 
     public void AddFormat(Format format)
@@ -89,6 +93,8 @@ public class Book: Aggregate
             throw new InvalidOperationException($"Format {format.FormatType} already exists.");
 
         _formats.Add(format);
+
+        AddDomainEvent(new FormatAdded(BookId, format));
     }
 
     public void RemoveFormat(Format format)
@@ -101,6 +107,8 @@ public class Book: Aggregate
             throw new InvalidOperationException($"Format {format.FormatType} does not exist.");
 
         _formats.Remove(existingFormat);
+
+        AddDomainEvent(new FormatRemoved(BookId, format));
     }
 
     public void Approve(CommitteeApproval committeeApproval)
@@ -113,6 +121,8 @@ public class Book: Aggregate
                 "A book cannot be approved unless it has been reviewed by at least three reviewers.");
 
         _committeeApproval = committeeApproval;
+
+        AddDomainEvent(new Approved(BookId, committeeApproval));
     }
 
     public void MoveToPrinting(IPublishingHouse publishingHouse)
@@ -131,6 +141,8 @@ public class Book: Aggregate
             throw new InvalidOperationException("Cannot move to the Printing state until the genre limit is reached.");
 
         _currentState = State.Printing;
+
+        AddDomainEvent(new MovedToPrinting(BookId));
     }
 
     public void MoveToPublished()
@@ -144,7 +156,7 @@ public class Book: Aggregate
 
         _currentState = State.Published;
 
-        AddDomainEvent(new BookPublishedEvent(BookId, ISBN, Title, Author));
+        AddDomainEvent(new Published(BookId, ISBN, Title, Author));
     }
 
     public void MoveToOutOfPrint()
@@ -159,5 +171,7 @@ public class Book: Aggregate
                 "Cannot move to Out of Print state if more than 10% of total copies are unsold.");
 
         _currentState = State.OutOfPrint;
+
+        AddDomainEvent(new MovedToOutOfPrint(BookId));
     }
 }
