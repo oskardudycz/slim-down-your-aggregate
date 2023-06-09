@@ -1,7 +1,7 @@
 package io.eventdriven.slimdownaggregates.slimmed;
 
 import io.eventdriven.slimdownaggregates.slimmed.entities.*;
-import io.eventdriven.slimdownaggregates.slimmed.services.IPublishingHouse;
+import io.eventdriven.slimdownaggregates.slimmed.services.PublishingHouse;
 
 import static io.eventdriven.slimdownaggregates.slimmed.core.TypeExtensions.*;
 import static io.eventdriven.slimdownaggregates.slimmed.BookEvent.*;
@@ -9,6 +9,15 @@ import static io.eventdriven.slimdownaggregates.slimmed.BookService.BookCommand.
 
 public final class BookService {
   public sealed interface BookCommand {
+    record StartWriting(
+      BookId bookId,
+      Genre genre,
+      Title title,
+      Author author,
+      ISBN isbn
+    ) implements BookCommand {
+    }
+
     record AddChapter(
       BookId bookId,
       ChapterTitle title,
@@ -66,10 +75,11 @@ public final class BookService {
   }
 
 
-  public static BookEvent decide(IPublishingHouse publishingHouse, BookCommand command, Book state)
+  public static BookEvent decide(PublishingHouse publishingHouse, BookCommand command, Book state)
   {
     return switch (command)
     {
+      case StartWriting startWriting -> handle(startWriting, ofType(state, Book.Initial.class));
       case AddChapter addChapter -> handle(addChapter, ofType(state, Book.InWriting.class));
       case Edit edit -> handle(edit, ofType(state, Book.InWriting.class));
       case AddFormat addFormat -> handle(addFormat, ofType(state, Book.InEditing.class));
@@ -80,6 +90,17 @@ public final class BookService {
       case Publish publish -> handle(publish, ofType(state, Book.InPrinting.class));
       case MoveToOutOfPrint moveToOutOfPrint -> handle(moveToOutOfPrint, ofType(state, Book.InPublishing.class));
     };
+  }
+
+  public static WritingStarted handle(StartWriting command, Book.Initial state)
+  {
+    return new WritingStarted(
+      command.bookId,
+      command.genre,
+      command.title,
+      command.author,
+      command.isbn
+    );
   }
 
   public static ChapterAdded handle(AddChapter command, Book.InWriting state) {
@@ -139,7 +160,7 @@ public final class BookService {
     return new Approved(state.bookId(), command.committeeApproval());
   }
 
-  public static MovedToPrinting handle(IPublishingHouse publishingHouse, Print command, Book.InEditing state) {
+  public static MovedToPrinting handle(PublishingHouse publishingHouse, Print command, Book.InEditing state) {
     if (!state.isApproved()) {
       throw new IllegalStateException("Cannot move to the Printing state until the book has been approved.");
     }

@@ -9,6 +9,14 @@ using static BookCommand;
 
 public abstract record BookCommand
 {
+    public record StartWriting(
+        BookId BookId,
+        Genre Genre,
+        Title Title,
+        Author Author,
+        ISBN ISBN
+    ): BookCommand;
+
     public record AddChapter(
         BookId BookId,
         ChapterTitle Title,
@@ -64,6 +72,9 @@ public static class BookService
     public static BookEvent Decide(IPublishingHouse publishingHouse, BookCommand command, Book state) =>
         command switch
         {
+            StartWriting startWriting =>
+                Handle(startWriting, state as Initial ?? throw new InvalidOperationException()),
+
             AddChapter addChapter =>
                 Handle(addChapter, state as InWriting ?? throw new InvalidOperationException()),
 
@@ -93,6 +104,17 @@ public static class BookService
 
             _ => throw new ArgumentOutOfRangeException(nameof(command))
         };
+
+    public static WritingStarted Handle(StartWriting command, Initial state)
+    {
+        return new WritingStarted(
+            command.BookId,
+            command.Genre,
+            command.Title,
+            command.Author,
+            command.ISBN
+        );
+    }
 
     public static ChapterAdded Handle(AddChapter command, InWriting state)
     {

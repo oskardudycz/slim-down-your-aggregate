@@ -3,6 +3,14 @@ package io.eventdriven.slimdownaggregates.slimmed;
 import io.eventdriven.slimdownaggregates.slimmed.entities.*;
 
 public sealed interface BookEvent {
+  record WritingStarted(
+    BookId bookId,
+    Genre genre,
+    Title title,
+    Author author,
+    ISBN isbn
+  ) implements BookEvent {
+  }
   record ChapterAdded(
     BookId bookId,
     Chapter chapter

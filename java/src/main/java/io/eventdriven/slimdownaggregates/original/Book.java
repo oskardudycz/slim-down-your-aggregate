@@ -5,7 +5,7 @@ import io.eventdriven.slimdownaggregates.original.entities.*;
 import io.eventdriven.slimdownaggregates.original.events.BookMovedToEditingEvent;
 import io.eventdriven.slimdownaggregates.original.events.BookPublishedEvent;
 import io.eventdriven.slimdownaggregates.original.events.ChapterAddedEvent;
-import io.eventdriven.slimdownaggregates.original.services.IPublishingHouse;
+import io.eventdriven.slimdownaggregates.original.services.PublishingHouse;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -13,7 +13,7 @@ import java.util.*;
 public class Book extends Aggregate {
   private List<Chapter> chapters = new ArrayList<>();
   private CommitteeApproval committeeApproval;
-  private IPublishingHouse publishingHouse;
+  private PublishingHouse publishingHouse;
   private List<Translation> translations = new ArrayList<>();
   private List<Format> formats = new ArrayList<>();
   private State currentState = State.WRITING;
@@ -36,7 +36,7 @@ public class Book extends Aggregate {
   private String summary;
 
   public Book(BookId bookId, Title title, Author author, Genre genre, List<Reviewer> reviewers,
-              IPublishingHouse publishingHouse, Publisher publisher, ISBN isbn,
+              PublishingHouse publishingHouse, Publisher publisher, ISBN isbn,
               LocalDate publicationDate, int edition, int totalPages, int numberOfIllustrations,
               String bindingType, String summary) {
     super(bookId.getValue());
@@ -126,22 +126,22 @@ public class Book extends Aggregate {
     this.committeeApproval = committeeApproval;
   }
 
-  public void moveToPrinting() throws Exception {
+  public void moveToPrinting() {
     if (this.currentState != State.EDITING) {
-      throw new Exception("Cannot move to Printing state from the current state.");
+      throw new IllegalStateException("Cannot move to Printing state from the current state.");
     }
 
     if (this.committeeApproval == null) {
-      throw new Exception("Cannot move to the Printing state until the book has been approved.");
+      throw new IllegalStateException("Cannot move to the Printing state until the book has been approved.");
     }
 
     if (this.reviewers.size() < 3) {
-      throw new Exception(
+      throw new IllegalStateException(
         "A book cannot be moved to the Printing state unless it has been reviewed by at least three reviewersCount.");
     }
 
     if (!this.publishingHouse.isGenreLimitReached(this.genre)) {
-      throw new Exception("Cannot move to the Printing state until the genre limit is reached.");
+      throw new IllegalStateException("Cannot move to the Printing state until the genre limit is reached.");
     }
 
     this.currentState = State.PRINTING;
@@ -194,7 +194,7 @@ public class Book extends Aggregate {
     return currentState;
   }
 
-  public IPublishingHouse getPublishingHouse() {
+  public PublishingHouse getPublishingHouse() {
     return publishingHouse;
   }
 
