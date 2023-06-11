@@ -1,13 +1,11 @@
-using SlimDownYourAggregates.Tests.Original.Core;
 using SlimDownYourAggregates.Tests.Original.Entities;
-using SlimDownYourAggregates.Tests.Original.Events;
 using SlimDownYourAggregates.Tests.Original.Services;
 
 namespace SlimDownYourAggregates.Tests.Original;
 
 using static SlimDownYourAggregates.Tests.Original.BookEvent;
 
-public class Book: Aggregate
+public class Book
 {
     private List<Chapter> _chapters = new();
     private CommitteeApproval? _committeeApproval;
@@ -25,7 +23,7 @@ public class Book: Aggregate
         Genre genre,
         List<Reviewer> reviewers,
         ISBN isbn
-    ): base(bookId.Value)
+    )
     {
         BookId = bookId;
         Reviewers = reviewers;
@@ -43,7 +41,7 @@ public class Book: Aggregate
     private BookId BookId { get; }
     private List<Reviewer> Reviewers { get; }
 
-    public void AddChapter(ChapterTitle title, ChapterContent content)
+    public ChapterAdded AddChapter(ChapterTitle title, ChapterContent content)
     {
         if (_chapters.Any(chap => chap.Title.Value == title.Value))
             throw new InvalidOperationException($"Chapter with title {title.Value} already exists.");
@@ -52,13 +50,10 @@ public class Book: Aggregate
             throw new InvalidOperationException(
                 $"Chapter should be added in sequence. The title of the next chapter should be 'Chapter {_chapters.Count + 1}'");
 
-        var chapter = new Chapter(title, content);
-        _chapters.Add(chapter);
-
-        AddDomainEvent(new ChapterAdded(BookId, chapter));
+        return new ChapterAdded(BookId, new Chapter(title, content));
     }
 
-    public void MoveToEditing()
+    public MovedToEditing MoveToEditing()
     {
         if (_currentState != State.Writing)
             throw new InvalidOperationException("Cannot move to Editing state from the current state.");
@@ -66,12 +61,10 @@ public class Book: Aggregate
         if (_chapters.Count < 1)
             throw new InvalidOperationException("A book must have at least one chapter to move to the Editing state.");
 
-        _currentState = State.Editing;
-
-        AddDomainEvent(new MovedToEditing(BookId));
+        return new MovedToEditing(BookId);
     }
 
-    public void AddTranslation(Translation translation)
+    public TranslationAdded AddTranslation(Translation translation)
     {
         if (_currentState != State.Editing)
             throw new InvalidOperationException("Cannot add translation of a book that is not in the Editing state.");
@@ -79,12 +72,10 @@ public class Book: Aggregate
         if (_translations.Count >= 5)
             throw new InvalidOperationException("Cannot add more translations. Maximum 5 translations are allowed.");
 
-        _translations.Add(translation);
-
-        AddDomainEvent(new TranslationAdded(BookId, translation));
+        return new TranslationAdded(BookId, translation);
     }
 
-    public void AddFormat(Format format)
+    public FormatAdded AddFormat(Format format)
     {
         if (_currentState != State.Editing)
             throw new InvalidOperationException("Cannot add format of a book that is not in the Editing state.");
@@ -92,12 +83,10 @@ public class Book: Aggregate
         if (_formats.Any(f => f.FormatType == format.FormatType))
             throw new InvalidOperationException($"Format {format.FormatType} already exists.");
 
-        _formats.Add(format);
-
-        AddDomainEvent(new FormatAdded(BookId, format));
+        return new FormatAdded(BookId, format);
     }
 
-    public void RemoveFormat(Format format)
+    public FormatRemoved RemoveFormat(Format format)
     {
         if (_currentState != State.Editing)
             throw new InvalidOperationException("Cannot remove format of a book that is not in the Editing state.");
@@ -106,12 +95,10 @@ public class Book: Aggregate
         if (existingFormat == null)
             throw new InvalidOperationException($"Format {format.FormatType} does not exist.");
 
-        _formats.Remove(existingFormat);
-
-        AddDomainEvent(new FormatRemoved(BookId, format));
+        return new FormatRemoved(BookId, format);
     }
 
-    public void Approve(CommitteeApproval committeeApproval)
+    public Approved Approve(CommitteeApproval committeeApproval)
     {
         if (_currentState != State.Editing)
             throw new InvalidOperationException("Cannot approve a book that is not in the Editing state.");
@@ -120,12 +107,10 @@ public class Book: Aggregate
             throw new InvalidOperationException(
                 "A book cannot be approved unless it has been reviewed by at least three reviewers.");
 
-        _committeeApproval = committeeApproval;
-
-        AddDomainEvent(new Approved(BookId, committeeApproval));
+        return new Approved(BookId, committeeApproval);
     }
 
-    public void MoveToPrinting(IPublishingHouse publishingHouse)
+    public MovedToPrinting MoveToPrinting(IPublishingHouse publishingHouse)
     {
         if (_currentState != State.Editing)
             throw new InvalidOperationException("Cannot move to Printing state from the current state.");
@@ -140,12 +125,10 @@ public class Book: Aggregate
         if (!publishingHouse.IsGenreLimitReached(Genre))
             throw new InvalidOperationException("Cannot move to the Printing state until the genre limit is reached.");
 
-        _currentState = State.Printing;
-
-        AddDomainEvent(new MovedToPrinting(BookId));
+        return new MovedToPrinting(BookId);
     }
 
-    public void MoveToPublished()
+    public Published MoveToPublished()
     {
         if (_currentState != State.Printing || _translations.Count < 5)
             throw new InvalidOperationException("Cannot move to Published state from the current state.");
@@ -154,12 +137,10 @@ public class Book: Aggregate
             throw new InvalidOperationException(
                 "A book cannot be moved to the Published state unless it has been reviewed by at least three reviewers.");
 
-        _currentState = State.Published;
-
-        AddDomainEvent(new Published(BookId, ISBN, Title, Author));
+        return new Published(BookId, ISBN, Title, Author);
     }
 
-    public void MoveToOutOfPrint()
+    public MovedToOutOfPrint MoveToOutOfPrint()
     {
         if (_currentState != State.Published)
             throw new InvalidOperationException("Cannot move to Out of Print state from the current state.");
@@ -170,8 +151,6 @@ public class Book: Aggregate
             throw new InvalidOperationException(
                 "Cannot move to Out of Print state if more than 10% of total copies are unsold.");
 
-        _currentState = State.OutOfPrint;
-
-        AddDomainEvent(new MovedToOutOfPrint(BookId));
+        return new MovedToOutOfPrint(BookId);
     }
 }
