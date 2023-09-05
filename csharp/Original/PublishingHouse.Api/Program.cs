@@ -1,9 +1,12 @@
+using PublishingHouse.Application;
+
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services
     .AddRouting()
     .AddEndpointsApiExplorer()
     .AddSwaggerGen()
+    .AddPublishingHouse(builder.Configuration)
     .AddControllers();
 
 var app = builder.Build();

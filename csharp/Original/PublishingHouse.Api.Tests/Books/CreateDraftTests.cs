@@ -1,3 +1,4 @@
+using FluentAssertions;
 using Ogooreck.API;
 using Xunit;
 using static Ogooreck.API.ApiSpecification;
@@ -14,7 +15,15 @@ public class CreateDraftTests: IClassFixture<ApiSpecification<Program>>
                 URI("/api/books/")
                 //BODY(new OpenShoppingCartRequest(ClientId))
             )
-            .Then(CREATED);
+            .Then(
+                CREATED_WITH_DEFAULT_HEADERS(locationHeaderPrefix: "/api/books/"),
+                (response, _) =>
+                {
+                    response.TryGetCreatedId<Guid>(out var createdId).Should().BeTrue();
+                    createdId.Should().NotBeEmpty();
+
+                    return ValueTask.CompletedTask;
+                });
 
     private readonly ApiSpecification<Program> API;
 
