@@ -1,8 +1,3 @@
-using FluentAssertions;
-using Ogooreck.API;
-using Xunit;
-using static Ogooreck.API.ApiSpecification;
-
 namespace PublishingHouse.Api.Tests.Books;
 
 public class CreateDraftTests: IClassFixture<ApiSpecification<Program>>

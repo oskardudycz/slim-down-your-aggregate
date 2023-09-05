@@ -14,4 +14,15 @@
 
 
 
+
+
+
+
+
+
+
+    <ItemGroup>
+      <ProjectReference Include="..\PublishingHouse.Persistence\PublishingHouse.Persistence.csproj" />
+    </ItemGroup>
+
 </Project>
