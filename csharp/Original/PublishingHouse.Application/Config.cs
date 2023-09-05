@@ -7,5 +7,7 @@ namespace PublishingHouse.Application;
 public static class Config
 {
     public static IServiceCollection AddPublishingHouse(this IServiceCollection services, IConfiguration config) =>
-        services.AddScoped<IBooksService, BooksService>();
+        services
+            .AddScoped<IBooksService, BooksService>()
+            .AddScoped<IBookQueryService, BooksQueryService>();
 }

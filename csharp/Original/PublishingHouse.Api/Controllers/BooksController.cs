@@ -9,9 +9,13 @@ namespace PublishingHouse.Api.Controllers;
 public class BooksController: Controller
 {
     private readonly IBooksService booksService;
+    private readonly IBookQueryService booksQueryService;
 
-    public BooksController(IBooksService booksService) =>
+    public BooksController(IBooksService booksService, IBookQueryService booksQueryService)
+    {
         this.booksService = booksService;
+        this.booksQueryService = booksQueryService;
+    }
 
     [HttpPost]
     public IActionResult CreateDraft([FromBody] CreateDraftRequest? request)
@@ -22,4 +26,8 @@ public class BooksController: Controller
 
         return Created($"/api/books/{bookId}", bookId);
     }
+
+    [HttpGet("{id}")]
+    public async Task<IActionResult> GetDetailsById([FromRoute] Guid id) =>
+        await booksQueryService.GetDetailsById(id) is {} result ? Ok(result): NotFound();
 }
