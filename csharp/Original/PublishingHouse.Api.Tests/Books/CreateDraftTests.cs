@@ -11,7 +11,7 @@ public class CreateDraftTests: IClassFixture<ApiSpecification<Program>>
         API.Given()
             .When(
                 POST,
-                URI("/api/ShoppingCarts/")
+                URI("/api/books/")
                 //BODY(new OpenShoppingCartRequest(ClientId))
             )
             .Then(CREATED);

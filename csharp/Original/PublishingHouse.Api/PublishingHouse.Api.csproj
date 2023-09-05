@@ -15,4 +15,9 @@
     </ItemGroup>
 
 
+    <ItemGroup>
+      <ProjectReference Include="..\PublishingHouse.Application\PublishingHouse.Application.csproj" />
+      <ProjectReference Include="..\PublishingHouse.Infrastructure\PublishingHouse.Infrastructure.csproj" />
+    </ItemGroup>
+
 </Project>
