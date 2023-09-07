@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Mvc;
 using PublishingHouse.Api.Requests;
 using PublishingHouse.Application.Books;
 using PublishingHouse.Application.Books.Commands;
+using PublishingHouse.Books.Entities;
+using PublishingHouse.Core.Validation;
 
 namespace PublishingHouse.Api.Controllers;
 
@@ -18,16 +20,30 @@ public class BooksController: Controller
     }
 
     [HttpPost]
-    public IActionResult CreateDraft([FromBody] CreateDraftRequest? request)
+    public IActionResult CreateDraft([FromBody] CreateDraftRequest request)
     {
         var bookId = Guid.NewGuid();
 
-        booksService.CreateDraft(new CreateDraftCommand(bookId));
+        var (title, author, publisher, edition, genre) = request;
+
+        booksService.CreateDraft(
+            new CreateDraftCommand(
+                new BookId(bookId),
+                new Title(title.AssertNotEmpty()),
+                new Author(
+                    author.AssertNotNull().FirstName.AssertNotEmpty(),
+                    author.LastName.AssertNotEmpty()
+                ),
+                new Publisher(publisher.AssertNotEmpty()),
+                edition.AssertNotEmpty(),
+                genre != null ? new Genre(genre): null
+            )
+        );
 
         return Created($"/api/books/{bookId}", bookId);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetDetailsById([FromRoute] Guid id) =>
-        await booksQueryService.GetDetailsById(id) is {} result ? Ok(result): NotFound();
+        await booksQueryService.GetDetailsById(new BookId(id)) is { } result ? Ok(result) : NotFound();
 }

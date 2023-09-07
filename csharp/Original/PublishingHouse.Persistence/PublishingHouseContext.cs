@@ -2,13 +2,16 @@ using PublishingHouse.Persistence.Books;
 
 namespace PublishingHouse.Persistence;
 
-public static class PublishingHouseContext
+internal static class PublishingHouseContext
 {
     private static Dictionary<Guid, BookEntity> books = new();
 
-    public static BookEntity? Find(Guid id) =>
-        books.TryGetValue(id, out var value) ? value : null;
+    public static Task<BookEntity?> Find(Guid id) =>
+        Task.FromResult(books.TryGetValue(id, out var value) ? value : null);
 
-    public static void Add(BookEntity entity) =>
+    public static Task Add(BookEntity entity)
+    {
         books.Add(entity.Id, entity);
+        return Task.CompletedTask;
+    }
 }

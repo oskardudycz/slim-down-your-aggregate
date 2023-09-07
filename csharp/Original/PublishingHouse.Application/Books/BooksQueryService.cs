@@ -1,15 +1,20 @@
 using PublishingHouse.Application.Books.DTOs;
-using PublishingHouse.Application.Books.Mappers;
-using PublishingHouse.Persistence;
+using PublishingHouse.Books.Entities;
+using PublishingHouse.Books.Repositories;
 
 namespace PublishingHouse.Application.Books;
 
 public class BooksQueryService: IBookQueryService
 {
-    public Task<BookDetails?> GetDetailsById(Guid bookId)
+    public async Task<BookDetails?> GetDetailsById(BookId bookId)
     {
-        var book = PublishingHouseContext.Find(bookId);
+        var book = await repository.FindById(bookId);
 
-        return Task.FromResult(book != null ? BookDetailsMapper.Map(book) : null);
+        return book != null ? new BookDetails(book.BookId.Value) : null;
     }
+
+    public BooksQueryService(IBooksRepository repository) =>
+        this.repository = repository;
+
+    private readonly IBooksRepository repository;
 }
