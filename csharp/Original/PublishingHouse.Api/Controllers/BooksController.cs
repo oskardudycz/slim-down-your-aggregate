@@ -44,6 +44,6 @@ public class BooksController: Controller
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetDetailsById([FromRoute] Guid id) =>
-        await booksQueryService.GetDetailsById(new BookId(id)) is { } result ? Ok(result) : NotFound();
+    public async Task<IActionResult> FindDetailsById([FromRoute] Guid id) =>
+        await booksQueryService.FindDetailsById(new BookId(id)) is { } result ? Ok(result) : NotFound();
 }

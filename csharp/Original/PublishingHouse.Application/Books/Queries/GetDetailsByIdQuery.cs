@@ -1,3 +1,3 @@
 namespace PublishingHouse.Application.Books.Queries;
 
-public record GetDetailsByIdQuery(Guid BookId);
+public record FindDetailsByIdQuery(Guid BookId);
