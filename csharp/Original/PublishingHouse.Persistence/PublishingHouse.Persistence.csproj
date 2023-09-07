@@ -7,4 +7,12 @@
     </PropertyGroup>
 
 
+    <ItemGroup>
+      <ProjectReference Include="..\PublishingHouse\PublishingHouse.csproj" />
+    </ItemGroup>
+
+
+
+
+
 </Project>

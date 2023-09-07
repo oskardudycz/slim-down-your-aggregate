@@ -1,25 +1,29 @@
 using PublishingHouse.Application.Books.Commands;
-using PublishingHouse.Persistence;
-using PublishingHouse.Persistence.Books;
-using PublishingHouse.Persistence.Books.Entities;
+using PublishingHouse.Books;
+using PublishingHouse.Books.Repositories;
+using PublishingHouse.Books.Services;
 
 namespace PublishingHouse.Application.Books;
 
 public class BooksService: IBooksService
 {
-    public void CreateDraft(CreateDraftCommand command)
+    public Task CreateDraft(CreateDraftCommand command)
     {
-        PublishingHouseContext.Add(new BookEntity
-        {
-            Id = command.BookId,
-            CurrentState = BookEntity.State.Writing,
-            Title = "UNSET",
-            Author = new Author("UNSET", "UNSET"),
-            Publisher = "UNSET",
-            Chapters = new List<Chapter>(),
-            Formats = new List<Format>(),
-            Reviewers = new List<Reviewer>(),
-            Translations = new List<Translation>()
-        });
+        var book = Book.CreateDraft(
+            command.BookId,
+            command.Title,
+            command.Author,
+            command.Genre,
+            (null as IPublishingHouse)!, //TODO: Consider making it smarter
+            command.Publisher,
+            command.Edition
+        );
+
+        return booksRepository.Add(book);
     }
+
+    private readonly IBooksRepository booksRepository;
+
+    public BooksService(IBooksRepository booksRepository) =>
+        this.booksRepository = booksRepository;
 }

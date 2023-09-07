@@ -1,5 +1,6 @@
 using PublishingHouse.Books.Entities;
 using PublishingHouse.Books.Events;
+using PublishingHouse.Books.Factories;
 using PublishingHouse.Books.Services;
 using PublishingHouse.Core;
 
@@ -9,14 +10,8 @@ public class Book: Aggregate
 {
     public enum State { Writing, Editing, Printing, Published, OutOfPrint }
 
-    private readonly List<Chapter> _chapters = new();
-    private CommitteeApproval? _committeeApproval;
-    private readonly IPublishingHouse _publishingHouse;
-    private readonly List<Translation> _translations = new();
-    private readonly List<Format> _formats = new();
-    private State _currentState = State.Writing;
-
     public BookId BookId { get; }
+    public State CurrentState { get; private set; }
     public Title Title { get; }
     public Author Author { get; }
     public Genre? Genre { get; }
@@ -31,128 +26,112 @@ public class Book: Aggregate
     //TODO: add type for that
     public string? Summary { get; }
 
-    public List<Reviewer> Reviewers { get; }
-    public IReadOnlyList<Chapter> Chapters => _chapters.AsReadOnly();
-    public CommitteeApproval? CommitteeApproval => _committeeApproval;
-    public IReadOnlyList<Translation> Translations => _translations.AsReadOnly();
-    public IReadOnlyList<Format> Formats => _formats.AsReadOnly();
+    private readonly IPublishingHouse publishingHouse;
 
-    public Book(
+    public IReadOnlyList<Reviewer> Reviewers => reviewers.AsReadOnly();
+    private readonly List<Reviewer> reviewers;
+    public IReadOnlyList<Chapter> Chapters => chapters.AsReadOnly();
+    private readonly List<Chapter> chapters;
+    public CommitteeApproval? CommitteeApproval { get; private set; }
+    public IReadOnlyList<Translation> Translations => translations.AsReadOnly();
+    private readonly List<Translation> translations;
+    public IReadOnlyList<Format> Formats => formats.AsReadOnly();
+    private readonly List<Format> formats;
+
+    public static Book CreateDraft(
         BookId bookId,
         Title title,
         Author author,
-        Genre genre,
-        List<Reviewer> reviewers,
+        Genre? genre,
         IPublishingHouse publishingHouse,
         Publisher publisher,
-        ISBN isbn,
-        DateTime publicationDate,
-        int edition,
-        int totalPages,
-        int numberOfIllustrations,
-        string bindingType,
-        string summary
-    ): base(bookId.Value)
-    {
-        BookId = bookId;
-        Title = title;
-        Author = author;
-        Genre = genre;
-        Reviewers = reviewers;
-        _publishingHouse = publishingHouse;
-        Publisher = publisher;
-        ISBN = isbn;
-        PublicationDate = publicationDate;
-        Edition = edition;
-        TotalPages = totalPages;
-        NumberOfIllustrations = numberOfIllustrations;
-        BindingType = bindingType;
-        Summary = summary;
-    }
+        int edition
+    ) =>
+        new Book(bookId, State.Writing, title, author, genre, publishingHouse, publisher, edition);
 
     public void AddChapter(ChapterTitle title, ChapterContent content)
     {
-        if (_chapters.Any(chap => chap.Title.Value == title.Value))
+        if (chapters.Any(chap => chap.Title.Value == title.Value))
             throw new InvalidOperationException($"Chapter with title {title.Value} already exists.");
 
-        if (_chapters.Count > 0 && _chapters.Last().Title.Value != "Chapter " + (_chapters.Count))
+        if (chapters.Count > 0 && chapters.Last().Title.Value != "Chapter " + (chapters.Count))
             throw new InvalidOperationException(
-                $"Chapter should be added in sequence. The title of the next chapter should be 'Chapter {_chapters.Count + 1}'");
+                $"Chapter should be added in sequence. The title of the next chapter should be 'Chapter {chapters.Count + 1}'");
 
         var chapter = new Chapter(title, content);
-        _chapters.Add(chapter);
+        chapters.Add(chapter);
 
         AddDomainEvent(new ChapterAddedEvent(BookId, chapter));
     }
 
     public void MoveToEditing()
     {
-        if (_currentState != State.Writing)
+        if (CurrentState != State.Writing)
             throw new InvalidOperationException("Cannot move to Editing state from the current state.");
 
-        if (_chapters.Count < 1)
+        if (chapters.Count < 1)
             throw new InvalidOperationException("A book must have at least one chapter to move to the Editing state.");
 
         if (Genre == null)
             throw new InvalidOperationException("Book can be moved to the editing only when genre is specified");
 
-        _currentState = State.Editing;
+        CurrentState = State.Editing;
 
         AddDomainEvent(new BookMovedToEditingEvent(BookId));
     }
 
     public void AddTranslation(Translation translation)
     {
-        if (_currentState != State.Editing)
+        if (CurrentState != State.Editing)
             throw new InvalidOperationException("Cannot add translation of a book that is not in the Editing state.");
 
-        if (_translations.Count >= 5)
+        if (translations.Count >= 5)
             throw new InvalidOperationException("Cannot add more translations. Maximum 5 translations are allowed.");
 
-        _translations.Add(translation);
+        translations.Add(translation);
     }
 
     public void AddFormat(Format format)
     {
-        if (_currentState != State.Editing)
+        if (CurrentState != State.Editing)
             throw new InvalidOperationException("Cannot add format of a book that is not in the Editing state.");
 
-        if (_formats.Any(f => f.FormatType == format.FormatType))
+        if (formats.Any(f => f.FormatType == format.FormatType))
             throw new InvalidOperationException($"Format {format.FormatType} already exists.");
 
-        _formats.Add(format);
+        formats.Add(format);
     }
 
     public void RemoveFormat(Format format)
     {
-        if (_currentState != State.Editing)
+        if (CurrentState != State.Editing)
             throw new InvalidOperationException("Cannot remove format of a book that is not in the Editing state.");
 
-        var existingFormat = _formats.FirstOrDefault(f => f.FormatType == format.FormatType);
+        var existingFormat = formats.FirstOrDefault(f => f.FormatType == format.FormatType);
         if (existingFormat == null)
             throw new InvalidOperationException($"Format {format.FormatType} does not exist.");
 
-        _formats.Remove(existingFormat);
+        formats.Remove(existingFormat);
     }
 
     public void Approve(CommitteeApproval committeeApproval)
     {
-        if (_currentState != State.Editing)
+        if (CurrentState != State.Editing)
             throw new InvalidOperationException("Cannot approve a book that is not in the Editing state.");
 
         if (Reviewers.Count < 3)
             throw new InvalidOperationException(
                 "A book cannot be approved unless it has been reviewed by at least three reviewers.");
 
-        _committeeApproval = committeeApproval;
+        CommitteeApproval = committeeApproval;
     }
 
     public void MoveToPrinting()
     {
-        if (_currentState != State.Editing)
+        if (CurrentState != State.Editing)
             throw new InvalidOperationException("Cannot move to printing from the current state.");
 
-        if (_committeeApproval == null)
+        if (CommitteeApproval == null)
             throw new InvalidOperationException("Cannot move to printing state until the book has been approved.");
 
         if (Reviewers.Count < 3)
@@ -162,15 +141,15 @@ public class Book: Aggregate
         if (Genre == null)
             throw new InvalidOperationException("Book can be moved to the printing only when genre is specified");
 
-        if (!_publishingHouse.IsGenreLimitReached(Genre))
+        if (!publishingHouse.IsGenreLimitReached(Genre))
             throw new InvalidOperationException("Cannot move to printing until the genre limit is reached.");
 
-        _currentState = State.Printing;
+        CurrentState = State.Printing;
     }
 
     public void MoveToPublished()
     {
-        if (_currentState != State.Printing || _translations.Count < 5)
+        if (CurrentState != State.Printing || translations.Count < 5)
             throw new InvalidOperationException("Cannot move to Published state from the current state.");
 
         if (ISBN == null)
@@ -180,22 +159,94 @@ public class Book: Aggregate
             throw new InvalidOperationException(
                 "A book cannot be moved to the Published state unless it has been reviewed by at least three reviewers.");
 
-        _currentState = State.Published;
+        CurrentState = State.Published;
 
         AddDomainEvent(new BookPublishedEvent(BookId, ISBN, Title, Author));
     }
 
     public void MoveToOutOfPrint()
     {
-        if (_currentState != State.Published)
+        if (CurrentState != State.Published)
             throw new InvalidOperationException("Cannot move to Out of Print state from the current state.");
 
-        double totalCopies = _formats.Sum(f => f.TotalCopies);
-        double totalSoldCopies = _formats.Sum(f => f.SoldCopies);
+        double totalCopies = formats.Sum(f => f.TotalCopies);
+        double totalSoldCopies = formats.Sum(f => f.SoldCopies);
         if ((totalSoldCopies / totalCopies) > 0.1)
             throw new InvalidOperationException(
                 "Cannot move to Out of Print state if more than 10% of total copies are unsold.");
 
-        _currentState = State.OutOfPrint;
+        CurrentState = State.OutOfPrint;
+    }
+
+    private Book(
+        BookId bookId,
+        State state,
+        Title title,
+        Author author,
+        Genre? genre,
+        IPublishingHouse publishingHouse,
+        Publisher publisher,
+        int edition,
+        ISBN? isbn = null,
+        DateTime? publicationDate = null,
+        int? totalPages = null,
+        int? numberOfIllustrations = null,
+        string? bindingType = null,
+        string? summary = null,
+        CommitteeApproval? committeeApproval = null,
+        List<Reviewer>? reviewers = null,
+        List<Chapter>? chapters = null,
+        List<Translation>? translations = null,
+        List<Format>? formats = null
+    ): base(bookId.Value)
+    {
+        BookId = bookId;
+        CurrentState = state;
+        Title = title;
+        Author = author;
+        Genre = genre;
+        this.publishingHouse = publishingHouse;
+        Publisher = publisher;
+        Edition = edition;
+        ISBN = isbn;
+        PublicationDate = publicationDate;
+        TotalPages = totalPages;
+        NumberOfIllustrations = numberOfIllustrations;
+        BindingType = bindingType;
+        Summary = summary;
+        CommitteeApproval = committeeApproval;
+        this.reviewers = reviewers ?? new List<Reviewer>();
+        this.chapters = chapters ?? new List<Chapter>();
+        this.translations = translations?? new List<Translation>();
+        this.formats = formats ?? new List<Format>();
+    }
+
+    public class Factory: IBooksFactory
+    {
+        public Book Create(
+            BookId bookId,
+            State state,
+            Title title,
+            Author author,
+            Genre? genre,
+            IPublishingHouse publishingHouse,
+            Publisher publisher,
+            int edition,
+            ISBN? isbn,
+            DateTime? publicationDate,
+            int? totalPages,
+            int? numberOfIllustrations,
+            string? bindingType,
+            string? summary,
+            CommitteeApproval? committeeApproval,
+            List<Reviewer> reviewers,
+            List<Chapter> chapters,
+            List<Translation> translations,
+            List<Format> formats
+        ) =>
+            new Book(
+                bookId, state, title, author, genre, publishingHouse, publisher,
+                edition, isbn, publicationDate, totalPages, numberOfIllustrations,
+                bindingType, summary, committeeApproval, reviewers, chapters, translations, formats);
     }
 }
