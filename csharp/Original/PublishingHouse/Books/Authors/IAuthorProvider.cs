@@ -4,5 +4,5 @@ namespace PublishingHouse.Books.Authors;
 
 public interface IAuthorProvider
 {
-    Task<Author> GetOrCreate(AuthorIdOrData authorIdOrData);
+    Task<Author> GetOrCreate(AuthorIdOrData authorIdOrData, CancellationToken ct);
 }

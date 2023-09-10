@@ -1,18 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using PublishingHouse.Books;
-using PublishingHouse.Books.DTOs;
 using PublishingHouse.Books.Entities;
 using PublishingHouse.Books.Factories;
 using PublishingHouse.Books.Repositories;
-using PublishingHouse.Books.Services;
-using PublishingHouse.Core.ValueObjects;
-using PublishingHouse.Persistence.Authors;
-using PublishingHouse.Persistence.Books.Entities;
 using PublishingHouse.Persistence.Books.Mappers;
-using PublishingHouse.Persistence.Languages;
-using PublishingHouse.Persistence.Publishers;
-using PublishingHouse.Persistence.Reviewers;
-using PublishingHouse.Persistence.Translators;
 
 namespace PublishingHouse.Persistence.Books.Repositories;
 
@@ -30,6 +21,7 @@ public class BooksRepository: IBooksRepository
     public async Task<Book?> FindById(BookId bookId, CancellationToken ct)
     {
         var book = await dbContext.Books
+            .AsNoTracking()
             .Include(e => e.Author)
             .Include(e => e.Publisher)
             .Include(e => e.Reviewers)
@@ -44,8 +36,20 @@ public class BooksRepository: IBooksRepository
 
     public Task Add(Book book, CancellationToken ct)
     {
-        dbContext.Books.Add(book.MapToEntity());
+        dbContext.Books.Add(book.MapToEntity(dbContext));
 
         return dbContext.SaveChangesAsync(ct);
+    }
+
+    public async Task Update(Book book, CancellationToken ct)
+    {
+        var local = await dbContext.Books.FindAsync(
+            new object?[] { book.Id.Value },
+            cancellationToken: ct
+            ) ?? throw new InvalidOperationException();
+
+        book.MapTo(local);
+
+        await dbContext.SaveChangesAsync(ct);
     }
 }

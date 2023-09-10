@@ -10,6 +10,10 @@ namespace PublishingHouse.Api.Tests;
 public class ApiSpecification: ApiSpecification<Program>
 {
     public ApiSpecification(): base(new TestWebApplicationFactory()) { }
+
+    private ApiSpecification(string schemaName): base(new TestWebApplicationFactory(schemaName)) { }
+
+    public static ApiSpecification WithSchema(string schemaName) => new(schemaName);
 }
 
 public class TestWebApplicationFactory: WebApplicationFactory<Program>
@@ -43,6 +47,7 @@ public class TestWebApplicationFactory: WebApplicationFactory<Program>
         using var scope = host.Services.CreateScope();
         var database = scope.ServiceProvider.GetRequiredService<PublishingHouseDbContext>().Database;
         database.ExecuteSqlRaw("TRUNCATE TABLE \"Books\" CASCADE");
+        database.ExecuteSqlRaw("TRUNCATE TABLE \"Authors\" CASCADE");
 
         return host;
     }

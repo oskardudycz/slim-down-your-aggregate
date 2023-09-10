@@ -7,11 +7,9 @@ using PublishingHouse.Core.ValueObjects;
 
 namespace PublishingHouse.Books;
 
-public class Book: Aggregate
+public class Book: Aggregate<BookId>
 {
     public enum State { Writing, Editing, Printing, Published, OutOfPrint }
-
-    public BookId BookId { get; }
     public State CurrentState { get; private set; }
     public Title Title { get; }
     public Author Author { get; }
@@ -55,14 +53,14 @@ public class Book: Aggregate
         if (chapters.Any(chap => chap.Title.Value == title.Value))
             throw new InvalidOperationException($"Chapter with title {title.Value} already exists.");
 
-        if (chapters.Count > 0 && chapters.Last().Title.Value != "Chapter " + (chapters.Count))
+        if (chapters.Count > 0 && !chapters.Last().Title.Value.StartsWith("Chapter " + (chapters.Count)))
             throw new InvalidOperationException(
                 $"Chapter should be added in sequence. The title of the next chapter should be 'Chapter {chapters.Count + 1}'");
 
         var chapter = new Chapter(new ChapterNumber(chapters.Count + 1), title, content);
         chapters.Add(chapter);
 
-        AddDomainEvent(new ChapterAddedEvent(BookId, chapter));
+        AddDomainEvent(new ChapterAddedEvent(Id, chapter));
     }
 
     public void MoveToEditing()
@@ -78,7 +76,7 @@ public class Book: Aggregate
 
         CurrentState = State.Editing;
 
-        AddDomainEvent(new BookMovedToEditingEvent(BookId));
+        AddDomainEvent(new BookMovedToEditingEvent(Id));
     }
 
     public void AddTranslation(Translation translation)
@@ -162,7 +160,7 @@ public class Book: Aggregate
 
         CurrentState = State.Published;
 
-        AddDomainEvent(new BookPublishedEvent(BookId, ISBN, Title, Author));
+        AddDomainEvent(new BookPublishedEvent(Id, ISBN, Title, Author));
     }
 
     public void MoveToOutOfPrint()
@@ -199,9 +197,8 @@ public class Book: Aggregate
         List<Chapter>? chapters = null,
         List<Translation>? translations = null,
         List<Format>? formats = null
-    ): base(bookId.Value)
+    ): base(bookId)
     {
-        BookId = bookId;
         CurrentState = state;
         Title = title;
         Author = author;

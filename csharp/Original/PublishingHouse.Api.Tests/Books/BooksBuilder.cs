@@ -14,12 +14,14 @@ public static class BooksBuilder
                  new CreateDraftRequest(
                      Faker.Random.String(),
                      new AuthorRequest(null, Faker.Name.FirstName(), Faker.Name.LastName()),
-                     Faker.Random.Guid(),
+                     ExistingPublisherId,
                      Faker.Random.Int(0),
                      Faker.Random.String()
                  )
             )
         );
+
+    public static readonly Guid ExistingPublisherId = new("c528d322-17eb-47ba-bccf-6cb61d340f09");
 
     public static readonly Faker Faker = new();
 }
