@@ -2,8 +2,10 @@ using Microsoft.AspNetCore.Mvc;
 using PublishingHouse.Api.Requests;
 using PublishingHouse.Application.Books;
 using PublishingHouse.Application.Books.Commands;
+using PublishingHouse.Authors;
 using PublishingHouse.Books.Entities;
 using PublishingHouse.Core.Validation;
+using PublishingHouse.Core.ValueObjects;
 
 namespace PublishingHouse.Api.Controllers;
 
@@ -24,19 +26,22 @@ public class BooksController: Controller
     {
         var bookId = Guid.NewGuid();
 
-        var (title, author, publisher, edition, genre) = request;
+        var (title, author, publisherId, edition, genre) = request;
+
+        author.AssertNotNull();
 
         booksService.CreateDraft(
             new CreateDraftCommand(
                 new BookId(bookId),
                 new Title(title.AssertNotEmpty()),
-                new Author(
-                    author.AssertNotNull().FirstName.AssertNotEmpty(),
-                    author.LastName.AssertNotEmpty()
+                new AuthorIdOrData(
+                    author.AuthorId.HasValue ? new AuthorId(author.AuthorId.Value) : null,
+                    author.FirstName != null ? new AuthorFirstName(author.FirstName) : null,
+                    author.LastName != null ? new AuthorLastName(author.LastName) : null
                 ),
-                new Publisher(publisher.AssertNotEmpty()),
-                edition.AssertNotEmpty(),
-                genre != null ? new Genre(genre): null
+                new PublisherId(publisherId.AssertNotEmpty()),
+                new PositiveInt(edition.GetValueOrDefault()),
+                genre != null ? new Genre(genre) : null
             )
         );
 

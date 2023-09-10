@@ -1,4 +1,4 @@
-namespace PublishingHouse.Core;
+namespace PublishingHouse.Core.Aggregates;
 
 public abstract class Aggregate
 {

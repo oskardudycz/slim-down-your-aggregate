@@ -1,8 +1,8 @@
 namespace PublishingHouse.Persistence.Books.Entities;
 
-public class Translator
+public class Publisher
 {
-    public Translator(Guid id, string name)
+    public Publisher(Guid id, string name)
     {
         Id = id;
         Name = name;

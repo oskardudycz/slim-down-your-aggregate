@@ -11,7 +11,7 @@ public static class BookDetailsMapper
             entity.Title,
             new BookDetails.AuthorDetails(entity.Author.FirstName, entity.Author.LastName),
             entity.Genre,
-            entity.Publisher,
+            entity.Publisher.Name,
             entity.Edition,
             entity.ISBN,
             entity.PublicationDate,
@@ -24,7 +24,7 @@ public static class BookDetailsMapper
                     entity.CommitteeApproval.Feedback)
                 : null,
             entity.Reviewers.Select(r => r.Name).ToList(),
-            entity.Chapters.Select(c => new BookDetails.ChapterDetails(c.Title.Value, c.Content.Value)).ToList(),
+            entity.Chapters.Select(c => new BookDetails.ChapterDetails(c.Title, c.Content)).ToList(),
             entity.Translations.Select(t => new BookDetails.TranslationDetails(t.Translator.Name, t.Language.Name)).ToList(),
             entity.Formats.Select(f => new BookDetails.Format(f.FormatType, f.TotalCopies, f.SoldCopies)).ToList()
         );

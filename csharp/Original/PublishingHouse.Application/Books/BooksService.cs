@@ -1,29 +1,43 @@
 using PublishingHouse.Application.Books.Commands;
+using PublishingHouse.Authors;
 using PublishingHouse.Books;
 using PublishingHouse.Books.Repositories;
 using PublishingHouse.Books.Services;
+using PublishingHouse.Publishers;
 
 namespace PublishingHouse.Application.Books;
 
 public class BooksService: IBooksService
 {
-    public Task CreateDraft(CreateDraftCommand command)
+    public async Task CreateDraft(CreateDraftCommand command)
     {
+        var (bookId, title, authorIdOrData, publisherId, positiveInt, genre) = command;
+
         var book = Book.CreateDraft(
-            command.BookId,
-            command.Title,
-            command.Author,
-            command.Genre,
+            bookId,
+            title,
+            await authorProvider.GetOrCreate(authorIdOrData),
             (null as IPublishingHouse)!, //TODO: Consider making it smarter
-            command.Publisher,
-            command.Edition
+            await publisherProvider.GetById(publisherId),
+            positiveInt,
+            genre
         );
 
-        return booksRepository.Add(book);
+        await booksRepository.Add(book);
+    }
+
+    public BooksService(
+        IBooksRepository booksRepository,
+        IAuthorProvider authorProvider,
+        IPublisherProvider publisherProvider
+    )
+    {
+        this.booksRepository = booksRepository;
+        this.authorProvider = authorProvider;
+        this.publisherProvider = publisherProvider;
     }
 
     private readonly IBooksRepository booksRepository;
-
-    public BooksService(IBooksRepository booksRepository) =>
-        this.booksRepository = booksRepository;
+    private readonly IAuthorProvider authorProvider;
+    private readonly IPublisherProvider publisherProvider;
 }

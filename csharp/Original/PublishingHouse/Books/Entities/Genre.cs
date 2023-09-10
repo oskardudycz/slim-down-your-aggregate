@@ -1,14 +1,6 @@
-using PublishingHouse.Core.Validation;
+using PublishingHouse.Core.ValueObjects;
 
 namespace PublishingHouse.Books.Entities;
 
-public class Genre
-{
-    public Genre(string name)
-    {
-        Name = name.AssertNotEmpty();
-    }
-
-    public string Name { get; }
-}
+public record Genre(string Value): NonEmptyString(Value);
 

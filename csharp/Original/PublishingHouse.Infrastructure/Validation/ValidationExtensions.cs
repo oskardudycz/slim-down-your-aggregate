@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using System.Runtime.CompilerServices;
 
 namespace PublishingHouse.Core.Validation;
@@ -46,6 +47,17 @@ public static class ValidationExtensions
         where T : IComparable<T>
     {
         if (value.CompareTo(valueToCompare) < 0)
+            throw new ArgumentOutOfRangeException(paramName);
+
+        return value;
+    }
+
+
+
+    public static T AssertPositive<T>(this T value, [CallerArgumentExpression("value")] string? paramName = null)
+        where T : INumber<T>
+    {
+        if (value.CompareTo(0) <= 0)
             throw new ArgumentOutOfRangeException(paramName);
 
         return value;

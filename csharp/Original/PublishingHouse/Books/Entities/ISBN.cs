@@ -1,11 +1,5 @@
+using PublishingHouse.Core.ValueObjects;
+
 namespace PublishingHouse.Books.Entities;
 
-public class ISBN
-{
-    public ISBN(string number)
-    {
-        Number = number;
-    }
-
-    public string Number { get; }
-}
+public record ISBN(string Value): NonEmptyString(Value);

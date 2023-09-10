@@ -1,5 +1,6 @@
 using PublishingHouse.Books.Entities;
 using PublishingHouse.Books.Services;
+using PublishingHouse.Core.ValueObjects;
 
 namespace PublishingHouse.Books.Factories;
 
@@ -10,16 +11,16 @@ public interface IBooksFactory
         Book.State state,
         Title title,
         Author author,
-        Genre? genre,
         IPublishingHouse publishingHouse,
         Publisher publisher,
-        int edition,
+        PositiveInt edition,
+        Genre? genre,
         ISBN? isbn,
-        DateTime? publicationDate,
-        int? totalPages,
-        int? numberOfIllustrations,
-        string? bindingType,
-        string? summary,
+        DateOnly? publicationDate,
+        PositiveInt? totalPages,
+        PositiveInt? numberOfIllustrations,
+        NonEmptyString? bindingType,
+        NonEmptyString? summary,
         CommitteeApproval? committeeApproval,
         List<Reviewer> reviewers,
         List<Chapter> chapters,

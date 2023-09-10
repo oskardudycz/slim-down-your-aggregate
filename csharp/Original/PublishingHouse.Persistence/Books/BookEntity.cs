@@ -11,10 +11,10 @@ public class BookEntity
     public required string Title { get; set; }
     public required Author Author { get; set; }
     public string? Genre { get; set; }
-    public required string Publisher { get; set; }
+    public required Publisher Publisher { get; set; }
     public int Edition { get; set; }
     public string? ISBN { get; set; }
-    public DateTime? PublicationDate { get; set; }
+    public DateOnly? PublicationDate { get; set; }
     public int? TotalPages { get; set; }
     public int? NumberOfIllustrations { get; set; }
     public string? BindingType { get; set; }
