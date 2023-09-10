@@ -2,16 +2,8 @@ namespace PublishingHouse.Persistence.Books.Entities;
 
 public class ChapterEntity
 {
-    public ChapterEntity(Guid id, int number, string title, string content)
-    {
-        Id = id;
-        Number = number;
-        Title = title;
-        Content = content;
-    }
-
-    public Guid Id { get; }
-    public int Number { get; }
-    public string Title { get; }
-    public string Content { get; }
+    public Guid Id { get; set; }
+    public required int Number { get; set; }
+    public required string Title { get; set; }
+    public required string Content { get; set; }
 }

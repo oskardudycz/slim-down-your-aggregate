@@ -3,6 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlimDownYourAggregates.Tests", "SlimDownYourAggregates.Tests\SlimDownYourAggregates.Tests.csproj", "{51B2B9C5-0019-435F-A8EB-A728B103CA25}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Original", "Original", "{8EC0A473-B12D-41DF-82B8-FFC574A7BB1C}"
+	ProjectSection(SolutionItems) = preProject
+		docker-compose.yml = docker-compose.yml
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PublishingHouse", "Original\PublishingHouse\PublishingHouse.csproj", "{7DF6037A-72E1-4BAF-A70D-F2A1FD6BC1B6}"
 EndProject
