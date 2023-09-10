@@ -1,8 +1,8 @@
 namespace PublishingHouse.Persistence.Books.Entities;
 
-public class Chapter
+public class ChapterEntity
 {
-    public Chapter(Guid id, int number, string title, string content)
+    public ChapterEntity(Guid id, int number, string title, string content)
     {
         Id = id;
         Number = number;

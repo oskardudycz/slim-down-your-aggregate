@@ -1,8 +1,8 @@
-namespace PublishingHouse.Persistence.Books.Entities;
+namespace PublishingHouse.Persistence.Authors;
 
-public class Author
+public class AuthorEntity
 {
-    public Author(Guid id, string firstName, string lastName)
+    public AuthorEntity(Guid id, string firstName, string lastName)
     {
         Id = id;
         FirstName = firstName;
