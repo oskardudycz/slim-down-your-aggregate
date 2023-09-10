@@ -54,7 +54,6 @@ public class BooksRepository: IBooksRepository
             book.Chapters
                 .Select(c =>
                     new Chapter(
-                        new ChapterId(c.Id),
                         new ChapterNumber(c.Number),
                         new ChapterTitle(c.Title),
                         new ChapterContent(c.Content)
@@ -109,7 +108,6 @@ public class BooksRepository: IBooksRepository
                     .Select(c =>
                         new ChapterEntity
                         {
-                            Id = c.Id.Value,
                             Number = c.Number.Value,
                             Title = c.Title.Value,
                             Content = c.Content.Value

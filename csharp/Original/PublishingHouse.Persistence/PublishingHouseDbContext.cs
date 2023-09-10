@@ -51,6 +51,7 @@ public class PublishingHouseDbContext: DbContext
             {
                 a.ToTable("BookChapters");
                 a.WithOwner().HasForeignKey("BookId");
+                a.HasKey("Number", "BookId");
             })
             .OwnsMany(b => b.Translations, a =>
             {
