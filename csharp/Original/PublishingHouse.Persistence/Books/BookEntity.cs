@@ -14,9 +14,9 @@ public class BookEntity
     public required State CurrentState { get; set; }
     public required string Title { get; set; }
     public required AuthorEntity Author { get; set; }
-    public string? Genre { get; set; }
     public required PublisherEntity Publisher { get; set; }
-    public int Edition { get; set; }
+    public required int Edition { get; set; }
+    public string? Genre { get; set; }
     public string? ISBN { get; set; }
     public DateOnly? PublicationDate { get; set; }
     public int? TotalPages { get; set; }

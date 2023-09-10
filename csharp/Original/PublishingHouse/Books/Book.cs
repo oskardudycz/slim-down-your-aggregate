@@ -59,7 +59,7 @@ public class Book: Aggregate
             throw new InvalidOperationException(
                 $"Chapter should be added in sequence. The title of the next chapter should be 'Chapter {chapters.Count + 1}'");
 
-        var chapter = new Chapter(ChapterId.Generate(), new ChapterNumber(chapters.Count + 1), title, content);
+        var chapter = new Chapter(new ChapterNumber(chapters.Count + 1), title, content);
         chapters.Add(chapter);
 
         AddDomainEvent(new ChapterAddedEvent(BookId, chapter));
