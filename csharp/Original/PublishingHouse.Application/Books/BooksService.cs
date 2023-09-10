@@ -1,9 +1,9 @@
 using PublishingHouse.Application.Books.Commands;
-using PublishingHouse.Authors;
 using PublishingHouse.Books;
+using PublishingHouse.Books.Authors;
+using PublishingHouse.Books.Publishers;
 using PublishingHouse.Books.Repositories;
 using PublishingHouse.Books.Services;
-using PublishingHouse.Publishers;
 
 namespace PublishingHouse.Application.Books;
 

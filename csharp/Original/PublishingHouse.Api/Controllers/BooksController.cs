@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using PublishingHouse.Api.Requests;
 using PublishingHouse.Application.Books;
 using PublishingHouse.Application.Books.Commands;
-using PublishingHouse.Authors;
+using PublishingHouse.Books.Authors;
 using PublishingHouse.Books.Entities;
 using PublishingHouse.Core.Validation;
 using PublishingHouse.Core.ValueObjects;

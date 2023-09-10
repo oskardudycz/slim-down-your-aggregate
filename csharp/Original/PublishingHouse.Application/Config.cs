@@ -1,15 +1,15 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using PublishingHouse.Application.Books;
-using PublishingHouse.Authors;
 using PublishingHouse.Books;
+using PublishingHouse.Books.Authors;
 using PublishingHouse.Books.Factories;
+using PublishingHouse.Books.Publishers;
 using PublishingHouse.Books.Repositories;
 using PublishingHouse.Persistence;
 using PublishingHouse.Persistence.Authors;
 using PublishingHouse.Persistence.Books.Repositories;
 using PublishingHouse.Persistence.Publishers;
-using PublishingHouse.Publishers;
 
 namespace PublishingHouse.Application;
 
