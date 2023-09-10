@@ -1,20 +1,33 @@
 using PublishingHouse.Books.Authors;
 using PublishingHouse.Books.Entities;
 using PublishingHouse.Core.Validation;
+using PublishingHouse.Persistence.Books.Mappers;
 
 namespace PublishingHouse.Persistence.Authors;
 
 public class AuthorProvider: IAuthorProvider
 {
-    public Task<Author> GetOrCreate(AuthorIdOrData authorIdOrData)
+    public async Task<Author> GetOrCreate(AuthorIdOrData authorIdOrData, CancellationToken ct)
     {
-        // TODO: Get it from DB Context
-
         if (authorIdOrData.AuthorId != null)
-            return Task.FromResult(new Author(authorIdOrData.AuthorId, new AuthorFirstName("George"), new AuthorLastName("Orwell")));
+            return (await dbContext.Authors.FindAsync(authorIdOrData.AuthorId, ct))?.Map() ??
+                   throw new InvalidOperationException();
 
         var (firstName, lastName) = authorIdOrData.Data;
 
-        return Task.FromResult(new Author(AuthorId.Generate(), firstName, lastName));
+        var author = new AuthorEntity
+        {
+            FirstName = firstName.Value, LastName = lastName.Value
+        };
+
+        dbContext.Authors.Add(author);
+        await dbContext.SaveChangesAsync(ct);
+
+        return author.Map();
     }
+
+    private readonly PublishingHouseDbContext dbContext;
+
+    public AuthorProvider(PublishingHouseDbContext dbContext) =>
+        this.dbContext = dbContext;
 }

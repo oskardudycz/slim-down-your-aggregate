@@ -49,6 +49,23 @@ public class BooksController: Controller
         return Created($"/api/books/{bookId}", bookId);
     }
 
+    [HttpPost("{id}/chapters")]
+    public async Task<IActionResult> AddChapter([FromRoute] Guid id, [FromBody] AddChapterRequest request, CancellationToken ct)
+    {
+        var (title, content) = request;
+
+        await booksService.AddChapter(
+            new AddChapterCommand(
+                new BookId(id),
+                new ChapterTitle(title.AssertNotEmpty()),
+                content != null ? new ChapterContent(content): ChapterContent.Empty
+            ),
+            ct
+        );
+
+        return NoContent();
+    }
+
     [HttpGet("{id}")]
     public async Task<IActionResult> FindDetailsById([FromRoute] Guid id, CancellationToken ct) =>
         await booksQueryService.FindDetailsById(new BookId(id), ct) is { } result ? Ok(result) : NotFound();

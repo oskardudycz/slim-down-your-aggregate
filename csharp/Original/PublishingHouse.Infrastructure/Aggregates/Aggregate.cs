@@ -1,12 +1,12 @@
 namespace PublishingHouse.Core.Aggregates;
 
-public abstract class Aggregate
+public abstract class Aggregate<TKey>
 {
-    public Guid Id { get; protected set; }
+    public TKey Id { get; protected set; }
 
     private List<IDomainEvent> _domainEvents = new();
 
-    protected Aggregate(Guid id)
+    protected Aggregate(TKey id)
     {
         Id = id;
     }

@@ -12,7 +12,7 @@ using PublishingHouse.Persistence;
 namespace PublishingHouse.Persistence.Migrations
 {
     [DbContext(typeof(PublishingHouseDbContext))]
-    [Migration("20230910120035_InitialCreate")]
+    [Migration("20230910182056_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -124,6 +124,13 @@ namespace PublishingHouse.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Publishers", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("c528d322-17eb-47ba-bccf-6cb61d340f09"),
+                            Name = "Readers Digest"
+                        });
                 });
 
             modelBuilder.Entity("PublishingHouse.Persistence.Reviewers.ReviewerEntity", b =>
@@ -198,10 +205,7 @@ namespace PublishingHouse.Persistence.Migrations
                     b.OwnsMany("PublishingHouse.Persistence.Books.Entities.ChapterEntity", "Chapters", b1 =>
                         {
                             b1.Property<int>("Number")
-                                .ValueGeneratedOnAdd()
                                 .HasColumnType("integer");
-
-                            NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b1.Property<int>("Number"));
 
                             b1.Property<Guid>("BookId")
                                 .HasColumnType("uuid");

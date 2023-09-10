@@ -14,7 +14,7 @@ public class CreateDraftTests: IClassFixture<ApiSpecification>
                     new CreateDraftRequest(
                         Faker.Random.String(),
                         new AuthorRequest(null, Faker.Name.FirstName(), Faker.Name.LastName()),
-                        Faker.Random.Guid(),
+                        ExistingPublisherId,
                         Faker.Random.Int(0),
                         Faker.Random.String()
                     )

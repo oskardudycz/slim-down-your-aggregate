@@ -33,10 +33,15 @@ public class PublishingHouseDbContext: DbContext
     {
         modelBuilder.Entity<AuthorEntity>()
             .ToTable("Authors");
+
+        modelBuilder.Entity<PublisherEntity>().HasData(
+            new PublisherEntity { Id = new Guid("c528d322-17eb-47ba-bccf-6cb61d340f09"), Name = "Readers Digest" });
+
         modelBuilder.Entity<LanguageEntity>()
             .ToTable("Languages");
         modelBuilder.Entity<PublisherEntity>()
             .ToTable("Publishers");
+
         modelBuilder.Entity<ReviewerEntity>()
             .ToTable("Reviewers");
         modelBuilder.Entity<TranslatorEntity>()
@@ -55,6 +60,8 @@ public class PublishingHouseDbContext: DbContext
                 a.ToTable("BookChapters");
                 a.WithOwner().HasForeignKey("BookId");
                 a.HasKey("Number", "BookId");
+                a.Property(e => e.Number)
+                    .ValueGeneratedNever();
             })
             .OwnsMany(b => b.Translations, a =>
             {

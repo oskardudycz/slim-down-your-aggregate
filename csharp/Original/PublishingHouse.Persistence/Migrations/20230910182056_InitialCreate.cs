@@ -1,6 +1,5 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
@@ -102,8 +101,7 @@ namespace PublishingHouse.Persistence.Migrations
                 name: "BookChapters",
                 columns: table => new
                 {
-                    Number = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    Number = table.Column<int>(type: "integer", nullable: false),
                     BookId = table.Column<Guid>(type: "uuid", nullable: false),
                     Title = table.Column<string>(type: "text", nullable: false),
                     Content = table.Column<string>(type: "text", nullable: false)
@@ -187,6 +185,11 @@ namespace PublishingHouse.Persistence.Migrations
                         principalTable: "Books",
                         principalColumn: "Id");
                 });
+
+            migrationBuilder.InsertData(
+                table: "Publishers",
+                columns: new[] { "Id", "Name" },
+                values: new object[] { new Guid("c528d322-17eb-47ba-bccf-6cb61d340f09"), "Readers Digest" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_BookChapters_BookId",

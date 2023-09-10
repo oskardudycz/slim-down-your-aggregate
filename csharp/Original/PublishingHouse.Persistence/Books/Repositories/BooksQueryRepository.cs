@@ -10,6 +10,7 @@ public class BooksQueryRepository: IBooksQueryRepository
 {
     public Task<BookDetails?> FindDetailsById(BookId bookId, CancellationToken ct) =>
         dbContext.Books
+            .AsNoTracking()
             .Include(e => e.Author)
             .Include(e => e.Publisher)
             .Include(e => e.Reviewers)

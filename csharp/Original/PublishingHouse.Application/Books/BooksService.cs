@@ -16,28 +16,40 @@ public class BooksService: IBooksService
         var book = Book.CreateDraft(
             bookId,
             title,
-            await authorProvider.GetOrCreate(authorIdOrData),
+            await authorProvider.GetOrCreate(authorIdOrData, ct),
             (null as IPublishingHouse)!, //TODO: Consider making it smarter
-            await publisherProvider.GetById(publisherId),
+            await publisherProvider.GetById(publisherId, ct),
             positiveInt,
             genre
         );
 
-        await booksRepository.Add(book, ct);
+        await repository.Add(book, ct);
+    }
+
+    public async Task AddChapter(AddChapterCommand addChapterCommand, CancellationToken ct)
+    {
+        var (bookId, chapterTitle, chapterContent) = addChapterCommand;
+
+        var book = await repository.FindById(bookId, ct) ??
+                   throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
+
+        book.AddChapter(chapterTitle, chapterContent);
+
+        await repository.Update(book, ct);
     }
 
     public BooksService(
-        IBooksRepository booksRepository,
+        IBooksRepository repository,
         IAuthorProvider authorProvider,
         IPublisherProvider publisherProvider
     )
     {
-        this.booksRepository = booksRepository;
+        this.repository = repository;
         this.authorProvider = authorProvider;
         this.publisherProvider = publisherProvider;
     }
 
-    private readonly IBooksRepository booksRepository;
+    private readonly IBooksRepository repository;
     private readonly IAuthorProvider authorProvider;
     private readonly IPublisherProvider publisherProvider;
 }

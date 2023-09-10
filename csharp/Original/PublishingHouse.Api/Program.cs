@@ -11,6 +11,8 @@ builder.Services
     .AddPublishingHouse(builder.Configuration)
     .AddControllers();
 
+//TODO: Add exception handling middleware
+
 var app = builder.Build();
 
 app.UseRouting()
