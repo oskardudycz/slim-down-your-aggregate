@@ -1,11 +1,25 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
+using PublishingHouse.Persistence.Books;
+using PublishingHouse.Persistence.Books.Entities;
+using PublishingHouse.Persistence.Languages;
+using PublishingHouse.Persistence.Publishers;
+using PublishingHouse.Persistence.Reviewers;
+using PublishingHouse.Persistence.Translators;
 
 namespace PublishingHouse.Persistence;
 
 public class PublishingHouseDbContext: DbContext
 {
+    public DbSet<BookEntity> Books { get; set; } = default!;
+    public DbSet<ChapterEntity> BookChapters { get; set; } = default!;
+    public DbSet<LanguageEntity> Authors { get; set; } = default!;
+    public DbSet<LanguageEntity> Languages { get; set; } = default!;
+    public DbSet<PublisherEntity> Publishers { get; set; } = default!;
+    public DbSet<ReviewerEntity> Reviewers { get; set; } = default!;
+    public DbSet<TranslatorEntity> Translators { get; set; } = default!;
+
     public PublishingHouseDbContext(DbContextOptions<PublishingHouseDbContext> options)
         : base(options)
     {

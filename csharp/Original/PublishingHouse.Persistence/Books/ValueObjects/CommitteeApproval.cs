@@ -1,4 +1,4 @@
-namespace PublishingHouse.Persistence.Books.Entities;
+namespace PublishingHouse.Persistence.Books.ValueObjects;
 
 public class CommitteeApproval
 {

@@ -4,6 +4,10 @@ using PublishingHouse.Books.Factories;
 using PublishingHouse.Books.Repositories;
 using PublishingHouse.Books.Services;
 using PublishingHouse.Core.ValueObjects;
+using PublishingHouse.Persistence.Languages;
+using PublishingHouse.Persistence.Publishers;
+using PublishingHouse.Persistence.Reviewers;
+using PublishingHouse.Persistence.Translators;
 
 namespace PublishingHouse.Persistence.Books.Repositories;
 
@@ -25,10 +29,10 @@ public class BooksRepository: IBooksRepository
             new BookId(book.Id),
             (Book.State)book.CurrentState,
             new Title(book.Title),
-            new Author(new AuthorId(book.Author.Id), new AuthorFirstName(book.Author.FirstName),
-                new AuthorLastName(book.Author.LastName)),
+            new Author(new AuthorId(book.AuthorEntity.Id), new AuthorFirstName(book.AuthorEntity.FirstName),
+                new AuthorLastName(book.AuthorEntity.LastName)),
             (null as IPublishingHouse)!, //TODO: Change that
-            new Publisher(new PublisherId(book.Publisher.Id), new PublisherName(book.Publisher.Name)),
+            new Publisher(new PublisherId(book.PublisherEntity.Id), new PublisherName(book.PublisherEntity.Name)),
             new PositiveInt(book.Edition),
             book.Genre != null ? new Genre(book.Genre) : null,
             book.ISBN != null ? new ISBN(book.ISBN) : null,
@@ -58,7 +62,7 @@ public class BooksRepository: IBooksRepository
                 .Select(t =>
                     new Translation(
                         new Language(new LanguageId(t.Language.Id), new LanguageName(t.Language.Name)),
-                        new Translator(new TranslatorId(t.Translator.Id), new TranslatorName(t.Translator.Name))
+                        new Translator(new TranslatorId(t.TranslatorEntity.Id), new TranslatorName(t.TranslatorEntity.Name))
                     )
                 )
                 .ToList(),
@@ -76,10 +80,10 @@ public class BooksRepository: IBooksRepository
                 Id = book.Id,
                 CurrentState = (BookEntity.State)book.CurrentState,
                 Title = book.Title.Value,
-                Author =
-                    new Entities.Author(book.Author.Id.Value, book.Author.FirstName.Value, book.Author.LastName.Value),
+                AuthorEntity =
+                    new Authors.AuthorEntity(book.Author.Id.Value, book.Author.FirstName.Value, book.Author.LastName.Value),
                 Genre = book.Genre?.Value,
-                Publisher = new Entities.Publisher(book.Publisher.Id.Value, book.Publisher.Name.Value),
+                PublisherEntity = new PublisherEntity(book.Publisher.Id.Value, book.Publisher.Name.Value),
                 Edition = book.Edition.Value,
                 ISBN = book.ISBN?.Value,
                 PublicationDate = book.PublicationDate,
@@ -89,11 +93,11 @@ public class BooksRepository: IBooksRepository
                 Summary = book.Summary?.Value,
                 Reviewers = book.Reviewers
                     .Select(r =>
-                        new Entities.Reviewer(r.Id.Value, r.Name.Value)
+                        new ReviewerEntity(r.Id.Value, r.Name.Value)
                     ).ToList(),
                 Chapters = book.Chapters
                     .Select(c =>
-                        new Entities.Chapter(
+                        new Entities.ChapterEntity(
                             c.Id.Value,
                             c.Number.Value,
                             c.Title.Value,
@@ -102,15 +106,15 @@ public class BooksRepository: IBooksRepository
                     )
                     .ToList(),
                 Translations = book.Translations
-                    .Select(t => new Entities.Translation(
-                        new Entities.Language(t.Language.Id.Value, t.Language.Name.Value),
-                        new Entities.Translator(t.Language.Id.Value, t.Translator.Name.Value)))
+                    .Select(t => new ValueObjects.Translation(
+                        new LanguageEntity(t.Language.Id.Value, t.Language.Name.Value),
+                        new TranslatorEntity(t.Language.Id.Value, t.Translator.Name.Value)))
                     .ToList(),
                 Formats = book.Formats
-                    .Select(f => new Entities.Format(f.FormatType.Value, f.TotalCopies.Value, f.SoldCopies.Value))
+                    .Select(f => new ValueObjects.Format(f.FormatType.Value, f.TotalCopies.Value, f.SoldCopies.Value))
                     .ToList(),
                 CommitteeApproval = book.CommitteeApproval != null
-                    ? new Entities.CommitteeApproval(
+                    ? new ValueObjects.CommitteeApproval(
                         book.CommitteeApproval.IsApproved,
                         book.CommitteeApproval.Feedback.Value
                     )
