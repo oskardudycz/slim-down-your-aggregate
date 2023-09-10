@@ -5,13 +5,7 @@ namespace PublishingHouse.Persistence.Books.ValueObjects;
 
 public class Translation
 {
-    public Translation(LanguageEntity language, TranslatorEntity translatorEntity)
-    {
-        Language = language;
-        TranslatorEntity = translatorEntity;
-    }
-
-    public LanguageEntity Language { get; }
-    public TranslatorEntity TranslatorEntity { get; }
+    public required LanguageEntity Language { get; set; }
+    public required TranslatorEntity Translator { get; set; }
 }
 
