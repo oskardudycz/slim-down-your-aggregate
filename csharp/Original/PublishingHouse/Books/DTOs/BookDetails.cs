@@ -25,7 +25,7 @@ public record BookDetails(
 {
     public record AuthorDetails(string FirstName, string LastName);
     public record CommitteeApprovalDetails(bool IsApproved, string Feedback);
-    public record ChapterDetails(string Title, string Content);
+    public record ChapterDetails(string Title, string? Content);
     public record TranslationDetails(string Language, string Translator);
     public record Format(string FormatType, int TotalCopies, int SoldCopies);
 }
