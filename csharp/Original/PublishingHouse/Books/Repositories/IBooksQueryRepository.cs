@@ -5,5 +5,5 @@ namespace PublishingHouse.Books.Repositories;
 
 public interface IBooksQueryRepository
 {
-    Task<BookDetails?> FindDetailsById(BookId bookId);
+    Task<BookDetails?> FindDetailsById(BookId bookId, CancellationToken ct);
 }

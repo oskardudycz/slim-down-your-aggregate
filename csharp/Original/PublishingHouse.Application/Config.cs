@@ -17,7 +17,7 @@ public static class Config
 {
     public static IServiceCollection AddPublishingHouse(this IServiceCollection services, IConfiguration config) =>
         services
-            .AddScoped<IBooksFactory, Book.Factory>()
+            .AddScoped<IBookFactory, Book.Factory>()
             .AddScoped<IBooksRepository, BooksRepository>()
             .AddScoped<IBooksQueryRepository, BooksQueryRepository>()
             .AddScoped<IBooksService, BooksService>()

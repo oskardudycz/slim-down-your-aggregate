@@ -1,4 +1,6 @@
+using Microsoft.EntityFrameworkCore;
 using PublishingHouse.Application;
+using PublishingHouse.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +26,14 @@ app.UseRouting()
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Publishing House V1");
         c.RoutePrefix = string.Empty;
     });
+
+var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
+
+if (environment == "Development")
+{
+    await app.Services.CreateScope().ServiceProvider
+        .GetRequiredService<PublishingHouseDbContext>().Database.MigrateAsync();
+}
 
 app.Run();
 

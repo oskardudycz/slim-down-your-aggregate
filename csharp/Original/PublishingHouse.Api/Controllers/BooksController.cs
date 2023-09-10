@@ -22,7 +22,7 @@ public class BooksController: Controller
     }
 
     [HttpPost]
-    public IActionResult CreateDraft([FromBody] CreateDraftRequest request)
+    public async Task<IActionResult> CreateDraft([FromBody] CreateDraftRequest request, CancellationToken ct)
     {
         var bookId = Guid.NewGuid();
 
@@ -30,7 +30,7 @@ public class BooksController: Controller
 
         author.AssertNotNull();
 
-        booksService.CreateDraft(
+        await booksService.CreateDraft(
             new CreateDraftCommand(
                 new BookId(bookId),
                 new Title(title.AssertNotEmpty()),
@@ -42,13 +42,14 @@ public class BooksController: Controller
                 new PublisherId(publisherId.AssertNotEmpty()),
                 new PositiveInt(edition.GetValueOrDefault()),
                 genre != null ? new Genre(genre) : null
-            )
+            ),
+            ct
         );
 
         return Created($"/api/books/{bookId}", bookId);
     }
 
     [HttpGet("{id}")]
-    public async Task<IActionResult> FindDetailsById([FromRoute] Guid id) =>
-        await booksQueryService.FindDetailsById(new BookId(id)) is { } result ? Ok(result) : NotFound();
+    public async Task<IActionResult> FindDetailsById([FromRoute] Guid id, CancellationToken ct) =>
+        await booksQueryService.FindDetailsById(new BookId(id), ct) is { } result ? Ok(result) : NotFound();
 }

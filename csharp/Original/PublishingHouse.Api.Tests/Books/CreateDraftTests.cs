@@ -2,7 +2,7 @@ using PublishingHouse.Api.Requests;
 
 namespace PublishingHouse.Api.Tests.Books;
 
-public class CreateDraftTests: IClassFixture<ApiSpecification<Program>>
+public class CreateDraftTests: IClassFixture<ApiSpecification>
 {
     [Fact]
     public Task DraftIsCreated_ForValidRequest() =>
@@ -30,8 +30,8 @@ public class CreateDraftTests: IClassFixture<ApiSpecification<Program>>
                     return ValueTask.CompletedTask;
                 });
 
-    private readonly ApiSpecification<Program> API;
+    private readonly ApiSpecification API;
 
-    public CreateDraftTests(ApiSpecification<Program> api) =>
+    public CreateDraftTests(ApiSpecification api) =>
         API = api;
 }

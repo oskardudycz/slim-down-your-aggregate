@@ -9,7 +9,7 @@ namespace PublishingHouse.Application.Books;
 
 public class BooksService: IBooksService
 {
-    public async Task CreateDraft(CreateDraftCommand command)
+    public async Task CreateDraft(CreateDraftCommand command, CancellationToken ct)
     {
         var (bookId, title, authorIdOrData, publisherId, positiveInt, genre) = command;
 
@@ -23,7 +23,7 @@ public class BooksService: IBooksService
             genre
         );
 
-        await booksRepository.Add(book);
+        await booksRepository.Add(book, ct);
     }
 
     public BooksService(

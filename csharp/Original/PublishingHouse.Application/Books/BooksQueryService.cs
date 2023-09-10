@@ -6,8 +6,8 @@ namespace PublishingHouse.Application.Books;
 
 public class BooksQueryService: IBookQueryService
 {
-    public Task<BookDetails?> FindDetailsById(BookId bookId) =>
-        repository.FindDetailsById(bookId);
+    public Task<BookDetails?> FindDetailsById(BookId bookId, CancellationToken ct) =>
+        repository.FindDetailsById(bookId, ct);
 
     public BooksQueryService(IBooksQueryRepository repository) =>
         this.repository = repository;
