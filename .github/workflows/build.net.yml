@@ -34,5 +34,13 @@ jobs:
       - name: Build
         run: dotnet build --configuration Release --no-restore
 
+      - name: Start containers
+        run: docker-compose -f "docker-compose.yml" up -d
+
       - name: Run tests
         run: dotnet test --configuration Release --no-build --filter Category!=SkipCI
+        
+      - name: Stop containers
+        if: always()
+        run: docker-compose -f "docker-compose.yml" down
+

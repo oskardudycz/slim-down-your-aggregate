@@ -4,7 +4,7 @@ using PublishingHouse.Core.ValueObjects;
 
 namespace PublishingHouse.Books.Factories;
 
-public interface IBooksFactory
+public interface IBookFactory
 {
     Book Create(
         BookId bookId,

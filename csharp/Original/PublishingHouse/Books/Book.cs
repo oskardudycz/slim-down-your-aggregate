@@ -222,7 +222,7 @@ public class Book: Aggregate
         this.formats = formats ?? new List<Format>();
     }
 
-    public class Factory: IBooksFactory
+    public class Factory: IBookFactory
     {
         public Book Create(
             BookId bookId,

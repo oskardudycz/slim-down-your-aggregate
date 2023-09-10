@@ -26,6 +26,9 @@ public class PublishingHouseDbContext: DbContext
     {
     }
 
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) =>
+        optionsBuilder.LogTo(Console.WriteLine);
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AuthorEntity>()
@@ -91,13 +94,10 @@ public class PublishingHouseDbContextFactory: IDesignTimeDbContextFactory<Publis
                 .AddJsonFile($"appsettings.{environmentName}.json", optional: true, reloadOnChange: false)
                 .AddEnvironmentVariables()
                 .Build()
-                .GetConnectionString("WarehouseDB");
+                .GetConnectionString("PublishingHouse");
 
         optionsBuilder.UseNpgsql(connectionString);
 
         return new PublishingHouseDbContext(optionsBuilder.Options);
     }
-
-    public static PublishingHouseDbContext Create()
-        => new PublishingHouseDbContextFactory().CreateDbContext();
 }

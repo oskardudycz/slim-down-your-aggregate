@@ -1,6 +1,6 @@
 namespace PublishingHouse.Api.Tests.Books;
 
-public class GetBookDetailsByIdTests: IClassFixture<ApiSpecification<Program>>
+public class GetBookDetailsByIdTests: IClassFixture<ApiSpecification>
 {
     [Fact]
     public Task ReturnsNotFound_ForNonExistingBook() =>
@@ -23,8 +23,8 @@ public class GetBookDetailsByIdTests: IClassFixture<ApiSpecification<Program>>
     private readonly Guid UnknownBookId = Guid.NewGuid();
     private readonly Guid ExistingBookId = Guid.NewGuid();
 
-    private readonly ApiSpecification<Program> API;
+    private readonly ApiSpecification API;
 
-    public GetBookDetailsByIdTests(ApiSpecification<Program> api) =>
+    public GetBookDetailsByIdTests(ApiSpecification api) =>
         API = api;
 }

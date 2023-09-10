@@ -4,5 +4,5 @@ namespace PublishingHouse.Application.Books;
 
 public interface IBooksService
 {
-    Task CreateDraft(CreateDraftCommand command);
+    Task CreateDraft(CreateDraftCommand command, CancellationToken ct);
 }

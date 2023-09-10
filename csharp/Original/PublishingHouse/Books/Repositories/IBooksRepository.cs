@@ -4,7 +4,7 @@ namespace PublishingHouse.Books.Repositories;
 
 public interface IBooksRepository
 {
-    Task<Book?> FindById(BookId bookId);
+    Task<Book?> FindById(BookId bookId, CancellationToken ct);
 
-    Task Add(Book book);
+    Task Add(Book book, CancellationToken ct);
 }
