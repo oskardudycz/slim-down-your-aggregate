@@ -1,7 +1,7 @@
 using PublishingHouse.Books.Entities;
 using PublishingHouse.Core.Validation;
 
-namespace PublishingHouse.Authors;
+namespace PublishingHouse.Books.Authors;
 
 public record AuthorIdOrData
 {

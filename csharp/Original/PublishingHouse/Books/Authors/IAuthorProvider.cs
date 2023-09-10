@@ -1,6 +1,6 @@
 using PublishingHouse.Books.Entities;
 
-namespace PublishingHouse.Authors;
+namespace PublishingHouse.Books.Authors;
 
 public interface IAuthorProvider
 {

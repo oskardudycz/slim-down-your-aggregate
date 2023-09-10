@@ -1,4 +1,4 @@
-using PublishingHouse.Authors;
+using PublishingHouse.Books.Authors;
 using PublishingHouse.Books.Entities;
 using PublishingHouse.Core.ValueObjects;
 
