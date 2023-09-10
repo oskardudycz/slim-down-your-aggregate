@@ -2,11 +2,13 @@ namespace PublishingHouse.Persistence.Books.Entities;
 
 public class Reviewer
 {
-    public Reviewer(string name)
+    public Reviewer(Guid id, string name)
     {
+        Id = id;
         Name = name;
     }
 
+    public Guid Id { get; }
     public string Name { get; }
 }
 

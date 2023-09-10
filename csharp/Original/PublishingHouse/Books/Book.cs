@@ -2,7 +2,8 @@ using PublishingHouse.Books.Entities;
 using PublishingHouse.Books.Events;
 using PublishingHouse.Books.Factories;
 using PublishingHouse.Books.Services;
-using PublishingHouse.Core;
+using PublishingHouse.Core.Aggregates;
+using PublishingHouse.Core.ValueObjects;
 
 namespace PublishingHouse.Books;
 
@@ -16,15 +17,15 @@ public class Book: Aggregate
     public Author Author { get; }
     public Genre? Genre { get; }
     public Publisher Publisher { get; }
-    public int Edition { get; }
+    public PositiveInt Edition { get; }
     public ISBN? ISBN { get; }
-    public DateTime? PublicationDate { get; }
-    public int? TotalPages { get; }
-    public int? NumberOfIllustrations { get; }
-    public string? BindingType { get; }
+    public DateOnly? PublicationDate { get; }
+    public PositiveInt? TotalPages { get; }
+    public PositiveInt? NumberOfIllustrations { get; }
+    public NonEmptyString? BindingType { get; }
 
     //TODO: add type for that
-    public string? Summary { get; }
+    public NonEmptyString? Summary { get; }
 
     private readonly IPublishingHouse publishingHouse;
 
@@ -42,12 +43,12 @@ public class Book: Aggregate
         BookId bookId,
         Title title,
         Author author,
-        Genre? genre,
         IPublishingHouse publishingHouse,
         Publisher publisher,
-        int edition
+        PositiveInt edition,
+        Genre? genre
     ) =>
-        new Book(bookId, State.Writing, title, author, genre, publishingHouse, publisher, edition);
+        new Book(bookId, State.Writing, title, author, publishingHouse, publisher, edition, genre);
 
     public void AddChapter(ChapterTitle title, ChapterContent content)
     {
@@ -58,7 +59,7 @@ public class Book: Aggregate
             throw new InvalidOperationException(
                 $"Chapter should be added in sequence. The title of the next chapter should be 'Chapter {chapters.Count + 1}'");
 
-        var chapter = new Chapter(title, content);
+        var chapter = new Chapter(ChapterId.Generate(), new ChapterNumber(chapters.Count + 1), title, content);
         chapters.Add(chapter);
 
         AddDomainEvent(new ChapterAddedEvent(BookId, chapter));
@@ -169,8 +170,8 @@ public class Book: Aggregate
         if (CurrentState != State.Published)
             throw new InvalidOperationException("Cannot move to Out of Print state from the current state.");
 
-        double totalCopies = formats.Sum(f => f.TotalCopies);
-        double totalSoldCopies = formats.Sum(f => f.SoldCopies);
+        double totalCopies = formats.Sum(f => f.TotalCopies.Value);
+        double totalSoldCopies = formats.Sum(f => f.SoldCopies.Value);
         if ((totalSoldCopies / totalCopies) > 0.1)
             throw new InvalidOperationException(
                 "Cannot move to Out of Print state if more than 10% of total copies are unsold.");
@@ -183,16 +184,16 @@ public class Book: Aggregate
         State state,
         Title title,
         Author author,
-        Genre? genre,
         IPublishingHouse publishingHouse,
         Publisher publisher,
-        int edition,
+        PositiveInt edition,
+        Genre? genre,
         ISBN? isbn = null,
-        DateTime? publicationDate = null,
-        int? totalPages = null,
-        int? numberOfIllustrations = null,
-        string? bindingType = null,
-        string? summary = null,
+        DateOnly? publicationDate = null,
+        PositiveInt? totalPages = null,
+        PositiveInt? numberOfIllustrations = null,
+        NonEmptyString? bindingType = null,
+        NonEmptyString? summary = null,
         CommitteeApproval? committeeApproval = null,
         List<Reviewer>? reviewers = null,
         List<Chapter>? chapters = null,
@@ -228,16 +229,16 @@ public class Book: Aggregate
             State state,
             Title title,
             Author author,
-            Genre? genre,
             IPublishingHouse publishingHouse,
             Publisher publisher,
-            int edition,
+            PositiveInt edition,
+            Genre? genre,
             ISBN? isbn,
-            DateTime? publicationDate,
-            int? totalPages,
-            int? numberOfIllustrations,
-            string? bindingType,
-            string? summary,
+            DateOnly? publicationDate,
+            PositiveInt? totalPages,
+            PositiveInt? numberOfIllustrations,
+            NonEmptyString? bindingType,
+            NonEmptyString? summary,
             CommitteeApproval? committeeApproval,
             List<Reviewer> reviewers,
             List<Chapter> chapters,
@@ -245,8 +246,8 @@ public class Book: Aggregate
             List<Format> formats
         ) =>
             new Book(
-                bookId, state, title, author, genre, publishingHouse, publisher,
-                edition, isbn, publicationDate, totalPages, numberOfIllustrations,
+                bookId, state, title, author, publishingHouse, publisher, edition,
+                genre, isbn, publicationDate, totalPages, numberOfIllustrations,
                 bindingType, summary, committeeApproval, reviewers, chapters, translations, formats);
     }
 }

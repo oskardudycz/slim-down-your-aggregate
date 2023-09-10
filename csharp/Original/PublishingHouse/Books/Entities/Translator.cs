@@ -1,12 +1,7 @@
+using PublishingHouse.Core.ValueObjects;
+
 namespace PublishingHouse.Books.Entities;
 
-public class Translator
-{
-    public Translator(string name)
-    {
-        Name = name;
-    }
-
-    public string Name { get; }
-}
-
+public record Translator(TranslatorId Id, TranslatorName Name);
+public record TranslatorId(Guid Value) : NonEmptyGuid(Value);
+public record TranslatorName(string Value) : NonEmptyString(Value);

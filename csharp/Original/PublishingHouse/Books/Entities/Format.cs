@@ -1,15 +1,22 @@
+using PublishingHouse.Core.Validation;
+using PublishingHouse.Core.ValueObjects;
+
 namespace PublishingHouse.Books.Entities;
 
-public class Format
+public record Format
 {
-    public Format(string formatType, int totalCopies, int soldCopies)
+    public Format(FormatType formatType, PositiveInt totalCopies, PositiveInt soldCopies)
     {
         FormatType = formatType;
         TotalCopies = totalCopies;
         SoldCopies = soldCopies;
+
+        TotalCopies.AssertGreaterOrEqualThan(SoldCopies);
     }
 
-    public string FormatType { get; }
-    public int TotalCopies { get; }
-    public int SoldCopies { get; }
+    public FormatType FormatType { get; }
+    public PositiveInt TotalCopies { get; }
+    public PositiveInt SoldCopies { get; }
 }
+
+public record FormatType(string Value): NonEmptyString(Value);

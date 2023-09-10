@@ -13,8 +13,8 @@ public static class BooksBuilder
             BODY(body ??
                  new CreateDraftRequest(
                      Faker.Random.String(),
-                     new AuthorRequest(Faker.Name.FirstName(), Faker.Name.LastName()),
-                     Faker.Random.String(),
+                     new AuthorRequest(null, Faker.Name.FirstName(), Faker.Name.LastName()),
+                     Faker.Random.Guid(),
                      Faker.Random.Int(0),
                      Faker.Random.String()
                  )
