@@ -29,4 +29,7 @@ public record ChapterNumber(int Value): PositiveInt(Value);
 public record ChapterTitle(string Value): NonEmptyString(Value);
 
 
-public record ChapterContent(string Value): NonEmptyString(Value);
+public record ChapterContent(string Value)
+{
+    public static readonly ChapterContent Empty = new(string.Empty);
+};

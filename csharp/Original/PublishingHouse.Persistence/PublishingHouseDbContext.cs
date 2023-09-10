@@ -45,7 +45,7 @@ public class PublishingHouseDbContext: DbContext
             {
                 a.ToTable("BookFormats");
                 a.WithOwner().HasForeignKey("BookId");
-                a.HasKey(p => p.FormatType);
+                a.HasKey("FormatType", "BookId");
             })
             .OwnsMany(b => b.Chapters, a =>
             {
