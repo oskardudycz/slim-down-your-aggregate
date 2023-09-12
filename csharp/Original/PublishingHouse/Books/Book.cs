@@ -16,7 +16,7 @@ public class Book: Aggregate<BookId>
     public Genre? Genre { get; }
     public Publisher Publisher { get; }
     public PositiveInt Edition { get; }
-    public ISBN? ISBN { get; }
+    public ISBN? ISBN { get; private set; }
     public DateOnly? PublicationDate { get; }
     public PositiveInt? TotalPages { get; }
     public PositiveInt? NumberOfIllustrations { get; }
@@ -113,6 +113,18 @@ public class Book: Aggregate<BookId>
         formats.Remove(existingFormat);
     }
 
+    public void AddReviewer(Reviewer reviewer)
+    {
+        if (CurrentState != State.Editing)
+            throw new InvalidOperationException("Cannot approve a book that is not in the Editing state.");
+
+        if (Reviewers.Contains(reviewer))
+            throw new InvalidOperationException(
+                $"{reviewer.Name} is already a reviewer.");
+
+        reviewers.Add(reviewer);
+    }
+
     public void Approve(CommitteeApproval committeeApproval)
     {
         if (CurrentState != State.Editing)
@@ -125,10 +137,25 @@ public class Book: Aggregate<BookId>
         CommitteeApproval = committeeApproval;
     }
 
+    public void SetISBN(ISBN isbn)
+    {
+        if (CurrentState != State.Editing)
+            throw new InvalidOperationException("Cannot approve a book that is not in the Editing state.");
+
+        if (ISBN != null)
+            throw new InvalidOperationException(
+                "Cannot change already set ISBN.");
+
+        ISBN = isbn;
+    }
+
     public void MoveToPrinting()
     {
         if (CurrentState != State.Editing)
             throw new InvalidOperationException("Cannot move to printing from the current state.");
+
+        if (chapters.Count < 1)
+            throw new InvalidOperationException("A book must have at least one chapter to move to the printing state.");
 
         if (CommitteeApproval == null)
             throw new InvalidOperationException("Cannot move to printing state until the book has been approved.");
