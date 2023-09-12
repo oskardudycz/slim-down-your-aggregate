@@ -26,14 +26,24 @@ public class BooksService: IBooksService
         await repository.Add(book, ct);
     }
 
-    public async Task AddChapter(AddChapterCommand addChapterCommand, CancellationToken ct)
+    public async Task AddChapter(AddChapterCommand command, CancellationToken ct)
     {
-        var (bookId, chapterTitle, chapterContent) = addChapterCommand;
+        var (bookId, chapterTitle, chapterContent) = command;
 
         var book = await repository.FindById(bookId, ct) ??
                    throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
 
         book.AddChapter(chapterTitle, chapterContent);
+
+        await repository.Update(book, ct);
+    }
+
+    public async Task MoveToEditing(MoveToEditingCommand command, CancellationToken ct)
+    {
+        var book = await repository.FindById(command.BookId, ct) ??
+                   throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
+
+        book.MoveToEditing();
 
         await repository.Update(book, ct);
     }

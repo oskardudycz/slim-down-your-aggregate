@@ -66,6 +66,17 @@ public class BooksController: Controller
         return NoContent();
     }
 
+    [HttpPost("{id}/move-to-editing")]
+    public async Task<IActionResult> MoveToEditing([FromRoute] Guid id, CancellationToken ct)
+    {
+        await booksService.MoveToEditing(
+            new MoveToEditingCommand(new BookId(id)),
+            ct
+        );
+
+        return NoContent();
+    }
+
     [HttpGet("{id}")]
     public async Task<IActionResult> FindDetailsById([FromRoute] Guid id, CancellationToken ct) =>
         await booksQueryService.FindDetailsById(new BookId(id), ct) is { } result ? Ok(result) : NotFound();
