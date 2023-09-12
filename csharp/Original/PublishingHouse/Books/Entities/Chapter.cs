@@ -11,8 +11,13 @@ public class Chapter
         Content = content;
     }
     public ChapterNumber Number { get; }
-    public ChapterTitle Title { get; }
-    public ChapterContent Content { get; }
+    public ChapterTitle Title { get; private set; }
+    public ChapterContent Content { get; private set; }
+
+    public void ChangeTitle(ChapterTitle title) =>
+        Title = title;
+    public void ChangeContent(ChapterContent content) =>
+        Content = content;
 }
 
 public record ChapterNumber(int Value): PositiveInt(Value);

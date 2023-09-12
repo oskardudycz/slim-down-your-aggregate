@@ -14,5 +14,5 @@ public class MoveToEditingTests
             )
             .Then(NO_CONTENT);
 
-    private readonly ApiSpecification API = ApiSpecification.WithSchema(nameof(AddChapterTests));
+    private readonly ApiSpecification API = ApiSpecification.WithSchema(nameof(MoveToEditingTests));
 }

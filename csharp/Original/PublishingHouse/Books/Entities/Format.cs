@@ -15,8 +15,15 @@ public record Format
     }
 
     public FormatType FormatType { get; }
-    public PositiveInt TotalCopies { get; }
-    public PositiveInt SoldCopies { get; }
+    public PositiveInt TotalCopies { get; private set; }
+    public PositiveInt SoldCopies { get; private set; }
+
+    public void SetTotalCopies(PositiveInt totalCopies) =>
+        TotalCopies = totalCopies;
+
+    public void SetSoldCopies(PositiveInt soldCopies) =>
+        TotalCopies = soldCopies;
+
 }
 
 public record FormatType(string Value): NonEmptyString(Value);
