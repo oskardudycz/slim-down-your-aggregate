@@ -7,7 +7,7 @@ export class Format {
   #totalCopies: PositiveNumber;
   #soldCopies: PositiveNumber;
 
-  public get type() {
+  public get formatType() {
     return this.#type;
   }
   public get totalCopies() {

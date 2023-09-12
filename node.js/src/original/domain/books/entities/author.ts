@@ -1,4 +1,5 @@
-import { DeepReadonly, NonEmptyString } from '#core/typing';
+import { NonEmptyString } from '#core/typing';
+import { DeepReadonly } from 'ts-essentials';
 
 export type Author = DeepReadonly<{
   authorId: AuthorId;
