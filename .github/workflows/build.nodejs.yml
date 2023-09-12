@@ -1,4 +1,4 @@
-name: Build .NET version
+name: Build Node.js version
 
 on:
   # run it on push to the default repository branch
@@ -13,7 +13,7 @@ on:
 
 defaults:
   run:
-    working-directory: csharp
+    working-directory: node.js
 
 jobs:
   build:    
