@@ -1,5 +1,4 @@
-import { Brand, NonEmptyString } from '#core/typing';
-import { PositiveNumber } from '#core/typing/positiveNumber';
+import { Brand, NonEmptyString, PositiveNumber } from '#core/typing';
 
 export type ChapterNumber = PositiveNumber<'ChapterNumber'>;
 

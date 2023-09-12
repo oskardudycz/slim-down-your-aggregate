@@ -13,9 +13,9 @@ public class Book: Aggregate<BookId>
     public State CurrentState { get; private set; }
     public Title Title { get; }
     public Author Author { get; }
-    public Genre? Genre { get; }
     public Publisher Publisher { get; }
     public PositiveInt Edition { get; }
+    public Genre? Genre { get; }
     public ISBN? ISBN { get; private set; }
     public DateOnly? PublicationDate { get; }
     public PositiveInt? TotalPages { get; }
@@ -24,6 +24,7 @@ public class Book: Aggregate<BookId>
 
     //TODO: add type for that
     public NonEmptyString? Summary { get; }
+    public CommitteeApproval? CommitteeApproval { get; private set; }
 
     private readonly IPublishingHouse publishingHouse;
 
@@ -31,7 +32,6 @@ public class Book: Aggregate<BookId>
     private readonly List<Reviewer> reviewers;
     public IReadOnlyList<Chapter> Chapters => chapters.AsReadOnly();
     private readonly List<Chapter> chapters;
-    public CommitteeApproval? CommitteeApproval { get; private set; }
     public IReadOnlyList<Translation> Translations => translations.AsReadOnly();
     private readonly List<Translation> translations;
     public IReadOnlyList<Format> Formats => formats.AsReadOnly();

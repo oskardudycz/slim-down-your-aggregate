@@ -12,13 +12,7 @@ import {
   Document,
 } from 'mongodb';
 import { DEFAULT_RETRY_OPTIONS, RetryOptions, retryPromise } from './retries';
-import { getEventStore } from './streams';
-import {
-  Checkpoint,
-  EventHandler,
-  SubscriptionResolvedEvent,
-  SubscriptionToAll,
-} from './subscriptions';
+import { Checkpoint, SubscriptionToAll } from './subscriptions';
 
 let mongoClient: MongoClient;
 let isOpened = false;
