@@ -1,4 +1,7 @@
+using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
+using PublishingHouse.Api.Core;
 using PublishingHouse.Application;
 using PublishingHouse.Persistence;
 
@@ -7,17 +10,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services
     .AddRouting()
     .AddEndpointsApiExplorer()
+    .AddProblemDetails()
     .AddSwaggerGen()
     .AddPublishingHouse(builder.Configuration)
     .AddControllers();
-
-//TODO: Add exception handling middleware
 
 var app = builder.Build();
 
 app.UseRouting()
     .UseRouting()
     .UseAuthorization()
+    .UseExceptionHandlerWithDefaultMapping()
     .UseEndpoints(endpoints =>
     {
         endpoints.MapControllers();
@@ -40,4 +43,6 @@ if (environment == "Development")
 app.Run();
 
 // Needed for tests
-public partial class Program {}
+public partial class Program
+{
+}
