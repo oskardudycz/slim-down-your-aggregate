@@ -3,7 +3,7 @@
 //////////////////////////////////////
 
 export type WeakETag = `W/${string}`;
-export type ETag = WeakETag | string;
+export type ETag = string;
 
 export const WeakETagRegex = /W\/"(-?\d+.*)"/;
 
