@@ -1,6 +1,7 @@
-import { DeepReadonly, NonEmptyString, NonEmptyUuid } from '#core/typing';
+import { NonEmptyString, NonEmptyUuid } from '#core/typing';
+import { DeepReadonly } from 'ts-essentials';
 
 export type LanguageId = NonEmptyUuid<'LanguageId'>;
 export type LanguageName = NonEmptyString<'LanguageName'>;
 
-export type Language = DeepReadonly<{ Id: LanguageId; Name: LanguageName }>;
+export type Language = DeepReadonly<{ id: LanguageId; name: LanguageName }>;

@@ -1,9 +1,10 @@
-import { DeepReadonly, NonEmptyString, NonEmptyUuid } from '#core/typing';
+import { NonEmptyString, NonEmptyUuid } from '#core/typing';
+import { DeepReadonly } from 'ts-essentials';
 
 export type TranslatorId = NonEmptyUuid<'TranslatorId'>;
 export type TranslatorName = NonEmptyString<'TranslatorName'>;
 
 export type Translator = DeepReadonly<{
-  Id: TranslatorId;
-  Name: TranslatorName;
+  id: TranslatorId;
+  name: TranslatorName;
 }>;

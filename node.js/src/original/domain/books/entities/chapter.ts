@@ -1,6 +1,13 @@
-import { Brand, NonEmptyString, PositiveNumber } from '#core/typing';
+import {
+  Brand,
+  NonEmptyString,
+  PositiveNumber,
+  positiveNumber,
+} from '#core/typing';
 
 export type ChapterNumber = PositiveNumber<'ChapterNumber'>;
+export const chapterNumber = (number: number): ChapterNumber =>
+  positiveNumber(number);
 
 export type ChapterTitle = NonEmptyString<'ChapterTitle'>;
 

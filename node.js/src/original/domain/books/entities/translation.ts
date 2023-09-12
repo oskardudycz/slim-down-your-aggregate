@@ -1,4 +1,4 @@
-import { DeepReadonly } from '#core/typing';
+import { DeepReadonly } from 'ts-essentials';
 import { Language } from './language';
 import { Translator } from './translator';
 
