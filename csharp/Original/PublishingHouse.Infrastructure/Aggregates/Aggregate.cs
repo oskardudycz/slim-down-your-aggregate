@@ -2,24 +2,19 @@ namespace PublishingHouse.Core.Aggregates;
 
 public abstract class Aggregate<TKey>
 {
-    public TKey Id { get; protected set; }
+    public TKey Id { get; }
 
-    private List<IDomainEvent> _domainEvents = new();
+    private readonly List<IDomainEvent> domainEvents = new();
 
-    protected Aggregate(TKey id)
-    {
+    public IReadOnlyCollection<IDomainEvent> DomainEvents
+        => domainEvents.AsReadOnly();
+
+    protected Aggregate(TKey id) =>
         Id = id;
-    }
 
-    protected void AddDomainEvent(IDomainEvent domainEvent)
-    {
-        _domainEvents.Add(domainEvent);
-    }
+    protected void AddDomainEvent(IDomainEvent domainEvent) =>
+        domainEvents.Add(domainEvent);
 
-    public void ClearEvents()
-    {
-        _domainEvents.Clear();
-    }
-
-    public IReadOnlyCollection<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+    public void ClearEvents() =>
+        domainEvents.Clear();
 }

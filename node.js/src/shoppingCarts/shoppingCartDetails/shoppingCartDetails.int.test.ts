@@ -8,7 +8,7 @@ import {
   ShoppingCartStatus,
 } from './shoppingCartDetails';
 import { ShoppingCartEvent } from '../shoppingCart';
-import { PricedProductItem } from 'src/gist';
+import { PricedProductItem } from '../productItem';
 
 describe('Shopping Cart details', () => {
   let mongo: MongoClient;
