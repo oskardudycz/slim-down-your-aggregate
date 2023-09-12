@@ -1,3 +1,3 @@
-import { Brand } from 'src/original/infrastructure/typing';
+import { NonEmptyString } from '#core/typing';
 
-export type BookId = Brand<string, 'BookId'>;
+export type BookId = NonEmptyString<'BookId'>;
