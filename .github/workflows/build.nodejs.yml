@@ -1,0 +1,58 @@
+name: Build .NET version
+
+on:
+  # run it on push to the default repository branch
+  push:
+    branches: [ main ]
+    paths:
+      - "node.js/**"
+  # run it during pull request
+  pull_request:
+    paths:
+      - "node.js/**"
+
+defaults:
+  run:
+    working-directory: csharp
+
+jobs:
+  build:    
+    
+    strategy:
+      # define the test matrix
+      matrix:
+        # selected operation systems to run CI
+        os: [ubuntu-latest]
+        # selected node version to run CI
+        node-version: [18.x]
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+        
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          # use the node version defined in matrix above
+          node-version: ${{ matrix.node-version }}
+          
+      - name: Install NPM packages  
+        run: npm install
+        
+      - name: Run linting (ESlint and Prettier)
+        run: npm run lint
+        
+      - name: Build
+        run: npm run build:ts
+
+      - name: Start containers
+        run: docker-compose -f "docker-compose.yml" up -d
+            
+      - name: Run tests
+        run: npm test
+        
+      - name: Stop containers
+        if: always()
+        run: docker-compose -f "docker-compose.yml" down
