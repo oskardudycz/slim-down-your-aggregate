@@ -1,23 +1,26 @@
 import { DomainEvent } from '../events';
 
 export abstract class Aggregate<TKey> {
-  protected _domainEvents: DomainEvent[] = [];
+  #id: TKey;
+  #domainEvents: DomainEvent[] = [];
 
   public get id() {
-    return this._id;
+    return this.#id;
   }
 
   public get domainEvents() {
-    return [...this._domainEvents];
+    return [...this.#domainEvents];
   }
 
-  protected constructor(protected _id: TKey) {}
+  protected constructor(id: TKey) {
+    this.#id = id;
+  }
 
   protected addDomainEvent(domainEvent: DomainEvent) {
-    this._domainEvents = [...this._domainEvents, domainEvent];
+    this.#domainEvents = [...this.#domainEvents, domainEvent];
   }
 
   protected clearEvents() {
-    this._domainEvents = [];
+    this.#domainEvents = [];
   }
 }
