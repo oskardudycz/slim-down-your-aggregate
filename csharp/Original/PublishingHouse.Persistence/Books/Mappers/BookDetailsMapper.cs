@@ -10,9 +10,9 @@ public static class BookDetailsMapper
             entity.CurrentState.ToString(),
             entity.Title,
             new BookDetails.AuthorDetails(entity.Author.FirstName, entity.Author.LastName),
-            entity.Genre,
             entity.Publisher.Name,
             entity.Edition,
+            entity.Genre,
             entity.ISBN,
             entity.PublicationDate,
             entity.TotalPages,
@@ -26,6 +26,6 @@ public static class BookDetailsMapper
             entity.Reviewers.Select(r => r.Name).ToList(),
             entity.Chapters.Select(c => new BookDetails.ChapterDetails(c.Title, c.Content)).ToList(),
             entity.Translations.Select(t => new BookDetails.TranslationDetails(t.Translator.Name, t.Language.Name)).ToList(),
-            entity.Formats.Select(f => new BookDetails.Format(f.FormatType, f.TotalCopies, f.SoldCopies)).ToList()
+            entity.Formats.Select(f => new BookDetails.FormatDetails(f.FormatType, f.TotalCopies, f.SoldCopies)).ToList()
         );
 }
