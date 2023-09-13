@@ -22,6 +22,7 @@ import {
   ChapterAddedEvent,
 } from './events';
 import { IPublishingHouse } from './services/publishingHouse';
+import { IBookFactory } from './factories/bookFactory';
 
 export class Book extends Aggregate<BookId> {
   #currentState: State;
@@ -388,10 +389,10 @@ export class Book extends Aggregate<BookId> {
     bindingType?: NonEmptyString | null,
     summary?: NonEmptyString | null,
     committeeApproval?: CommitteeApproval | null,
-    reviewers?: Reviewer[],
-    chapters?: Chapter[],
-    translations?: Translation[],
-    formats?: Format[],
+    reviewers?: Reviewer[] | null,
+    chapters?: Chapter[] | null,
+    translations?: Translation[] | null,
+    formats?: Format[] | null,
   ) {
     super(id);
     this.#currentState = currentState;
@@ -414,6 +415,52 @@ export class Book extends Aggregate<BookId> {
     this.#translations = translations ?? [];
     this.#formats = formats ?? [];
   }
+
+  static BookFactory = class implements IBookFactory {
+    create(
+      bookId: BookId,
+      state: State,
+      title: Title,
+      author: Author,
+      publishingHouse: IPublishingHouse,
+      publisher: Publisher,
+      edition: PositiveNumber,
+      genre: Genre | null,
+      isbn: ISBN | null,
+      publicationDate: Date | null,
+      totalPages: PositiveNumber | null,
+      numberOfIllustrations: PositiveNumber | null,
+      bindingType: NonEmptyString | null,
+      summary: NonEmptyString | null,
+      committeeApproval: CommitteeApproval | null,
+      reviewers: Reviewer[] | null,
+      chapters: Chapter[] | null,
+      translations: Translation[] | null,
+      formats: Format[] | null,
+    ): Book {
+      return new Book(
+        bookId,
+        state,
+        title,
+        author,
+        publishingHouse,
+        publisher,
+        edition,
+        genre,
+        isbn,
+        publicationDate,
+        totalPages,
+        numberOfIllustrations,
+        bindingType,
+        summary,
+        committeeApproval,
+        reviewers,
+        chapters,
+        translations,
+        formats,
+      );
+    }
+  };
 }
 
 export enum State {
