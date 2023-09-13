@@ -96,7 +96,7 @@ export class Book extends Aggregate<BookId> {
     return [...this.#formats];
   }
 
-  static CreateDraft(
+  static createDraft(
     bookId: BookId,
     title: Title,
     author: Author,
