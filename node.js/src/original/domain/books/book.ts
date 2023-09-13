@@ -16,6 +16,11 @@ import {
   chapterNumber,
 } from './entities';
 import { BookId } from './entities/bookId';
+import {
+  BookMovedToEditingEvent,
+  BookPublishedEvent,
+  ChapterAddedEvent,
+} from './events';
 import { IPublishingHouse } from './services/publishingHouse';
 
 export class Book extends Aggregate<BookId> {
@@ -136,7 +141,15 @@ export class Book extends Aggregate<BookId> {
     );
     this.#chapters.push(chapter);
 
-    // this.addDomainEvent(new ChapterAddedEvent(this.id, chapter));
+    const event: ChapterAddedEvent = {
+      type: 'ChapterAddedEvent',
+      data: {
+        bookId: this.id,
+        chapter,
+      },
+    };
+
+    this.addDomainEvent(event);
   }
 
   moveToEditing(): void {
@@ -158,7 +171,14 @@ export class Book extends Aggregate<BookId> {
 
     this.#currentState = State.Editing;
 
-    // this.addDomainEvent(new BookMovedToEditingEvent(this.id));
+    const event: BookMovedToEditingEvent = {
+      type: 'BookMovedToEditingEvent',
+      data: {
+        bookId: this.id,
+      },
+    };
+
+    this.addDomainEvent(event);
   }
 
   addTranslation(translation: Translation): void {
@@ -314,7 +334,17 @@ export class Book extends Aggregate<BookId> {
 
     this.#currentState = State.Published;
 
-    // this.addDomainEvent(new BookPublishedEvent(this.id, this.#isbn, this.title, this.author));
+    const event: BookPublishedEvent = {
+      type: 'BookPublishedEvent',
+      data: {
+        bookId: this.id,
+        isbn: this.#isbn,
+        title: this.#title,
+        author: this.#author,
+      },
+    };
+
+    this.addDomainEvent(event);
   }
 
   moveToOutOfPrint(): void {
