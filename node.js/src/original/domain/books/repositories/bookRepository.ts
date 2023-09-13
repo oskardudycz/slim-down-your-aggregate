@@ -1,7 +1,8 @@
 import { Book } from '../book';
+import { BookId } from '../entities';
 
 export interface IBooksRepository {
-  findById(bookId: Book): Promise<Book | null>;
+  findById(bookId: BookId): Promise<Book | null>;
 
   add(book: Book): Promise<void>;
 

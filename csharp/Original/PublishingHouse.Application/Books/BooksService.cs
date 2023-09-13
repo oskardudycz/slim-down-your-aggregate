@@ -11,15 +11,15 @@ public class BooksService: IBooksService
 {
     public async Task CreateDraft(CreateDraftCommand command, CancellationToken ct)
     {
-        var (bookId, title, authorIdOrData, publisherId, positiveInt, genre) = command;
+        var (bookId, title, author, publisherId, edition, genre) = command;
 
         var book = Book.CreateDraft(
             bookId,
             title,
-            await authorProvider.GetOrCreate(authorIdOrData, ct),
+            await authorProvider.GetOrCreate(author, ct),
             (null as IPublishingHouse)!, //TODO: Consider making it smarter
             await publisherProvider.GetById(publisherId, ct),
-            positiveInt,
+            edition,
             genre
         );
 
