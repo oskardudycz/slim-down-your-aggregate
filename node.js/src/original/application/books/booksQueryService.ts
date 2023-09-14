@@ -1,14 +1,15 @@
 import { BookDetails } from 'src/original/domain/books/dtos';
-import { BookId } from 'src/original/domain/books/entities';
+import { FindDetailsByIdQuery } from './queries';
+import { IBooksQueryRepository } from 'src/original/domain/books/repositories';
 
-export interface IBookQueryService {
-  findDetailsById(bookId: BookId): Promise<BookDetails | null>;
+export interface IBooksQueryService {
+  findDetailsById(query: FindDetailsByIdQuery): Promise<BookDetails | null>;
 }
 
-export class BooksQueryService implements IBookQueryService {
-  constructor(private repository: IBookQueryService) {}
+export class BooksQueryService implements IBooksQueryService {
+  constructor(private repository: IBooksQueryRepository) {}
 
-  findDetailsById(bookId: BookId): Promise<BookDetails | null> {
-    return this.repository.findDetailsById(bookId);
+  findDetailsById(query: FindDetailsByIdQuery): Promise<BookDetails | null> {
+    return this.repository.findDetailsById(query.data.bookId);
   }
 }
