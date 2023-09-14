@@ -3,6 +3,8 @@ import { DeepReadonly } from 'ts-essentials';
 
 export type Author = DeepReadonly<{
   authorId: AuthorId;
+  firstName: AuthorFirstName;
+  lastName: AuthorFirstName;
 }>;
 
 export type AuthorId = NonEmptyString<'AuthorId'>;
