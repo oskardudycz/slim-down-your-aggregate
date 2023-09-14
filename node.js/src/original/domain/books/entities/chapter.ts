@@ -13,6 +13,10 @@ export type ChapterTitle = NonEmptyString<'ChapterTitle'>;
 
 export type ChapterContent = Brand<string, 'ChapterContent'>;
 
+export const chapterContent = (content: string) => {
+  return content as ChapterContent;
+};
+
 export class Chapter {
   readonly #number: ChapterNumber;
   #title: ChapterTitle;

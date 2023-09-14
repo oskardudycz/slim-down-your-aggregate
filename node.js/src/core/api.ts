@@ -1,7 +1,8 @@
-import express, { Application, Router } from 'express';
+import express, { Application } from 'express';
 import http from 'http';
+import { ApiController } from 'src/original/infrastructure/controllers';
 
-export const startAPI = (router: Router) => {
+export const getApplication = (...controllers: ApiController[]) => {
   const app: Application = express();
 
   app.set('etag', false);
@@ -11,11 +12,15 @@ export const startAPI = (router: Router) => {
       extended: true,
     }),
   );
-  app.use(router);
+  app.use(...controllers.map((c) => c.router));
 
+  return app;
+};
+
+export const startAPI = (app: Application, port = 5000) => {
   const server = http.createServer(app);
 
-  server.listen(5000);
+  server.listen(port);
 
   server.on('listening', () => {
     console.info('server up listening');
