@@ -4,6 +4,7 @@ import { PublisherEntity } from '../publishers/publisherEntity';
 
 export interface DocumentsCollection<T> {
   store: (id: string, obj: T) => Promise<boolean>;
+  patch: (id: string, obj: Partial<T>) => Promise<boolean>;
   delete: (id: string) => Promise<boolean>;
   get: (id: string) => Promise<T | null>;
 }
@@ -22,6 +23,13 @@ export const getDatabase = (): Database => {
       return {
         store: (id: string, obj: T): Promise<boolean> => {
           storage.set(toFullId(id), obj);
+
+          return Promise.resolve(true);
+        },
+        patch: (id: string, obj: Partial<T>): Promise<boolean> => {
+          const document = storage.get(toFullId(id)) as T;
+
+          storage.set(toFullId(id), { ...document, ...obj });
 
           return Promise.resolve(true);
         },

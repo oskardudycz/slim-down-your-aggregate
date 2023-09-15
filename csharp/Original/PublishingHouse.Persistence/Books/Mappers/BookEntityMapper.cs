@@ -95,7 +95,7 @@ public static class BookEntityMapper
                 .ToList(),
             Translations = book.Translations
                 .Select(t =>
-                    new ValueObjects.Translation
+                    new ValueObjects.TranslationVO
                     {
                         Language =
                             new LanguageEntity { Id = t.Language.Id.Value, Name = t.Language.Name.Value },
@@ -104,7 +104,7 @@ public static class BookEntityMapper
                 )
                 .ToList(),
             Formats = book.Formats
-                .Select(f => new Entities.Format
+                .Select(f => new Entities.FormatEntity
                 {
                     FormatType = f.FormatType.Value,
                     TotalCopies = f.TotalCopies.Value,
@@ -112,7 +112,7 @@ public static class BookEntityMapper
                 })
                 .ToList(),
             CommitteeApproval = book.CommitteeApproval != null
-                ? new ValueObjects.CommitteeApproval(
+                ? new ValueObjects.CommitteeApprovalVO(
                     book.CommitteeApproval.IsApproved,
                     book.CommitteeApproval.Feedback.Value
                 )
