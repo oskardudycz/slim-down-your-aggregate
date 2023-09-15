@@ -1,8 +1,8 @@
 namespace PublishingHouse.Persistence.Books.ValueObjects;
 
-public class CommitteeApproval
+public class CommitteeApprovalVO
 {
-    public CommitteeApproval(bool isApproved, string feedback)
+    public CommitteeApprovalVO(bool isApproved, string feedback)
     {
         IsApproved = isApproved;
         Feedback = feedback;

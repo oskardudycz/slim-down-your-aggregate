@@ -23,9 +23,9 @@ public class BookEntity
     public int? NumberOfIllustrations { get; set; }
     public string? BindingType { get; set; }
     public string? Summary { get; set; }
-    public CommitteeApproval? CommitteeApproval { get; set; }
+    public CommitteeApprovalVO? CommitteeApproval { get; set; }
     public required List<ReviewerEntity> Reviewers { get; set; } = new();
     public required List<ChapterEntity> Chapters { get; set; } = new();
-    public required List<Translation> Translations { get; set; } = new();
-    public required List<Format> Formats { get; set; } = new();
+    public required List<TranslationVO> Translations { get; set; } = new();
+    public required List<FormatEntity> Formats { get; set; } = new();
 }
