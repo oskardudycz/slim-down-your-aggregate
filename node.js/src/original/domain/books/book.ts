@@ -35,7 +35,7 @@ export class Book extends Aggregate<BookId> {
   #isbn: ISBN | null;
   #publicationDate: Date | null;
   #totalPages: PositiveNumber | null;
-  #numberOfIllustrations?: PositiveNumber | null;
+  #numberOfIllustrations: PositiveNumber | null;
   #bindingType: NonEmptyString | null;
   #summary: NonEmptyString | null;
   #committeeApproval: CommitteeApproval | null;
@@ -405,7 +405,7 @@ export class Book extends Aggregate<BookId> {
     this.#isbn = isbn ?? null;
     this.#publicationDate = publicationDate ?? null;
     this.#totalPages = totalPages ?? null;
-    this.#numberOfIllustrations = numberOfIllustrations;
+    this.#numberOfIllustrations = numberOfIllustrations ?? null;
     this.#bindingType = bindingType ?? null;
     this.#summary = summary ?? null;
     this.#committeeApproval = committeeApproval ?? null;
