@@ -15,6 +15,6 @@ export const configureBooks = () => {
       new AuthorProvider(orm),
       new PublisherProvider(orm),
     ),
-    queryService: new BooksQueryService(new BookQueryRepository()),
+    queryService: new BooksQueryService(new BookQueryRepository(orm)),
   };
 };

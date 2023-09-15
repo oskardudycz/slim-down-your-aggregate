@@ -18,7 +18,7 @@ export type BookEntity = {
   numberOfIllustrations: number | null;
   bindingType?: string | null;
   summary?: string | null;
-  cmmitteeApproval?: CommitteeApprovalVO | null;
+  committeeApproval?: CommitteeApprovalVO | null;
   reviewers: ReviewerEntity[];
   chapters: ChapterEntity[];
   translations: TranslationVO[];
@@ -26,9 +26,9 @@ export type BookEntity = {
 };
 
 export enum State {
-  Writing,
-  Editing,
-  Printing,
-  Published,
-  OutOfPrint,
+  Writing = 'Writing',
+  Editing = 'Editing',
+  Printing = 'Printing',
+  Published = 'Published',
+  OutOfPrint = 'OutOfPrint',
 }
