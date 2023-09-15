@@ -3,8 +3,8 @@ import { BookEntity } from '../books/bookEntity';
 import { PublisherEntity } from '../publishers/publisherEntity';
 
 export interface DocumentsCollection<T> {
-  store: (id: string, obj: T) => Promise<boolean>;
-  patch: (id: string, obj: Partial<T>) => Promise<boolean>;
+  store: (id: string, obj: T) => Promise<void>;
+  patch: (id: string, obj: Partial<T>) => Promise<void>;
   delete: (id: string) => Promise<boolean>;
   get: (id: string) => Promise<T | null>;
 }
@@ -21,17 +21,17 @@ export const getDatabase = (): Database => {
       const toFullId = (id: string) => `${name}-${id}`;
 
       return {
-        store: (id: string, obj: T): Promise<boolean> => {
+        store: (id: string, obj: T): Promise<void> => {
           storage.set(toFullId(id), obj);
 
-          return Promise.resolve(true);
+          return Promise.resolve();
         },
-        patch: (id: string, obj: Partial<T>): Promise<boolean> => {
+        patch: (id: string, obj: Partial<T>): Promise<void> => {
           const document = storage.get(toFullId(id)) as T;
 
           storage.set(toFullId(id), { ...document, ...obj });
 
-          return Promise.resolve(true);
+          return Promise.resolve();
         },
         delete: (id: string): Promise<boolean> => {
           storage.delete(toFullId(id));

@@ -1,4 +1,3 @@
-import { List } from 'immutable';
 import { State, Book } from '../book';
 import {
   Author,

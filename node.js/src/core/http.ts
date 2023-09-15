@@ -1,5 +1,5 @@
-import { NextFunction, Request, Response } from 'express';
-import { ETag, ETagErrors, toWeakETag } from './eTag';
+import { Request, Response } from 'express';
+import { ETag, ETagErrors } from './eTag';
 
 //////////////////////////////////////
 /// ETAG
