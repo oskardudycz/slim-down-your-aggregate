@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PublishingHouse.Persistence;
@@ -11,9 +12,11 @@ using PublishingHouse.Persistence;
 namespace PublishingHouse.Persistence.Migrations
 {
     [DbContext(typeof(PublishingHouseDbContext))]
-    partial class PublishingHouseDbContextModelSnapshot : ModelSnapshot
+    [Migration("20230918132345_Outbox")]
+    partial class Outbox
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

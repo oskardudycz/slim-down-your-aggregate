@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using PublishingHouse.Persistence.Authors;
 using PublishingHouse.Persistence.Books;
 using PublishingHouse.Persistence.Books.Entities;
+using PublishingHouse.Persistence.Core.Outbox;
 using PublishingHouse.Persistence.Languages;
 using PublishingHouse.Persistence.Publishers;
 using PublishingHouse.Persistence.Reviewers;
@@ -79,6 +80,10 @@ public class PublishingHouseDbContext: DbContext
                 sa.Property(p => p.Feedback);
                 sa.Property(p => p.IsApproved);
             });
+
+        modelBuilder.Entity<OutboxMessageEntity>()
+            .ToTable("Outbox")
+            .HasKey(p => p.Position);
     }
 }
 

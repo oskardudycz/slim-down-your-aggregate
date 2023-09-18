@@ -119,7 +119,7 @@ public static class BookEntityMapper
                 : null
         };
 
-    public static void MapTo(this Book book, BookEntity entity)
+    public static void UpdateFrom(this BookEntity entity, Book book)
     {
         entity.CurrentState = (BookEntity.State)book.CurrentState;
         entity.Title = book.Title.Value;

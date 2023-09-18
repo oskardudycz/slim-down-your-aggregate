@@ -4,52 +4,32 @@ using PublishingHouse.Books.Entities;
 using PublishingHouse.Books.Factories;
 using PublishingHouse.Books.Repositories;
 using PublishingHouse.Persistence.Books.Mappers;
+using PublishingHouse.Persistence.Core.Repositories;
 
 namespace PublishingHouse.Persistence.Books.Repositories;
 
-public class BooksRepository: IBooksRepository
+public class BooksRepository:
+    EntityFrameworkRepository<Book, BookId, BookEntity, PublishingHouseDbContext>,  IBooksRepository
 {
-    private readonly PublishingHouseDbContext dbContext;
     private readonly IBookFactory bookFactory;
 
-    public BooksRepository(PublishingHouseDbContext dbContext, IBookFactory bookFactory)
-    {
-        this.dbContext = dbContext;
+    public BooksRepository(PublishingHouseDbContext dbContext, IBookFactory bookFactory) : base(dbContext) =>
         this.bookFactory = bookFactory;
-    }
 
-    public async Task<Book?> FindById(BookId bookId, CancellationToken ct)
-    {
-        var book = await dbContext.Books
-            .AsNoTracking()
-            .Include(e => e.Author)
+    protected override IQueryable<BookEntity> Includes(DbSet<BookEntity> query) =>
+        query.Include(e => e.Author)
             .Include(e => e.Publisher)
             .Include(e => e.Reviewers)
             .Include(e => e.Chapters)
             .Include(e => e.Translations)
-            .Include(e => e.Formats)
-            .Where(e => e.Id == bookId.Value)
-            .SingleOrDefaultAsync(ct);
+            .Include(e => e.Formats);
 
-        return book?.MapToAggregate(bookFactory);
-    }
+    protected override Book MapToAggregate(BookEntity entity) =>
+        entity.MapToAggregate(bookFactory);
 
-    public Task Add(Book book, CancellationToken ct)
-    {
-        dbContext.Books.Add(book.MapToEntity(dbContext));
+    protected override BookEntity MapToEntity(Book aggregate) =>
+        aggregate.MapToEntity(DbContext);
 
-        return dbContext.SaveChangesAsync(ct);
-    }
-
-    public async Task Update(Book book, CancellationToken ct)
-    {
-        var local = await dbContext.Books.FindAsync(
-            new object?[] { book.Id.Value },
-            cancellationToken: ct
-            ) ?? throw new InvalidOperationException();
-
-        book.MapTo(local);
-
-        await dbContext.SaveChangesAsync(ct);
-    }
+    protected override void UpdateEntity(BookEntity entity, Book aggregate) =>
+        entity.UpdateFrom(aggregate);
 }
