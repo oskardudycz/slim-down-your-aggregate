@@ -4,13 +4,11 @@
         <TargetFramework>net7.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <RootNamespace>PublishingHouse</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\PublishingHouse.Infrastructure\PublishingHouse.Infrastructure.csproj"/>
     </ItemGroup>
-
-
-
 
 </Project>

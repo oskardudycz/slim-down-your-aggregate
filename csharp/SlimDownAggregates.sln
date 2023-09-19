@@ -7,7 +7,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Original", "Original", "{8E
 		docker-compose.yml = docker-compose.yml
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PublishingHouse", "Original\PublishingHouse\PublishingHouse.csproj", "{7DF6037A-72E1-4BAF-A70D-F2A1FD6BC1B6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PublishingHouse.Domain", "Original\PublishingHouse.Domain\PublishingHouse.Domain.csproj", "{7DF6037A-72E1-4BAF-A70D-F2A1FD6BC1B6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PublishingHouse.Api", "Original\PublishingHouse.Api\PublishingHouse.Api.csproj", "{742D59B3-C804-4392-9FDD-45702A7806EA}"
 EndProject
