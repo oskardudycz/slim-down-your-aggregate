@@ -1,7 +1,5 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SlimDownYourAggregates.Tests", "SlimDownYourAggregates.Tests\SlimDownYourAggregates.Tests.csproj", "{51B2B9C5-0019-435F-A8EB-A728B103CA25}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Original", "Original", "{8EC0A473-B12D-41DF-82B8-FFC574A7BB1C}"
 	ProjectSection(SolutionItems) = preProject
 		docker-compose.yml = docker-compose.yml
@@ -19,16 +17,29 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PublishingHouse.Infrastruct
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PublishingHouse.Persistence", "Original\PublishingHouse.Persistence\PublishingHouse.Persistence.csproj", "{F089FC51-1ACF-4D0B-98AB-2A415CB403C4}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Slimmed", "Slimmed", "{30800B20-8E06-4E43-AF00-096E3630EFC6}"
+	ProjectSection(SolutionItems) = preProject
+		docker-compose.yml = docker-compose.yml
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PublishingHouse.Domain", "Slimmed\PublishingHouse.Domain\PublishingHouse.Domain.csproj", "{56697652-4014-4611-BF57-58A9F753FDFB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PublishingHouse.Infrastructure", "Slimmed\PublishingHouse.Infrastructure\PublishingHouse.Infrastructure.csproj", "{015B1859-4274-42E5-A61C-C62F64ABA651}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PublishingHouse.Persistence", "Slimmed\PublishingHouse.Persistence\PublishingHouse.Persistence.csproj", "{E047BB02-29FD-40E8-AEA9-4A06315054A6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PublishingHouse.Application", "Slimmed\PublishingHouse.Application\PublishingHouse.Application.csproj", "{B4C0FA73-A552-4DE4-92C3-DF91D6FCF0D9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PublishingHouse.Api", "Slimmed\PublishingHouse.Api\PublishingHouse.Api.csproj", "{D77023CF-A993-4940-A568-B507B2516FFE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PublishingHouse.Api.Tests", "Slimmed\PublishingHouse.Api.Tests\PublishingHouse.Api.Tests.csproj", "{2767C5E3-DAF0-4C02-B82F-8B8FEF11A5AF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{51B2B9C5-0019-435F-A8EB-A728B103CA25}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{51B2B9C5-0019-435F-A8EB-A728B103CA25}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{51B2B9C5-0019-435F-A8EB-A728B103CA25}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{51B2B9C5-0019-435F-A8EB-A728B103CA25}.Release|Any CPU.Build.0 = Release|Any CPU
 		{7DF6037A-72E1-4BAF-A70D-F2A1FD6BC1B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{7DF6037A-72E1-4BAF-A70D-F2A1FD6BC1B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7DF6037A-72E1-4BAF-A70D-F2A1FD6BC1B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -53,6 +64,30 @@ Global
 		{F089FC51-1ACF-4D0B-98AB-2A415CB403C4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F089FC51-1ACF-4D0B-98AB-2A415CB403C4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F089FC51-1ACF-4D0B-98AB-2A415CB403C4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{56697652-4014-4611-BF57-58A9F753FDFB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{56697652-4014-4611-BF57-58A9F753FDFB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{56697652-4014-4611-BF57-58A9F753FDFB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{56697652-4014-4611-BF57-58A9F753FDFB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{015B1859-4274-42E5-A61C-C62F64ABA651}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{015B1859-4274-42E5-A61C-C62F64ABA651}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{015B1859-4274-42E5-A61C-C62F64ABA651}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{015B1859-4274-42E5-A61C-C62F64ABA651}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E047BB02-29FD-40E8-AEA9-4A06315054A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E047BB02-29FD-40E8-AEA9-4A06315054A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E047BB02-29FD-40E8-AEA9-4A06315054A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E047BB02-29FD-40E8-AEA9-4A06315054A6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B4C0FA73-A552-4DE4-92C3-DF91D6FCF0D9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4C0FA73-A552-4DE4-92C3-DF91D6FCF0D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4C0FA73-A552-4DE4-92C3-DF91D6FCF0D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4C0FA73-A552-4DE4-92C3-DF91D6FCF0D9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D77023CF-A993-4940-A568-B507B2516FFE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D77023CF-A993-4940-A568-B507B2516FFE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D77023CF-A993-4940-A568-B507B2516FFE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D77023CF-A993-4940-A568-B507B2516FFE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2767C5E3-DAF0-4C02-B82F-8B8FEF11A5AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2767C5E3-DAF0-4C02-B82F-8B8FEF11A5AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2767C5E3-DAF0-4C02-B82F-8B8FEF11A5AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2767C5E3-DAF0-4C02-B82F-8B8FEF11A5AF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{7DF6037A-72E1-4BAF-A70D-F2A1FD6BC1B6} = {8EC0A473-B12D-41DF-82B8-FFC574A7BB1C}
@@ -61,5 +96,11 @@ Global
 		{69040C7A-028E-4FF5-87A1-D8ABB1E29CA1} = {8EC0A473-B12D-41DF-82B8-FFC574A7BB1C}
 		{999E1D8C-A504-4C6C-BD8F-65CB5D9FD5D5} = {8EC0A473-B12D-41DF-82B8-FFC574A7BB1C}
 		{F089FC51-1ACF-4D0B-98AB-2A415CB403C4} = {8EC0A473-B12D-41DF-82B8-FFC574A7BB1C}
+		{56697652-4014-4611-BF57-58A9F753FDFB} = {30800B20-8E06-4E43-AF00-096E3630EFC6}
+		{015B1859-4274-42E5-A61C-C62F64ABA651} = {30800B20-8E06-4E43-AF00-096E3630EFC6}
+		{E047BB02-29FD-40E8-AEA9-4A06315054A6} = {30800B20-8E06-4E43-AF00-096E3630EFC6}
+		{B4C0FA73-A552-4DE4-92C3-DF91D6FCF0D9} = {30800B20-8E06-4E43-AF00-096E3630EFC6}
+		{D77023CF-A993-4940-A568-B507B2516FFE} = {30800B20-8E06-4E43-AF00-096E3630EFC6}
+		{2767C5E3-DAF0-4C02-B82F-8B8FEF11A5AF} = {30800B20-8E06-4E43-AF00-096E3630EFC6}
 	EndGlobalSection
 EndGlobal

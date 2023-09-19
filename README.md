@@ -9,6 +9,8 @@ See the original implementation in the:
 
 We'll be doing multiple transitions step by step to make it more focused on the business logic and make it smaller but more precise.
 
+We'll be working on the copy of original version located in the slimmed folder
+
 ## Prerequisities
 
 ### C#

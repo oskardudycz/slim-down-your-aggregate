@@ -12,7 +12,7 @@ import {
   toFindDetailsByIdQuery,
 } from '../requests';
 import { nonEmptyString } from '#core/typing';
-import { BookId } from 'src/original/domain/books/entities';
+import { BookId } from '../../domain/books/entities';
 import { sendCreated } from '../core/http';
 
 export class BooksController extends ApiController {
