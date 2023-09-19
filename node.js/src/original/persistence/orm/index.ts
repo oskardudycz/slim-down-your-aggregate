@@ -1,3 +1,5 @@
+import { NotFoundError } from '#core/errors';
+
 export interface EntitiesCollection<T> {
   add: (id: string, obj: T) => void;
   update: (id: string, obj: T) => void;
@@ -24,7 +26,7 @@ export const getDatabase = (): Database => {
       return {
         add: (id: string, obj: T): void => {
           if (unitOfWork.has(id))
-            throw new Error(
+            throw NotFoundError(
               `Entity with id ${id} already exsists in table ${name}!`,
             );
 
@@ -44,7 +46,9 @@ export const getDatabase = (): Database => {
         findById: (id: string): Promise<T | null> => {
           const document = unitOfWork.get(toFullId(id));
 
-          return Promise.resolve(JSON.parse(JSON.stringify(document)) as T);
+          return Promise.resolve(
+            document ? (JSON.parse(JSON.stringify(document)) as T) : null,
+          );
         },
       };
     },

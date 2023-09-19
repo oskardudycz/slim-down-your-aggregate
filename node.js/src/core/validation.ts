@@ -2,6 +2,8 @@
 /// Validation
 //////////////////////////////////////
 
+import { ValidationError } from './errors';
+
 export const enum ValidationErrors {
   NOT_A_NONEMPTY_STRING = 'NOT_A_NONEMPTY_STRING',
   NOT_A_POSITIVE_NUMBER = 'NOT_A_POSITIVE_NUMBER',
@@ -10,7 +12,7 @@ export const enum ValidationErrors {
 
 export const assertNotEmptyString = (value: unknown): string => {
   if (typeof value !== 'string' || value.length === 0) {
-    throw ValidationErrors.NOT_A_NONEMPTY_STRING;
+    throw ValidationError(ValidationErrors.NOT_A_NONEMPTY_STRING);
   }
   return value;
 };
@@ -18,12 +20,13 @@ export const assertNotEmptyString = (value: unknown): string => {
 export const assertPositiveNumber = (
   value: string | number | undefined,
 ): number => {
-  if (value === undefined) throw ValidationErrors.NOT_A_POSITIVE_NUMBER;
+  if (value === undefined)
+    throw ValidationError(ValidationErrors.NOT_A_POSITIVE_NUMBER);
 
   const number = typeof value === 'number' ? value : Number(value);
 
   if (number <= 0) {
-    throw ValidationErrors.NOT_A_POSITIVE_NUMBER;
+    throw ValidationError(ValidationErrors.NOT_A_POSITIVE_NUMBER);
   }
   return number;
 };
@@ -35,7 +38,7 @@ export const assertBigInt = (value: string): bigint => {
 export const assertUnsignedBigInt = (value: string): bigint => {
   const number = assertBigInt(value);
   if (number < 0) {
-    throw ValidationErrors.NOT_AN_UNSIGNED_BIGINT;
+    throw ValidationError(ValidationErrors.NOT_AN_UNSIGNED_BIGINT);
   }
   return number;
 };

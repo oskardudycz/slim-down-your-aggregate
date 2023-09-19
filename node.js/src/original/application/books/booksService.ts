@@ -6,6 +6,7 @@ import { IAuthorProvider } from 'src/original/domain/books/authors';
 import { IPublisherProvider } from 'src/original/domain/books/publishers/publisherProvider';
 import { Book } from 'src/original/domain/books/book';
 import { IPublishingHouse } from 'src/original/domain/books/services';
+import { NotFoundError } from '#core/errors';
 
 export interface IBooksService {
   createDraft(command: CreateDraftCommand): Promise<void>;
@@ -36,7 +37,7 @@ export class BooksService implements IBooksService {
     const book = await this.repository.findById(bookId);
 
     // TODO: Add Explicit Not Found exception
-    if (!book) throw new Error("Book doesn't exist");
+    if (!book) throw NotFoundError("Book doesn't exist");
 
     book.addChapter(chapterTitle, chapterContent);
 
@@ -47,7 +48,7 @@ export class BooksService implements IBooksService {
     const book = await this.repository.findById(command.data.bookId);
 
     // TODO: Add Explicit Not Found exception
-    if (!book) throw new Error("Book doesn't exist");
+    if (!book) throw NotFoundError("Book doesn't exist");
 
     book.moveToEditing();
 

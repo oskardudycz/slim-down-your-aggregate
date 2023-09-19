@@ -1,6 +1,8 @@
-import express, { Application } from 'express';
+import express, { Application, NextFunction, Request, Response } from 'express';
 import http from 'http';
 import { ApiController } from 'src/original/infrastructure/controllers';
+import 'express-async-errors';
+import { problemDetailsMiddleware } from './problemDetailsMiddleware';
 
 export const getApplication = (...controllers: ApiController[]) => {
   const app: Application = express();
@@ -12,7 +14,10 @@ export const getApplication = (...controllers: ApiController[]) => {
       extended: true,
     }),
   );
+
   app.use(...controllers.map((c) => c.router));
+
+  app.use(problemDetailsMiddleware);
 
   return app;
 };

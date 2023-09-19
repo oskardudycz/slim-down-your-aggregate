@@ -1,11 +1,10 @@
-import { startAPI } from '#core/api';
 import initApp from './app';
+import { startAPI } from './core/api';
+import 'express-async-errors';
 
 //////////////////////////////////////////////////////////
 /// API
 //////////////////////////////////////////////////////////
-
-//process.once('SIGTERM', disconnectFromMongoDB);
 
 try {
   const app = initApp();

@@ -23,6 +23,7 @@ import {
 } from './events';
 import { IPublishingHouse } from './services/publishingHouse';
 import { IBookFactory } from './factories/bookFactory';
+import { InvalidStateError } from '#core/errors';
 
 export class Book extends Aggregate<BookId> {
   #currentState: State;
@@ -119,7 +120,7 @@ export class Book extends Aggregate<BookId> {
 
   addChapter(title: ChapterTitle, content: ChapterContent): void {
     if (this.#chapters.some((chap) => chap.title === title)) {
-      throw new Error(`Chapter with title ${title} already exists.`);
+      throw InvalidStateError(`Chapter with title ${title} already exists.`);
     }
 
     if (
@@ -128,7 +129,7 @@ export class Book extends Aggregate<BookId> {
         `Chapter ${this.#chapters.length}`,
       )
     ) {
-      throw new Error(
+      throw InvalidStateError(
         `Chapter should be added in sequence. The title of the next chapter should be 'Chapter ${
           this.#chapters.length + 1
         }'`,
@@ -155,17 +156,19 @@ export class Book extends Aggregate<BookId> {
 
   moveToEditing(): void {
     if (this.#currentState !== State.Writing) {
-      throw new Error('Cannot move to Editing state from the current state.');
+      throw InvalidStateError(
+        'Cannot move to Editing state from the current state.',
+      );
     }
 
     if (this.#chapters.length < 1) {
-      throw new Error(
+      throw InvalidStateError(
         'A book must have at least one chapter to move to the Editing state.',
       );
     }
 
     if (this.#genre === null) {
-      throw new Error(
+      throw InvalidStateError(
         'Book can be moved to editing only when genre is specified',
       );
     }
@@ -184,13 +187,13 @@ export class Book extends Aggregate<BookId> {
 
   addTranslation(translation: Translation): void {
     if (this.#currentState !== State.Editing) {
-      throw new Error(
+      throw InvalidStateError(
         'Cannot add translation of a book that is not in the Editing state.',
       );
     }
 
     if (this.#translations.length >= 5) {
-      throw new Error(
+      throw InvalidStateError(
         'Cannot add more translations. Maximum 5 translations are allowed.',
       );
     }
@@ -200,13 +203,13 @@ export class Book extends Aggregate<BookId> {
 
   addFormat(format: Format): void {
     if (this.#currentState !== State.Editing) {
-      throw new Error(
+      throw InvalidStateError(
         'Cannot add format of a book that is not in the Editing state.',
       );
     }
 
     if (this.#formats.some((f) => f.formatType === format.formatType)) {
-      throw new Error(`Format ${format.formatType} already exists.`);
+      throw InvalidStateError(`Format ${format.formatType} already exists.`);
     }
 
     this.#formats.push(format);
@@ -214,7 +217,7 @@ export class Book extends Aggregate<BookId> {
 
   removeFormat(format: Format): void {
     if (this.#currentState !== State.Editing) {
-      throw new Error(
+      throw InvalidStateError(
         'Cannot remove format of a book that is not in the Editing state.',
       );
     }
@@ -223,7 +226,7 @@ export class Book extends Aggregate<BookId> {
       (f) => f.formatType === format.formatType,
     );
     if (!existingFormat) {
-      throw new Error(`Format ${format.formatType} does not exist.`);
+      throw InvalidStateError(`Format ${format.formatType} does not exist.`);
     }
 
     this.#formats = this.#formats.filter(
@@ -233,14 +236,14 @@ export class Book extends Aggregate<BookId> {
 
   addReviewer(reviewer: Reviewer): void {
     if (this.#currentState !== State.Editing) {
-      throw new Error(
+      throw InvalidStateError(
         'Cannot approve a book that is not in the Editing state.',
       );
     }
 
     if (this.#reviewers.some((r) => r.name === reviewer.name)) {
       const reviewerName: string = reviewer.name;
-      throw new Error(`${reviewerName} is already a reviewer.`);
+      throw InvalidStateError(`${reviewerName} is already a reviewer.`);
     }
 
     this.#reviewers.push(reviewer);
@@ -248,13 +251,13 @@ export class Book extends Aggregate<BookId> {
 
   approve(committeeApproval: CommitteeApproval): void {
     if (this.#currentState !== State.Editing) {
-      throw new Error(
+      throw InvalidStateError(
         'Cannot approve a book that is not in the Editing state.',
       );
     }
 
     if (this.#reviewers.length < 3) {
-      throw new Error(
+      throw InvalidStateError(
         'A book cannot be approved unless it has been reviewed by at least three reviewers.',
       );
     }
@@ -264,13 +267,13 @@ export class Book extends Aggregate<BookId> {
 
   setISBN(isbn: ISBN): void {
     if (this.#currentState !== State.Editing) {
-      throw new Error(
+      throw InvalidStateError(
         'Cannot approve a book that is not in the Editing state.',
       );
     }
 
     if (this.#isbn !== null) {
-      throw new Error('Cannot change already set ISBN.');
+      throw InvalidStateError('Cannot change already set ISBN.');
     }
 
     this.#isbn = isbn;
@@ -278,36 +281,38 @@ export class Book extends Aggregate<BookId> {
 
   moveToPrinting(): void {
     if (this.#currentState !== State.Editing) {
-      throw new Error('Cannot move to printing from the current state.');
+      throw InvalidStateError(
+        'Cannot move to printing from the current state.',
+      );
     }
 
     if (this.#chapters.length < 1) {
-      throw new Error(
+      throw InvalidStateError(
         'A book must have at least one chapter to move to the printing state.',
       );
     }
 
     if (this.#committeeApproval === null) {
-      throw new Error(
+      throw InvalidStateError(
         'Cannot move to printing state until the book has been approved.',
       );
     }
 
     if (this.#reviewers.length < 3) {
-      throw new Error(
+      throw InvalidStateError(
         'A book cannot be moved to the Printing state unless it has been reviewed by at least three reviewers.',
       );
     }
 
     if (this.#genre === null) {
-      throw new Error(
+      throw InvalidStateError(
         'Book can be moved to the printing only when genre is specified',
       );
     }
 
     // Check for genre limit
     if (!this.#publishingHouse.isGenreLimitReached(this.#genre)) {
-      throw new Error(
+      throw InvalidStateError(
         'Cannot move to printing until the genre limit is reached.',
       );
     }
@@ -320,15 +325,17 @@ export class Book extends Aggregate<BookId> {
       this.#currentState !== State.Printing ||
       this.#translations.length < 5
     ) {
-      throw new Error('Cannot move to Published state from the current state.');
+      throw InvalidStateError(
+        'Cannot move to Published state from the current state.',
+      );
     }
 
     if (this.#isbn === null) {
-      throw new Error('Cannot move to Published state without ISBN.');
+      throw InvalidStateError('Cannot move to Published state without ISBN.');
     }
 
     if (this.#reviewers.length < 3) {
-      throw new Error(
+      throw InvalidStateError(
         'A book cannot be moved to the Published state unless it has been reviewed by at least three reviewers.',
       );
     }
@@ -350,7 +357,7 @@ export class Book extends Aggregate<BookId> {
 
   moveToOutOfPrint(): void {
     if (this.#currentState !== State.Published) {
-      throw new Error(
+      throw InvalidStateError(
         'Cannot move to Out of Print state from the current state.',
       );
     }
@@ -365,7 +372,7 @@ export class Book extends Aggregate<BookId> {
     );
 
     if (totalSoldCopies / totalCopies > 0.1) {
-      throw new Error(
+      throw InvalidStateError(
         'Cannot move to Out of Print state if more than 10% of total copies are unsold.',
       );
     }

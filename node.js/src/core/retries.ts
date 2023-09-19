@@ -2,6 +2,8 @@
 /// Retries
 //////////////////////////////////////
 
+import { InvalidOperationError } from './errors';
+
 export type RetryOptions = Readonly<{
   maxRetries?: number;
   delay?: number;
@@ -35,7 +37,7 @@ export const retryPromise = async <T = never>(
       if (!shouldRetry(error) || retryCount == maxRetries) {
         console.error(`[retry] Exceeded max retry count, throwing:`);
         console.error(error);
-        throw error;
+        throw InvalidOperationError(error as Error);
       }
 
       const sleepTime = Math.pow(2, retryCount) * delay + Math.random() * delay;
@@ -50,5 +52,5 @@ export const retryPromise = async <T = never>(
     }
   } while (retryCount != maxRetries);
 
-  throw '[retry] Exceeded max retry count';
+  throw InvalidOperationError('[retry] Exceeded max retry count');
 };

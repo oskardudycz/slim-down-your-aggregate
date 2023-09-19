@@ -11,14 +11,22 @@ export interface PublishingHouseOrm extends Database {
   outbox: EntitiesCollection<OutboxMessageEntity>;
 }
 
-export const publishingHouseOrm = (): PublishingHouseOrm => {
+export const publishingHouseOrm = (
+  seed?: (orm: PublishingHouseOrm) => void,
+): PublishingHouseOrm => {
   const database = getDatabase();
 
-  return {
+  const orm = {
     ...database,
     authors: database.table<AuthorEntity>('authors'),
     books: database.table<BookEntity>('books'),
     publishers: database.table<PublisherEntity>('publishers'),
     outbox: database.table<OutboxMessageEntity>('outbox'),
   };
+
+  if (seed) {
+    seed(orm);
+  }
+
+  return orm;
 };

@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response, Router } from 'express';
+import { IRouter, Request, Response } from 'express';
 import { v4 as uuid } from 'uuid';
 import { ApiController } from '../../infrastructure/controllers';
 import { IBooksService } from '../../application/books/booksService';
@@ -13,7 +13,7 @@ import {
 } from '../requests';
 import { nonEmptyString } from '#core/typing';
 import { BookId } from 'src/original/domain/books/entities';
-import { sendCreated } from '#core/http';
+import { sendCreated } from '../core/http';
 
 export class BooksController extends ApiController {
   constructor(
@@ -23,80 +23,63 @@ export class BooksController extends ApiController {
     super();
   }
 
-  protected routes(router: Router): void {
-    router.post('/api/books/', this.createDraft);
-    router.post('/api/books/:bookId/chapters', this.addChapter);
-    router.post('/api/books/:bookId/move-to-editing', this.moveToEditing);
-    router.get('/api/books/:bookId', this.findDetailsById);
+  protected routes(router: IRouter): void {
+    router.post('/api/books/', (req, res) => this.createDraft(req, res));
+    router.post(
+      '/api/books/:bookId/chapters',
+      async (req, res) => await this.addChapter(req, res),
+    );
+    router.post('/api/books/:bookId/move-to-editing', (req, res) =>
+      this.moveToEditing(req, res),
+    );
+    router.get(
+      '/api/books/:bookId',
+      async (req, res) => await this.findDetailsById(req, res),
+    );
   }
 
   public createDraft = async (
     request: CreateDraftRequest,
     response: Response,
-    next: NextFunction,
   ) => {
-    try {
-      const bookId: BookId = nonEmptyString(uuid());
+    const bookId: BookId = nonEmptyString(uuid());
 
-      const command = toCreateDraftCommand(bookId, request);
+    const command = toCreateDraftCommand(bookId, request);
 
-      await this.booksService.createDraft(command);
+    await this.booksService.createDraft(command);
 
-      sendCreated(response, bookId);
-    } catch (error) {
-      console.error(error);
-      next(error);
-    }
+    sendCreated(response, bookId);
   };
 
   public addChapter = async (
     request: AddChapterRequest,
     response: Response,
-    next: NextFunction,
   ) => {
-    try {
-      const command = toAddChapterCommand(request);
+    const command = toAddChapterCommand(request);
 
-      await this.booksService.addChapter(command);
+    await this.booksService.addChapter(command);
 
-      response.sendStatus(204);
-    } catch (error) {
-      console.error(error);
-      next(error);
-    }
+    response.sendStatus(204);
   };
 
   public moveToEditing = async (
     request: AddChapterRequest,
     response: Response,
-    next: NextFunction,
   ) => {
-    try {
-      const command = toMoveToEditingCommand(request);
+    const command = toMoveToEditingCommand(request);
 
-      await this.booksService.moveToEditing(command);
+    await this.booksService.moveToEditing(command);
 
-      response.sendStatus(204);
-    } catch (error) {
-      console.error(error);
-      next(error);
-    }
+    response.sendStatus(204);
   };
 
-  private findDetailsById = async (
-    request: Request,
-    response: Response,
-    next: NextFunction,
-  ) => {
-    try {
-      const query = toFindDetailsByIdQuery(request);
+  private findDetailsById = async (request: Request, response: Response) => {
+    const query = toFindDetailsByIdQuery(request);
 
-      const result = await this.bookQueryService.findDetailsById(query);
+    const result = await this.bookQueryService.findDetailsById(query);
 
-      response.send(result);
-    } catch (error) {
-      console.error(error);
-      next(error);
-    }
+    if (!result) response.sendStatus(404);
+
+    response.send(result);
   };
 }

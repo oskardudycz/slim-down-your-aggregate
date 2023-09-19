@@ -1,6 +1,6 @@
-import { getApplication } from '#core/api';
 import { configurePublishingHouse } from '../application';
 import { BooksController } from './controllers';
+import { getApplication } from './core/api';
 
 const initApp = () => {
   const config = configurePublishingHouse();
