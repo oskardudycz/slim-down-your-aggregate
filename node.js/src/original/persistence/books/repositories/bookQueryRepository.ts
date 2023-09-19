@@ -1,13 +1,13 @@
 import { BookDetails } from 'src/original/domain/books/dtos';
 import { BookId } from 'src/original/domain/books/entities';
 import { IBooksQueryRepository } from 'src/original/domain/books/repositories';
-import { ORM } from '../../orm';
+import { PublishingHouseOrm } from '../../publishingHouseOrm';
 
 export class BookQueryRepository implements IBooksQueryRepository {
-  constructor(private orm: ORM) {}
+  constructor(private orm: PublishingHouseOrm) {}
 
   async findDetailsById(bookId: BookId): Promise<BookDetails | null> {
-    const entity = await this.orm.books.get(bookId);
+    const entity = await this.orm.books.findById(bookId);
 
     if (entity === null) return null;
 

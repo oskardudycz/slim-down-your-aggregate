@@ -1,29 +1,26 @@
 import { Book } from 'src/original/domain/books/book';
 import { BookId } from 'src/original/domain/books/entities';
 import { IBooksRepository } from 'src/original/domain/books/repositories';
-import { ORM } from '../../orm';
 import { IBookFactory } from 'src/original/domain/books/factories';
 import { bookMapper } from '../../mappers/bookMapper';
+import { PublishingHouseOrm } from '../../publishingHouseOrm';
+import { BookEntity } from '..';
+import { OrmRepository } from '../../core/repositories/ormRepository';
 
-export class BooksRepository implements IBooksRepository {
+export class BooksRepository
+  extends OrmRepository<Book, BookId, BookEntity, PublishingHouseOrm>
+  implements IBooksRepository
+{
   constructor(
-    private orm: ORM,
+    orm: PublishingHouseOrm,
     private bookFactory: IBookFactory,
-  ) {}
-
-  async findById(bookId: BookId): Promise<Book | null> {
-    const entity = await this.orm.books.get(bookId);
-
-    if (entity === null) return null;
-
-    return bookMapper.mapFromEntity(entity, this.bookFactory);
+  ) {
+    super(orm, orm.books);
   }
 
-  add(book: Book): Promise<void> {
-    return this.orm.books.store(book.id, bookMapper.mapToEntity(book));
-  }
+  protected mapToAggregate = (entity: BookEntity): Book =>
+    bookMapper.mapFromEntity(entity, this.bookFactory);
 
-  update(book: Book): Promise<void> {
-    return this.orm.books.store(book.id, bookMapper.mapToEntity(book));
-  }
+  protected mapToEntity = (aggregate: Book): BookEntity =>
+    bookMapper.mapToEntity(aggregate);
 }

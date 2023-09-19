@@ -37,12 +37,12 @@ public abstract class EntityFrameworkRepository<TAggregate, TKey, TEntity, TDbCo
 
     public async Task Update(TAggregate aggregate, CancellationToken ct)
     {
-        var local = await DbContext.Set<TEntity>().FindAsync(
+        var entity = await DbContext.Set<TEntity>().FindAsync(
             new object?[] { aggregate.Id.Value },
             cancellationToken: ct
         ) ?? throw new InvalidOperationException();
 
-        UpdateEntity(local, aggregate);
+        UpdateEntity(entity, aggregate);
         ScheduleOutbox(aggregate.DomainEvents);
 
         await DbContext.SaveChangesAsync(ct);

@@ -20,7 +20,7 @@ export abstract class Aggregate<TKey> {
     this.#domainEvents = [...this.#domainEvents, domainEvent];
   }
 
-  protected clearEvents() {
+  public clearEvents() {
     this.#domainEvents = [];
   }
 }

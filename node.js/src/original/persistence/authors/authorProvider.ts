@@ -8,11 +8,11 @@ import {
   AuthorFirstName,
   AuthorId,
 } from 'src/original/domain/books/entities';
-import { ORM } from '../orm';
 import { nonEmptyString } from '#core/typing';
+import { PublishingHouseOrm } from '../publishingHouseOrm';
 
 export class AuthorProvider implements IAuthorProvider {
-  constructor(private orm: ORM) {}
+  constructor(private orm: PublishingHouseOrm) {}
 
   async getOrCreate(authorIdOrData: AuthorIdOrData): Promise<Author> {
     if ('firstName' in authorIdOrData) {
@@ -23,7 +23,7 @@ export class AuthorProvider implements IAuthorProvider {
       const lastName: AuthorFirstName = nonEmptyString(
         authorIdOrData.firstName,
       );
-      await this.orm.authors.store(authorId, {
+      await this.orm.authors.add(authorId, {
         id: authorId,
         firstName,
         lastName,
@@ -31,7 +31,7 @@ export class AuthorProvider implements IAuthorProvider {
 
       return { authorId, firstName, lastName };
     } else {
-      const entity = await this.orm.authors.get(authorIdOrData);
+      const entity = await this.orm.authors.findById(authorIdOrData);
 
       if (!entity) throw Error(`Author with id ${authorIdOrData} not found`);
 

@@ -1,63 +1,57 @@
-import { AuthorEntity } from '../authors';
-import { BookEntity } from '../books/bookEntity';
-import { PublisherEntity } from '../publishers/publisherEntity';
-
-export interface DocumentsCollection<T> {
-  store: (id: string, obj: T) => Promise<void>;
-  patch: (id: string, obj: Partial<T>) => Promise<void>;
-  delete: (id: string) => Promise<boolean>;
-  get: (id: string) => Promise<T | null>;
+export interface EntitiesCollection<T> {
+  add: (id: string, obj: T) => void;
+  update: (id: string, obj: T) => void;
+  patch: (id: string, obj: Partial<T>) => void;
+  delete: (id: string) => boolean;
+  findById: (id: string) => Promise<T | null>;
 }
 
 export interface Database {
-  collection: <T>(name: string) => DocumentsCollection<T>;
+  table: <T>(name: string) => EntitiesCollection<T>;
+
+  saveChanges(): Promise<void>;
 }
 
 export const getDatabase = (): Database => {
-  const storage = new Map<string, unknown>();
+  let storage = new Map<string, unknown>();
+
+  const unitOfWork = storage;
 
   return {
-    collection: <T>(name: string): DocumentsCollection<T> => {
+    table: <T>(name: string): EntitiesCollection<T> => {
       const toFullId = (id: string) => `${name}-${id}`;
 
       return {
-        store: (id: string, obj: T): Promise<void> => {
-          storage.set(toFullId(id), obj);
+        add: (id: string, obj: T): void => {
+          if (unitOfWork.has(id))
+            throw new Error(
+              `Entity with id ${id} already exsists in table ${name}!`,
+            );
 
-          return Promise.resolve();
+          unitOfWork.set(toFullId(id), obj);
         },
-        patch: (id: string, obj: Partial<T>): Promise<void> => {
-          const document = storage.get(toFullId(id)) as T;
-
-          storage.set(toFullId(id), { ...document, ...obj });
-
-          return Promise.resolve();
+        update: (id: string, obj: T): void => {
+          unitOfWork.set(toFullId(id), obj);
         },
-        delete: (id: string): Promise<boolean> => {
-          storage.delete(toFullId(id));
+        patch: (id: string, obj: Partial<T>): void => {
+          const document = unitOfWork.get(toFullId(id)) as T;
 
-          return Promise.resolve(true);
+          unitOfWork.set(toFullId(id), { ...document, ...obj });
         },
-        get: (id: string): Promise<T | null> => {
-          const document = storage.get(toFullId(id));
+        delete: (id: string): boolean => {
+          return unitOfWork.delete(toFullId(id));
+        },
+        findById: (id: string): Promise<T | null> => {
+          const document = unitOfWork.get(toFullId(id));
 
           return Promise.resolve(JSON.parse(JSON.stringify(document)) as T);
         },
       };
     },
+    saveChanges: (): Promise<void> => {
+      storage = new Map([...storage.entries(), ...unitOfWork.entries()]);
+
+      return Promise.resolve();
+    },
   };
-};
-
-const database = getDatabase();
-
-export interface ORM {
-  authors: DocumentsCollection<AuthorEntity>;
-  books: DocumentsCollection<BookEntity>;
-  publishers: DocumentsCollection<PublisherEntity>;
-}
-
-export const orm = {
-  authors: database.collection<AuthorEntity>('authors'),
-  books: database.collection<BookEntity>('books'),
-  publishers: database.collection<PublisherEntity>('publishers'),
 };
