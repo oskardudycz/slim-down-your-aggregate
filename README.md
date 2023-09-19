@@ -1,9 +1,11 @@
 # Slim Down Your Aggregate
 
-Let's slim down some complex aggregate implementation. It's an aggregate responsible for managing the book writing, editing and publishing process. 
+Let's slim down some complex aggregate implementation. It's an aggregate responsible for managing the book writing, editing and publishing process.
 See the original implementation in the:
-- [C#](https://github.com/oskardudycz/slim-down-your-aggregate/blob/main/csharp/SlimDownYourAggregates.Tests/Original/Book.cs)
+
+- [C#](./csharp/Original/PublishingHouse.Domain/Books/Book.cs)
 - [Java](https://github.com/oskardudycz/slim-down-your-aggregate/blob/main/java/src/main/java/io/eventdriven/slimdownaggregates/original/Book.java)
+- [TypeScript](./node.js/src/original/domain/books/book.ts)
 
 We'll be doing multiple transitions step by step to make it more focused on the business logic and make it smaller but more precise.
 
@@ -37,17 +39,10 @@ We'll be doing multiple transitions step by step to make it more focused on the 
 2. Install Java JDK 17 (or later) - https://www.oracle.com/java/technologies/downloads/.
 3. Install IntelliJ, Eclipse, VSCode or other preferred IDE.
 4. Open [java](./java/) folder as project.
-## Steps
 
-1. Find the data that is used in IF statements or passed to events.
-2. Copy the Book aggregate and rename it into BookModel, this will be our storage model, we still need to keep the backward compatibility.
-3. Remove all methods from it, just keep state, we'll use it as a reference and need that for later.
-4. Remove all the data that we don't need for IFs from Book aggregate.
-5. Add missing events.
-6. Group them in the same file to make it more readable (as they're form of documentation) and make managing it less tedious.
-7. Return events as the result of the method, and remove aggregates.
-8. Add evolve method that will take the event, update the state and return the event. Thanks to that we're getting the split between business logic and state apply.
-9. Make evolve static to take aggregate.
-10. Add commands and use them in the service methods instead of multiple parameters.
-11. Simplify the structure based on the if conditions, e.g. instead of keeping the transaction list, just take transactions count.
-12. Add union type for state, updating evolve method and service logic.
+### TypeScript
+
+1. Clone this repository.
+2. Install Node.js 18 (or later) - https://node.js.org/en/download/ (Or better using NVM).
+3. Install VSCode, WebStorm or other preferred IDE.
+4. Open [java](./node.js/) folder as project.
