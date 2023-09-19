@@ -4,8 +4,8 @@ Let's slim down some complex aggregate implementation. It's an aggregate respons
 See the original implementation in the:
 
 - [C#](./csharp/Original/PublishingHouse.Domain/Books/Book.cs)
-- [Java](https://github.com/oskardudycz/slim-down-your-aggregate/blob/main/java/src/main/java/io/eventdriven/slimdownaggregates/original/Book.java)
-- [TypeScript](./java/src/main/java/io/eventdriven/slimdownaggregates/original/Book.java)
+- [Java](./java/src/main/java/io/eventdriven/slimdownaggregates/original/Book.java)
+- [TypeScript](./node.js/src/original/domain/books/book.ts)
 
 We'll be doing multiple transitions step by step to make it more focused on the business logic and make it smaller but more precise.
 
