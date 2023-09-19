@@ -32,9 +32,18 @@ public class TestWebApplicationFactory: WebApplicationFactory<Program>
             services
                 .AddTransient(s =>
                 {
+                    var options = new DbContextOptionsBuilder<PublishingHouseDbContext>();
+
+                    if (Environment.GetEnvironmentVariable("TEST_IN_MEMORY") == "true")
+                    {
+                        return options
+                            .UseInMemoryDatabase(schemaName)
+                            .Options;
+                    }
+
                     var connectionString = s.GetRequiredService<IConfiguration>()
                         .GetConnectionString("PublishingHouse");
-                    var options = new DbContextOptionsBuilder<PublishingHouseDbContext>();
+
                     options.UseNpgsql(
                         $"{connectionString}; searchpath = {schemaName.ToLower()}",
                         x => x.MigrationsHistoryTable("__EFMigrationsHistory", schemaName.ToLower()));
@@ -46,8 +55,13 @@ public class TestWebApplicationFactory: WebApplicationFactory<Program>
 
         using var scope = host.Services.CreateScope();
         var database = scope.ServiceProvider.GetRequiredService<PublishingHouseDbContext>().Database;
-        database.ExecuteSqlRaw("TRUNCATE TABLE \"Books\" CASCADE");
-        database.ExecuteSqlRaw("TRUNCATE TABLE \"Authors\" CASCADE");
+        database.EnsureCreated();
+
+        if (Environment.GetEnvironmentVariable("TEST_IN_MEMORY") != "true")
+        {
+            database.ExecuteSqlRaw("TRUNCATE TABLE \"Books\" CASCADE");
+            database.ExecuteSqlRaw("TRUNCATE TABLE \"Authors\" CASCADE");
+        }
 
         return host;
     }

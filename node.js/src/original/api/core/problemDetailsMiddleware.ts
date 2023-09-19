@@ -16,7 +16,7 @@ export const problemDetailsMiddleware = (
     title = `${error.type} error`;
     switch (error.type) {
       case ApplicationErrorType.Validation: {
-        statusCode = 200;
+        statusCode = 400;
         break;
       }
       case ApplicationErrorType.InvalidOperation: {
@@ -27,7 +27,7 @@ export const problemDetailsMiddleware = (
         statusCode = 404;
         break;
       }
-      case ApplicationErrorType.PreconditionFailed: {
+      case ApplicationErrorType.InvalidState: {
         statusCode = 412;
         break;
       }

@@ -33,8 +33,9 @@ app.UseRouting()
     });
 
 var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
+var useInMemory = Environment.GetEnvironmentVariable("TEST_IN_MEMORY") == "true";
 
-if (environment == "Development")
+if (environment == "Development" && !useInMemory)
 {
     await app.Services.CreateScope().ServiceProvider
         .GetRequiredService<PublishingHouseDbContext>().Database.MigrateAsync();

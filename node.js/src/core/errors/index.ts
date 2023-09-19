@@ -1,7 +1,7 @@
 export enum ApplicationErrorType {
   Validation = 'Validation',
   InvalidOperation = 'InvalidOperation',
-  PreconditionFailed = 'PreconditionFailed',
+  InvalidState = 'InvalidState',
   NotFound = 'NotFound',
   Unknown = 'Unknown',
 }
@@ -29,7 +29,7 @@ export const NotFoundError = (message: string) =>
   ApplicationError(ApplicationErrorType.NotFound, message);
 
 export const InvalidStateError = (message: string) =>
-  ApplicationError(ApplicationErrorType.PreconditionFailed, message);
+  ApplicationError(ApplicationErrorType.InvalidState, message);
 
 export const UnknownError = (errorOrMessage: Error | string) =>
   ApplicationError(ApplicationErrorType.Unknown, errorOrMessage);

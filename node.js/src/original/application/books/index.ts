@@ -14,11 +14,12 @@ import {
 } from 'src/original/persistence/publishingHouseOrm';
 
 export const EXISTING_PUBLISHER_ID = uuid();
+export const EXISTING_PUBLISHER_NAME = uuid();
 
 const seedPublishingHouse = (orm: PublishingHouseOrm) => {
   orm.publishers.add(EXISTING_PUBLISHER_ID, {
     id: EXISTING_PUBLISHER_ID,
-    name: uuid(),
+    name: EXISTING_PUBLISHER_NAME,
   });
 };
 

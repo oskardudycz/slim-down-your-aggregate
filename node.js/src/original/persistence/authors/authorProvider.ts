@@ -20,10 +20,8 @@ export class AuthorProvider implements IAuthorProvider {
       const firstName: AuthorFirstName = nonEmptyString(
         authorIdOrData.firstName,
       );
-      const lastName: AuthorFirstName = nonEmptyString(
-        authorIdOrData.firstName,
-      );
-      await this.orm.authors.add(authorId, {
+      const lastName: AuthorFirstName = nonEmptyString(authorIdOrData.lastName);
+      this.orm.authors.add(authorId, {
         id: authorId,
         firstName,
         lastName,
