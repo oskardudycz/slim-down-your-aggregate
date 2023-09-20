@@ -1,15 +1,16 @@
 using PublishingHouse.Books.Entities;
-using PublishingHouse.Books.Events;
 using PublishingHouse.Books.Factories;
 using PublishingHouse.Books.Services;
 using PublishingHouse.Core.Aggregates;
 using PublishingHouse.Core.ValueObjects;
+using static PublishingHouse.Books.BookEvent;
 
 namespace PublishingHouse.Books;
 
 public class Book: Aggregate<BookId>
 {
     public enum State { Writing, Editing, Printing, Published, OutOfPrint }
+
     public State CurrentState { get; private set; }
     public Title Title { get; }
     public Author Author { get; }
@@ -33,8 +34,12 @@ public class Book: Aggregate<BookId>
         Publisher publisher,
         PositiveInt edition,
         Genre? genre
-    ) =>
-        new Book(bookId, State.Writing, title, author, publishingHouse, publisher, edition, genre);
+    )
+    {
+        var book = new Book(bookId, State.Writing, title, author, publishingHouse, genre);
+        book.AddDomainEvent(new DraftCreated(bookId, title, author, publisher, edition, genre));
+        return book;
+    }
 
     public void AddChapter(ChapterTitle title, ChapterContent content)
     {
@@ -48,7 +53,7 @@ public class Book: Aggregate<BookId>
         var chapter = new Chapter(new ChapterNumber(chapters.Count + 1), title, content);
         chapters.Add(chapter);
 
-        AddDomainEvent(new ChapterAddedEvent(Id, chapter));
+        AddDomainEvent(new ChapterAdded(Id, chapter));
     }
 
     public void MoveToEditing()
@@ -64,7 +69,7 @@ public class Book: Aggregate<BookId>
 
         CurrentState = State.Editing;
 
-        AddDomainEvent(new BookMovedToEditingEvent(Id));
+        AddDomainEvent(new MovedToEditing(Id));
     }
 
     public void AddTranslation(Translation translation)
@@ -76,6 +81,8 @@ public class Book: Aggregate<BookId>
             throw new InvalidOperationException("Cannot add more translations. Maximum 5 translations are allowed.");
 
         translations.Add(translation);
+
+        AddDomainEvent(new TranslationAdded(Id, translation));
     }
 
     public void AddFormat(Format format)
@@ -87,6 +94,8 @@ public class Book: Aggregate<BookId>
             throw new InvalidOperationException($"Format {format.FormatType} already exists.");
 
         formats.Add(format);
+
+        AddDomainEvent(new FormatAdded(Id, format));
     }
 
     public void RemoveFormat(Format format)
@@ -99,6 +108,8 @@ public class Book: Aggregate<BookId>
             throw new InvalidOperationException($"Format {format.FormatType} does not exist.");
 
         formats.Remove(existingFormat);
+
+        AddDomainEvent(new FormatRemoved(Id, format));
     }
 
     public void AddReviewer(Reviewer reviewer)
@@ -111,6 +122,8 @@ public class Book: Aggregate<BookId>
                 $"{reviewer.Name} is already a reviewer.");
 
         reviewers.Add(reviewer);
+
+        AddDomainEvent(new ReviewerAdded(Id, reviewer));
     }
 
     public void Approve(CommitteeApproval committeeApproval)
@@ -123,6 +136,8 @@ public class Book: Aggregate<BookId>
                 "A book cannot be approved unless it has been reviewed by at least three reviewers.");
 
         CommitteeApproval = committeeApproval;
+
+        AddDomainEvent(new Approved(Id, committeeApproval));
     }
 
     public void SetISBN(ISBN isbn)
@@ -135,6 +150,8 @@ public class Book: Aggregate<BookId>
                 "Cannot change already set ISBN.");
 
         ISBN = isbn;
+
+        AddDomainEvent(new ISBNSet(Id, isbn));
     }
 
     public void MoveToPrinting()
@@ -159,6 +176,8 @@ public class Book: Aggregate<BookId>
             throw new InvalidOperationException("Cannot move to printing until the genre limit is reached.");
 
         CurrentState = State.Printing;
+
+        AddDomainEvent(new MovedToPrinting(Id));
     }
 
     public void MoveToPublished()
@@ -175,7 +194,7 @@ public class Book: Aggregate<BookId>
 
         CurrentState = State.Published;
 
-        AddDomainEvent(new BookPublishedEvent(Id, ISBN, Title, Author));
+        AddDomainEvent(new Published(Id, ISBN, Title, Author));
     }
 
     public void MoveToOutOfPrint()
@@ -190,6 +209,8 @@ public class Book: Aggregate<BookId>
                 "Cannot move to Out of Print state if more than 10% of total copies are unsold.");
 
         CurrentState = State.OutOfPrint;
+
+        AddDomainEvent(new MovedToOutOfPrint(Id));
     }
 
     private Book(
@@ -198,15 +219,8 @@ public class Book: Aggregate<BookId>
         Title title,
         Author author,
         IPublishingHouse publishingHouse,
-        Publisher publisher,
-        PositiveInt edition,
         Genre? genre,
         ISBN? isbn = null,
-        DateOnly? publicationDate = null,
-        PositiveInt? totalPages = null,
-        PositiveInt? numberOfIllustrations = null,
-        NonEmptyString? bindingType = null,
-        NonEmptyString? summary = null,
         CommitteeApproval? committeeApproval = null,
         List<Reviewer>? reviewers = null,
         List<Chapter>? chapters = null,
@@ -223,7 +237,7 @@ public class Book: Aggregate<BookId>
         CommitteeApproval = committeeApproval;
         this.reviewers = reviewers ?? new List<Reviewer>();
         this.chapters = chapters ?? new List<Chapter>();
-        this.translations = translations?? new List<Translation>();
+        this.translations = translations ?? new List<Translation>();
         this.formats = formats ?? new List<Format>();
     }
 
@@ -235,15 +249,8 @@ public class Book: Aggregate<BookId>
             Title title,
             Author author,
             IPublishingHouse publishingHouse,
-            Publisher publisher,
-            PositiveInt edition,
             Genre? genre,
             ISBN? isbn,
-            DateOnly? publicationDate,
-            PositiveInt? totalPages,
-            PositiveInt? numberOfIllustrations,
-            NonEmptyString? bindingType,
-            NonEmptyString? summary,
             CommitteeApproval? committeeApproval,
             List<Reviewer> reviewers,
             List<Chapter> chapters,
@@ -251,8 +258,8 @@ public class Book: Aggregate<BookId>
             List<Format> formats
         ) =>
             new Book(
-                bookId, state, title, author, publishingHouse, publisher, edition,
-                genre, isbn, publicationDate, totalPages, numberOfIllustrations,
-                bindingType, summary, committeeApproval, reviewers, chapters, translations, formats);
+                bookId, state, title, author, publishingHouse, genre, isbn,
+                committeeApproval, reviewers, chapters, translations, formats
+            );
     }
 }
