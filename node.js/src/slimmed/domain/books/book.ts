@@ -38,7 +38,6 @@ export class Book extends Aggregate<BookId> {
   #currentState: State;
   #title: Title;
   #author: Author;
-  #publishingHouse: IPublishingHouse;
   #genre: Genre | null;
   #isbn: ISBN | null;
   #committeeApproval: CommitteeApproval | null;
@@ -61,7 +60,6 @@ export class Book extends Aggregate<BookId> {
       State.Writing,
       title,
       author,
-      publishingHouse,
       publisher,
       edition,
       genre,
@@ -304,7 +302,7 @@ export class Book extends Aggregate<BookId> {
     this.addDomainEvent(event);
   }
 
-  moveToPrinting(): void {
+  moveToPrinting(publishingHouse: IPublishingHouse): void {
     if (this.#currentState !== State.Editing) {
       throw InvalidStateError(
         'Cannot move to printing from the current state.',
@@ -336,7 +334,7 @@ export class Book extends Aggregate<BookId> {
     }
 
     // Check for genre limit
-    if (!this.#publishingHouse.isGenreLimitReached(this.#genre)) {
+    if (!publishingHouse.isGenreLimitReached(this.#genre)) {
       throw InvalidStateError(
         'Cannot move to printing until the genre limit is reached.',
       );
@@ -428,7 +426,6 @@ export class Book extends Aggregate<BookId> {
     currentState: State,
     title: Title,
     author: Author,
-    publishingHouse: IPublishingHouse,
     genre: Genre | null,
     isbn?: ISBN | null,
     committeeApproval?: CommitteeApproval | null,
@@ -441,11 +438,9 @@ export class Book extends Aggregate<BookId> {
     this.#currentState = currentState;
     this.#title = title;
     this.#author = author;
-    this.#publishingHouse = publishingHouse;
     this.#genre = genre;
     this.#isbn = isbn ?? null;
     this.#committeeApproval = committeeApproval ?? null;
-    this.#publishingHouse = publishingHouse;
     this.#reviewers = reviewers ?? [];
     this.#chapters = chapters ?? [];
     this.#translations = translations ?? [];
@@ -458,7 +453,6 @@ export class Book extends Aggregate<BookId> {
       state: State,
       title: Title,
       author: Author,
-      publishingHouse: IPublishingHouse,
       genre: Genre | null,
       isbn: ISBN | null,
       committeeApproval: CommitteeApproval | null,
@@ -472,7 +466,6 @@ export class Book extends Aggregate<BookId> {
         state,
         title,
         author,
-        publishingHouse,
         genre,
         isbn,
         committeeApproval,

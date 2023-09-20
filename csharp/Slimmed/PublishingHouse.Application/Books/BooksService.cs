@@ -17,7 +17,6 @@ public class BooksService: IBooksService
             bookId,
             title,
             await authorProvider.GetOrCreate(author, ct),
-            (null as IPublishingHouse)!, //TODO: Consider making it smarter
             await publisherProvider.GetById(publisherId, ct),
             edition,
             genre
