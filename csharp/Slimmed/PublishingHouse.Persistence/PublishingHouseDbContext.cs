@@ -81,6 +81,9 @@ public class PublishingHouseDbContext: DbContext
                 sa.Property(p => p.IsApproved);
             });
 
+        modelBuilder.Entity<BookEntity>()
+            .Property(b => b.Version).IsConcurrencyToken();
+
         modelBuilder.Entity<OutboxMessageEntity>()
             .ToTable("Outbox")
             .HasKey(p => p.Position);

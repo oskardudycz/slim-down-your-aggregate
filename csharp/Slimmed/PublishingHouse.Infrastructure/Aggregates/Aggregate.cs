@@ -6,7 +6,7 @@ public abstract class Aggregate<TKey, TEvent>
 
     private readonly List<TEvent> domainEvents = new();
 
-    public IReadOnlyCollection<TEvent> DomainEvents
+    public IReadOnlyList<TEvent> DomainEvents
         => domainEvents.AsReadOnly();
 
     protected Aggregate(TKey id) =>

@@ -26,9 +26,7 @@ export abstract class OrmRepository<
   }
 
   public async add(aggregate: TAggregate): Promise<void> {
-    this.entities.add(aggregate.id, this.mapToEntity(aggregate));
-
-    this.scheduleOutbox(aggregate.domainEvents);
+    this.processEvents(this.orm, null, aggregate.domainEvents);
 
     await this.orm.saveChanges();
     aggregate.clearEvents();
@@ -41,25 +39,32 @@ export abstract class OrmRepository<
 
     if (!entity) throw new Error(`Entity with id ${id} was not found`);
 
-    this.entities.update(id, this.mapToEntity(aggregate));
-
-    this.scheduleOutbox(aggregate.domainEvents);
+    this.processEvents(this.orm, entity, aggregate.domainEvents);
 
     await this.orm.saveChanges();
     aggregate.clearEvents();
   }
 
-  private scheduleOutbox(events: TEvent[]): void {
-    const outboxTable = this.orm.table<OutboxMessageEntity>('outbox');
+  private processEvents(
+    orm: TOrm,
+    current: TEntity | null,
+    events: TEvent[],
+  ): void {
+    const outboxTable = orm.table<OutboxMessageEntity>('outbox');
 
-    const messages = events.map(outboxMessage);
+    for (const event of events) {
+      this.evolve(orm, current, event);
 
-    for (const message of messages) {
+      const message = outboxMessage(event);
       outboxTable.add(message.position.toString(), message);
     }
   }
 
   protected abstract mapToAggregate(entity: TEntity): TAggregate;
 
-  protected abstract mapToEntity(aggregate: TAggregate): TEntity;
+  protected abstract evolve(
+    orm: TOrm,
+    current: TEntity | null,
+    event: TEvent,
+  ): void;
 }

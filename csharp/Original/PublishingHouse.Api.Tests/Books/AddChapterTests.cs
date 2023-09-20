@@ -2,7 +2,7 @@ using PublishingHouse.Api.Requests;
 
 namespace PublishingHouse.Api.Tests.Books;
 
-public class AddChapterTests
+public class AddChapterTests: IClassFixture<ApiSpecification>
 {
     [Fact]
     public Task AddsChapter_ForExistingBook() =>
@@ -14,5 +14,8 @@ public class AddChapterTests
             )
             .Then(NO_CONTENT);
 
-    private readonly ApiSpecification API = ApiSpecification.WithSchema(nameof(AddChapterTests));
+    private readonly ApiSpecification API;
+
+    public AddChapterTests(ApiSpecification api) =>
+        API = api;
 }

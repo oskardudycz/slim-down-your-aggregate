@@ -5,7 +5,10 @@ namespace PublishingHouse.Persistence.Books.ValueObjects;
 
 public class TranslationVO
 {
-    public required LanguageEntity Language { get; set; }
-    public required TranslatorEntity Translator { get; set; }
+    public Guid LanguageId { get; set; }
+    public LanguageEntity Language { get; set; } = default!;
+
+    public Guid TranslatorId { get; set; }
+    public TranslatorEntity Translator { get; set; } = default!;
 }
 

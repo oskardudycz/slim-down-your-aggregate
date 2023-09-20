@@ -8,6 +8,7 @@ namespace PublishingHouse.Persistence.Core.Repositories;
 public abstract class EntityFrameworkRepository<TAggregate, TKey, TEvent, TEntity,  TDbContext>
     where TAggregate: Aggregate<TKey, TEvent>
     where TKey: NonEmptyGuid
+    where TEvent: class
     where TDbContext: DbContext
     where TEntity : class
 {
@@ -27,8 +28,7 @@ public abstract class EntityFrameworkRepository<TAggregate, TKey, TEvent, TEntit
 
     public async Task Add(TAggregate aggregate, CancellationToken ct)
     {
-        DbContext.Set<TEntity>().Add(MapToEntity(aggregate));
-        ScheduleOutbox(aggregate.DomainEvents);
+        ProcessEvents(DbContext, null, aggregate.DomainEvents);
 
         await DbContext.SaveChangesAsync(ct);
         aggregate.ClearEvents();
@@ -41,19 +41,20 @@ public abstract class EntityFrameworkRepository<TAggregate, TKey, TEvent, TEntit
             cancellationToken: ct
         ) ?? throw new InvalidOperationException();
 
-        UpdateEntity(entity, aggregate);
-        ScheduleOutbox(aggregate.DomainEvents);
+        ProcessEvents(DbContext, entity, aggregate.DomainEvents);
 
         await DbContext.SaveChangesAsync(ct);
         aggregate.ClearEvents();
     }
 
-    private void ScheduleOutbox(IEnumerable<TEvent> events)
+    private void ProcessEvents(TDbContext dbContext, TEntity? entity, IReadOnlyList<TEvent> events)
     {
-        var messages = events
-            .Select(OutboxMessageEntity.From);
-
-        DbContext.Set<OutboxMessageEntity>().AddRange(messages);
+        var outbox = dbContext.Set<OutboxMessageEntity>();
+        foreach (var @event in events)
+        {
+            Evolve(dbContext, entity, @event);
+            outbox.Add(OutboxMessageEntity.From(@event));
+        }
     }
 
     protected virtual IQueryable<TEntity> Includes(DbSet<TEntity> query) =>
@@ -61,7 +62,5 @@ public abstract class EntityFrameworkRepository<TAggregate, TKey, TEvent, TEntit
 
     protected abstract TAggregate MapToAggregate(TEntity entity);
 
-    protected abstract TEntity MapToEntity(TAggregate aggregate);
-
-    protected abstract void UpdateEntity(TEntity entity, TAggregate aggregate);
+    protected abstract void Evolve(TDbContext dbContext, TEntity? current, TEvent @event);
 }

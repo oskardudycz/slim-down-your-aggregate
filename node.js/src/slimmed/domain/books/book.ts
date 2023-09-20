@@ -472,9 +472,9 @@ export class Book extends Aggregate<BookId, BookEvent> {
 }
 
 export enum State {
-  Writing,
-  Editing,
-  Printing,
-  Published,
-  OutOfPrint,
+  Writing = 'Writing',
+  Editing = 'Editing',
+  Printing = 'Printing',
+  Published = 'Published',
+  OutOfPrint = 'OutOfPrint',
 }

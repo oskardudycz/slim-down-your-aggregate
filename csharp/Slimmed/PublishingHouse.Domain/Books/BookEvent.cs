@@ -35,6 +35,11 @@ public abstract record BookEvent: IDomainEvent
         Translation Translation
     ): BookEvent;
 
+    public record TranslationRemoved(
+        BookId BookId,
+        Translation Translation
+    ): BookEvent;
+
     public record ReviewerAdded(
         BookId BookId,
         Reviewer Reviewer
