@@ -13,28 +13,16 @@ public class Book: Aggregate<BookId>
     public State CurrentState { get; private set; }
     public Title Title { get; }
     public Author Author { get; }
-    public Publisher Publisher { get; }
-    public PositiveInt Edition { get; }
+
     public Genre? Genre { get; }
     public ISBN? ISBN { get; private set; }
-    public DateOnly? PublicationDate { get; }
-    public PositiveInt? TotalPages { get; }
-    public PositiveInt? NumberOfIllustrations { get; }
-    public NonEmptyString? BindingType { get; }
-
-    //TODO: add type for that
-    public NonEmptyString? Summary { get; }
     public CommitteeApproval? CommitteeApproval { get; private set; }
 
     private readonly IPublishingHouse publishingHouse;
 
-    public IReadOnlyList<Reviewer> Reviewers => reviewers.AsReadOnly();
     private readonly List<Reviewer> reviewers;
-    public IReadOnlyList<Chapter> Chapters => chapters.AsReadOnly();
     private readonly List<Chapter> chapters;
-    public IReadOnlyList<Translation> Translations => translations.AsReadOnly();
     private readonly List<Translation> translations;
-    public IReadOnlyList<Format> Formats => formats.AsReadOnly();
     private readonly List<Format> formats;
 
     public static Book CreateDraft(
@@ -118,7 +106,7 @@ public class Book: Aggregate<BookId>
         if (CurrentState != State.Editing)
             throw new InvalidOperationException("Cannot approve a book that is not in the Editing state.");
 
-        if (Reviewers.Contains(reviewer))
+        if (reviewers.Contains(reviewer))
             throw new InvalidOperationException(
                 $"{reviewer.Name} is already a reviewer.");
 
@@ -130,7 +118,7 @@ public class Book: Aggregate<BookId>
         if (CurrentState != State.Editing)
             throw new InvalidOperationException("Cannot approve a book that is not in the Editing state.");
 
-        if (Reviewers.Count < 3)
+        if (reviewers.Count < 3)
             throw new InvalidOperationException(
                 "A book cannot be approved unless it has been reviewed by at least three reviewers.");
 
@@ -160,7 +148,7 @@ public class Book: Aggregate<BookId>
         if (CommitteeApproval == null)
             throw new InvalidOperationException("Cannot move to printing state until the book has been approved.");
 
-        if (Reviewers.Count < 3)
+        if (reviewers.Count < 3)
             throw new InvalidOperationException(
                 "A book cannot be moved to the Printing state unless it has been reviewed by at least three reviewers.");
 
@@ -181,7 +169,7 @@ public class Book: Aggregate<BookId>
         if (ISBN == null)
             throw new InvalidOperationException("Cannot move to Published state without ISBN.");
 
-        if (Reviewers.Count < 3)
+        if (reviewers.Count < 3)
             throw new InvalidOperationException(
                 "A book cannot be moved to the Published state unless it has been reviewed by at least three reviewers.");
 
@@ -231,14 +219,7 @@ public class Book: Aggregate<BookId>
         Author = author;
         Genre = genre;
         this.publishingHouse = publishingHouse;
-        Publisher = publisher;
-        Edition = edition;
         ISBN = isbn;
-        PublicationDate = publicationDate;
-        TotalPages = totalPages;
-        NumberOfIllustrations = numberOfIllustrations;
-        BindingType = bindingType;
-        Summary = summary;
         CommitteeApproval = committeeApproval;
         this.reviewers = reviewers ?? new List<Reviewer>();
         this.chapters = chapters ?? new List<Chapter>();
