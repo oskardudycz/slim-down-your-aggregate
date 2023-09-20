@@ -23,16 +23,8 @@ public static class BookEntityMapper
             new Title(book.Title),
             new Author(new AuthorId(book.Author.Id), new AuthorFirstName(book.Author.FirstName),
                 new AuthorLastName(book.Author.LastName)),
-            (null as IPublishingHouse)!, //TODO: Change that
-            new Publisher(new PublisherId(book.Publisher.Id), new PublisherName(book.Publisher.Name)),
-            new PositiveInt(book.Edition),
             book.Genre != null ? new Genre(book.Genre) : null,
             book.ISBN != null ? new ISBN(book.ISBN) : null,
-            book.PublicationDate,
-            book.TotalPages.HasValue ? new PositiveInt(book.TotalPages.Value) : null,
-            book.NumberOfIllustrations.HasValue ? new PositiveInt(book.NumberOfIllustrations.Value) : null,
-            book.BindingType != null ? new NonEmptyString(book.BindingType) : null,
-            book.Summary != null ? new NonEmptyString(book.Summary) : null,
             book.CommitteeApproval != null
                 ? new CommitteeApproval(book.CommitteeApproval.IsApproved,
                     new NonEmptyString(book.CommitteeApproval.Feedback))

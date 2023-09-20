@@ -1,13 +1,12 @@
 using Microsoft.EntityFrameworkCore;
-using PublishingHouse.Core;
 using PublishingHouse.Core.Aggregates;
 using PublishingHouse.Core.ValueObjects;
 using PublishingHouse.Persistence.Core.Outbox;
 
 namespace PublishingHouse.Persistence.Core.Repositories;
 
-public abstract class EntityFrameworkRepository<TAggregate, TKey, TEntity, TDbContext>
-    where TAggregate: Aggregate<TKey>
+public abstract class EntityFrameworkRepository<TAggregate, TKey, TEvent, TEntity,  TDbContext>
+    where TAggregate: Aggregate<TKey, TEvent>
     where TKey: NonEmptyGuid
     where TDbContext: DbContext
     where TEntity : class
@@ -49,7 +48,7 @@ public abstract class EntityFrameworkRepository<TAggregate, TKey, TEntity, TDbCo
         aggregate.ClearEvents();
     }
 
-    private void ScheduleOutbox(IEnumerable<IDomainEvent> events)
+    private void ScheduleOutbox(IEnumerable<TEvent> events)
     {
         var messages = events
             .Select(OutboxMessageEntity.From);

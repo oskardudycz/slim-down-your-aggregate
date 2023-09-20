@@ -3,7 +3,6 @@ import { BookEntity } from '../books/bookEntity';
 import { IBookFactory } from '../../domain/books/factories';
 import { nonEmptyString, nonEmptyUuid, positiveNumber } from '#core/typing';
 import { Chapter, chapterContent, Format } from '../../domain/books/entities';
-import { IPublishingHouse } from '../../domain/books/services';
 
 export const bookMapper = {
   mapFromEntity: (entity: BookEntity, bookFactory: IBookFactory): Book => {
@@ -16,21 +15,8 @@ export const bookMapper = {
         firstName: nonEmptyString(entity.author.firstName),
         lastName: nonEmptyString(entity.author.lastName),
       },
-      {} as IPublishingHouse,
-      {
-        id: nonEmptyUuid(entity.publisher.id),
-        name: nonEmptyString(entity.publisher.name),
-      },
-      positiveNumber(entity.edition),
       entity.genre ? nonEmptyString(entity.genre) : null,
       entity.isbn ? nonEmptyString(entity.isbn) : null,
-      entity.publicationDate ?? null,
-      entity.totalPages ? positiveNumber(entity.totalPages) : null,
-      entity.numberOfIllustrations
-        ? positiveNumber(entity.numberOfIllustrations)
-        : null,
-      entity.bindingType ? nonEmptyString(entity.bindingType) : null,
-      entity.summary ? nonEmptyString(entity.summary) : null,
       entity.committeeApproval
         ? {
             feedback: nonEmptyString(entity.committeeApproval.feedback),

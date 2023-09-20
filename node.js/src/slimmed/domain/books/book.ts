@@ -21,6 +21,7 @@ import { IBookFactory } from './factories/bookFactory';
 import { InvalidStateError } from '#core/errors';
 import {
   Approved,
+  BookEvent,
   ChapterAdded,
   DraftCreated,
   FormatAdded,
@@ -34,7 +35,7 @@ import {
   TranslationAdded,
 } from './bookEvent';
 
-export class Book extends Aggregate<BookId> {
+export class Book extends Aggregate<BookId, BookEvent> {
   #currentState: State;
   #title: Title;
   #author: Author;
@@ -55,15 +56,7 @@ export class Book extends Aggregate<BookId> {
     edition: PositiveNumber,
     genre: Genre | null,
   ): Book {
-    const book = new Book(
-      bookId,
-      State.Writing,
-      title,
-      author,
-      publisher,
-      edition,
-      genre,
-    );
+    const book = new Book(bookId, State.Writing, title, author, genre);
 
     const event: DraftCreated = {
       type: 'DraftCreated',
