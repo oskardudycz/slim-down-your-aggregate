@@ -11,7 +11,6 @@ public interface IBookFactory
         Book.State state,
         Title title,
         Author author,
-        IPublishingHouse publishingHouse,
         Genre? genre,
         ISBN? isbn,
         CommitteeApproval? committeeApproval,
