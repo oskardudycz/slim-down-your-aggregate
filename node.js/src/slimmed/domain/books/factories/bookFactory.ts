@@ -11,7 +11,6 @@ import {
   Title,
   Translation,
 } from '../entities';
-import { IPublishingHouse } from '../services/publishingHouse';
 
 export interface IBookFactory {
   create(
@@ -19,7 +18,6 @@ export interface IBookFactory {
     state: State,
     title: Title,
     author: Author,
-    publishingHouse: IPublishingHouse,
     genre: Genre | null,
     isbn: ISBN | null,
     committeeApproval: CommitteeApproval | null,

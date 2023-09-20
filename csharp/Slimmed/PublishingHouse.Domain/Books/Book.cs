@@ -19,8 +19,6 @@ public class Book: Aggregate<BookId>
     public ISBN? ISBN { get; private set; }
     public CommitteeApproval? CommitteeApproval { get; private set; }
 
-    private readonly IPublishingHouse publishingHouse;
-
     private readonly List<Reviewer> reviewers;
     private readonly List<Chapter> chapters;
     private readonly List<Translation> translations;
@@ -30,13 +28,12 @@ public class Book: Aggregate<BookId>
         BookId bookId,
         Title title,
         Author author,
-        IPublishingHouse publishingHouse,
         Publisher publisher,
         PositiveInt edition,
         Genre? genre
     )
     {
-        var book = new Book(bookId, State.Writing, title, author, publishingHouse, genre);
+        var book = new Book(bookId, State.Writing, title, author, genre);
         book.AddDomainEvent(new DraftCreated(bookId, title, author, publisher, edition, genre));
         return book;
     }
@@ -154,7 +151,7 @@ public class Book: Aggregate<BookId>
         AddDomainEvent(new ISBNSet(Id, isbn));
     }
 
-    public void MoveToPrinting()
+    public void MoveToPrinting(IPublishingHouse publishingHouse)
     {
         if (CurrentState != State.Editing)
             throw new InvalidOperationException("Cannot move to printing from the current state.");
@@ -218,7 +215,6 @@ public class Book: Aggregate<BookId>
         State state,
         Title title,
         Author author,
-        IPublishingHouse publishingHouse,
         Genre? genre,
         ISBN? isbn = null,
         CommitteeApproval? committeeApproval = null,
@@ -232,7 +228,6 @@ public class Book: Aggregate<BookId>
         Title = title;
         Author = author;
         Genre = genre;
-        this.publishingHouse = publishingHouse;
         ISBN = isbn;
         CommitteeApproval = committeeApproval;
         this.reviewers = reviewers ?? new List<Reviewer>();
@@ -248,7 +243,6 @@ public class Book: Aggregate<BookId>
             State state,
             Title title,
             Author author,
-            IPublishingHouse publishingHouse,
             Genre? genre,
             ISBN? isbn,
             CommitteeApproval? committeeApproval,
@@ -258,8 +252,7 @@ public class Book: Aggregate<BookId>
             List<Format> formats
         ) =>
             new Book(
-                bookId, state, title, author, publishingHouse, genre, isbn,
-                committeeApproval, reviewers, chapters, translations, formats
+                bookId, state, title, author, genre, isbn, committeeApproval, reviewers, chapters, translations, formats
             );
     }
 }
