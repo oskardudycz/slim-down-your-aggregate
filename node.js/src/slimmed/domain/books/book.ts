@@ -1,4 +1,4 @@
-import { NonEmptyString, PositiveNumber } from '#core/typing';
+import { PositiveNumber } from '#core/typing';
 import { Aggregate } from '../../infrastructure/aggregates';
 import {
   Author,
@@ -16,14 +16,23 @@ import {
   chapterNumber,
 } from './entities';
 import { BookId } from './entities/bookId';
-import {
-  BookMovedToEditingEvent,
-  BookPublishedEvent,
-  ChapterAddedEvent,
-} from './events';
 import { IPublishingHouse } from './services/publishingHouse';
 import { IBookFactory } from './factories/bookFactory';
 import { InvalidStateError } from '#core/errors';
+import {
+  Approved,
+  ChapterAdded,
+  DraftCreated,
+  FormatAdded,
+  FormatRemoved,
+  ISBNSet,
+  MovedToEditing,
+  MovedToOutOfPrint,
+  MovedToPrinting,
+  Published,
+  ReviewerAdded,
+  TranslationAdded,
+} from './bookEvent';
 
 export class Book extends Aggregate<BookId> {
   #currentState: State;
@@ -47,7 +56,7 @@ export class Book extends Aggregate<BookId> {
     edition: PositiveNumber,
     genre: Genre | null,
   ): Book {
-    return new Book(
+    const book = new Book(
       bookId,
       State.Writing,
       title,
@@ -57,6 +66,21 @@ export class Book extends Aggregate<BookId> {
       edition,
       genre,
     );
+
+    const event: DraftCreated = {
+      type: 'DraftCreated',
+      data: {
+        bookId,
+        title,
+        author,
+        publisher,
+        edition,
+        genre,
+      },
+    };
+    book.addDomainEvent(event);
+
+    return book;
   }
 
   addChapter(title: ChapterTitle, content: ChapterContent): void {
@@ -84,8 +108,8 @@ export class Book extends Aggregate<BookId> {
     );
     this.#chapters.push(chapter);
 
-    const event: ChapterAddedEvent = {
-      type: 'ChapterAddedEvent',
+    const event: ChapterAdded = {
+      type: 'ChapterAdded',
       data: {
         bookId: this.id,
         chapter,
@@ -116,8 +140,8 @@ export class Book extends Aggregate<BookId> {
 
     this.#currentState = State.Editing;
 
-    const event: BookMovedToEditingEvent = {
-      type: 'BookMovedToEditingEvent',
+    const event: MovedToEditing = {
+      type: 'MovedToEditing',
       data: {
         bookId: this.id,
       },
@@ -140,6 +164,16 @@ export class Book extends Aggregate<BookId> {
     }
 
     this.#translations.push(translation);
+
+    const event: TranslationAdded = {
+      type: 'TranslationAdded',
+      data: {
+        bookId: this.id,
+        translation,
+      },
+    };
+
+    this.addDomainEvent(event);
   }
 
   addFormat(format: Format): void {
@@ -154,6 +188,16 @@ export class Book extends Aggregate<BookId> {
     }
 
     this.#formats.push(format);
+
+    const event: FormatAdded = {
+      type: 'FormatAdded',
+      data: {
+        bookId: this.id,
+        format,
+      },
+    };
+
+    this.addDomainEvent(event);
   }
 
   removeFormat(format: Format): void {
@@ -173,6 +217,16 @@ export class Book extends Aggregate<BookId> {
     this.#formats = this.#formats.filter(
       (f) => f.formatType !== format.formatType,
     );
+
+    const event: FormatRemoved = {
+      type: 'FormatRemoved',
+      data: {
+        bookId: this.id,
+        format,
+      },
+    };
+
+    this.addDomainEvent(event);
   }
 
   addReviewer(reviewer: Reviewer): void {
@@ -188,6 +242,16 @@ export class Book extends Aggregate<BookId> {
     }
 
     this.#reviewers.push(reviewer);
+
+    const event: ReviewerAdded = {
+      type: 'ReviewerAdded',
+      data: {
+        bookId: this.id,
+        reviewer,
+      },
+    };
+
+    this.addDomainEvent(event);
   }
 
   approve(committeeApproval: CommitteeApproval): void {
@@ -204,6 +268,16 @@ export class Book extends Aggregate<BookId> {
     }
 
     this.#committeeApproval = committeeApproval;
+
+    const event: Approved = {
+      type: 'Approved',
+      data: {
+        bookId: this.id,
+        committeeApproval,
+      },
+    };
+
+    this.addDomainEvent(event);
   }
 
   setISBN(isbn: ISBN): void {
@@ -218,6 +292,16 @@ export class Book extends Aggregate<BookId> {
     }
 
     this.#isbn = isbn;
+
+    const event: ISBNSet = {
+      type: 'ISBNSet',
+      data: {
+        bookId: this.id,
+        isbn,
+      },
+    };
+
+    this.addDomainEvent(event);
   }
 
   moveToPrinting(): void {
@@ -259,6 +343,15 @@ export class Book extends Aggregate<BookId> {
     }
 
     this.#currentState = State.Printing;
+
+    const event: MovedToPrinting = {
+      type: 'MovedToPrinting',
+      data: {
+        bookId: this.id,
+      },
+    };
+
+    this.addDomainEvent(event);
   }
 
   moveToPublished(): void {
@@ -283,8 +376,8 @@ export class Book extends Aggregate<BookId> {
 
     this.#currentState = State.Published;
 
-    const event: BookPublishedEvent = {
-      type: 'BookPublishedEvent',
+    const event: Published = {
+      type: 'Published',
       data: {
         bookId: this.id,
         isbn: this.#isbn,
@@ -319,6 +412,15 @@ export class Book extends Aggregate<BookId> {
     }
 
     this.#currentState = State.OutOfPrint;
+
+    const event: MovedToOutOfPrint = {
+      type: 'MovedToOutOfPrint',
+      data: {
+        bookId: this.id,
+      },
+    };
+
+    this.addDomainEvent(event);
   }
 
   private constructor(
@@ -327,15 +429,8 @@ export class Book extends Aggregate<BookId> {
     title: Title,
     author: Author,
     publishingHouse: IPublishingHouse,
-    publisher: Publisher,
-    edition: PositiveNumber,
     genre: Genre | null,
     isbn?: ISBN | null,
-    publicationDate?: Date | null,
-    totalPages?: PositiveNumber | null,
-    numberOfIllustrations?: PositiveNumber | null,
-    bindingType?: NonEmptyString | null,
-    summary?: NonEmptyString | null,
     committeeApproval?: CommitteeApproval | null,
     reviewers?: Reviewer[] | null,
     chapters?: Chapter[] | null,
@@ -347,15 +442,8 @@ export class Book extends Aggregate<BookId> {
     this.#title = title;
     this.#author = author;
     this.#publishingHouse = publishingHouse;
-    this.#publisher = publisher;
-    this.#edition = edition;
     this.#genre = genre;
     this.#isbn = isbn ?? null;
-    this.#publicationDate = publicationDate ?? null;
-    this.#totalPages = totalPages ?? null;
-    this.#numberOfIllustrations = numberOfIllustrations ?? null;
-    this.#bindingType = bindingType ?? null;
-    this.#summary = summary ?? null;
     this.#committeeApproval = committeeApproval ?? null;
     this.#publishingHouse = publishingHouse;
     this.#reviewers = reviewers ?? [];
@@ -371,15 +459,8 @@ export class Book extends Aggregate<BookId> {
       title: Title,
       author: Author,
       publishingHouse: IPublishingHouse,
-      publisher: Publisher,
-      edition: PositiveNumber,
       genre: Genre | null,
       isbn: ISBN | null,
-      publicationDate: Date | null,
-      totalPages: PositiveNumber | null,
-      numberOfIllustrations: PositiveNumber | null,
-      bindingType: NonEmptyString | null,
-      summary: NonEmptyString | null,
       committeeApproval: CommitteeApproval | null,
       reviewers: Reviewer[] | null,
       chapters: Chapter[] | null,
@@ -392,15 +473,8 @@ export class Book extends Aggregate<BookId> {
         title,
         author,
         publishingHouse,
-        publisher,
-        edition,
         genre,
         isbn,
-        publicationDate,
-        totalPages,
-        numberOfIllustrations,
-        bindingType,
-        summary,
         committeeApproval,
         reviewers,
         chapters,
