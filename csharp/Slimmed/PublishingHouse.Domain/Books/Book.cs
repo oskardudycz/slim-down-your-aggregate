@@ -7,7 +7,7 @@ using static PublishingHouse.Books.BookEvent;
 
 namespace PublishingHouse.Books;
 
-public class Book: Aggregate<BookId>
+public class Book: Aggregate<BookId, BookEvent>
 {
     public enum State { Writing, Editing, Printing, Published, OutOfPrint }
 

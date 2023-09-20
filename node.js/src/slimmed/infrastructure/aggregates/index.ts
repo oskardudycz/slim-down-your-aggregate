@@ -1,8 +1,8 @@
 import { DomainEvent } from '../events';
 
-export abstract class Aggregate<TKey> {
+export abstract class Aggregate<TKey, TEvent extends DomainEvent> {
   #id: TKey;
-  #domainEvents: DomainEvent[] = [];
+  #domainEvents: TEvent[] = [];
 
   public get id() {
     return this.#id;
@@ -16,7 +16,7 @@ export abstract class Aggregate<TKey> {
     this.#id = id;
   }
 
-  protected addDomainEvent(domainEvent: DomainEvent) {
+  protected addDomainEvent(domainEvent: TEvent) {
     this.#domainEvents = [...this.#domainEvents, domainEvent];
   }
 

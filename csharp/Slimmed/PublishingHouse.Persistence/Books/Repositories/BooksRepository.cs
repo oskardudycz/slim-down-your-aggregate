@@ -9,7 +9,7 @@ using PublishingHouse.Persistence.Core.Repositories;
 namespace PublishingHouse.Persistence.Books.Repositories;
 
 public class BooksRepository:
-    EntityFrameworkRepository<Book, BookId, BookEntity, PublishingHouseDbContext>,  IBooksRepository
+    EntityFrameworkRepository<Book, BookId, BookEvent, BookEntity, PublishingHouseDbContext>,  IBooksRepository
 {
     private readonly IBookFactory bookFactory;
 

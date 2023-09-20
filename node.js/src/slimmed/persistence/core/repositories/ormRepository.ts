@@ -8,8 +8,9 @@ import {
 } from '../outbox/outboxMessageEntity';
 
 export abstract class OrmRepository<
-  TAggregate extends Aggregate<TKey>,
+  TAggregate extends Aggregate<TKey, TEvent>,
   TKey extends NonEmptyString,
+  TEvent extends DomainEvent,
   TEntity,
   TOrm extends Database,
 > {
@@ -48,7 +49,7 @@ export abstract class OrmRepository<
     aggregate.clearEvents();
   }
 
-  private scheduleOutbox(events: DomainEvent[]): void {
+  private scheduleOutbox(events: TEvent[]): void {
     const outboxTable = this.orm.table<OutboxMessageEntity>('outbox');
 
     const messages = events.map(outboxMessage);
