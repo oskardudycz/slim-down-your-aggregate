@@ -13,8 +13,9 @@ public class BooksService: IBooksService
     {
         var (bookId, title, author, publisherId, edition, genre) = command;
 
-        var book = Book.CreateDraft(
-            bookId,
+        var book = new Book.Initial(bookId);
+
+        book.CreateDraft(
             title,
             await authorProvider.GetOrCreate(author, ct),
             await publisherProvider.GetById(publisherId, ct),
@@ -32,7 +33,9 @@ public class BooksService: IBooksService
         var book = await repository.FindById(bookId, ct) ??
                    throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
 
-        book.AddChapter(chapterTitle, chapterContent);
+        if (book is not Book.Draft draft) throw new InvalidOperationException();
+
+        draft.AddChapter(chapterTitle, chapterContent);
 
         await repository.Update(book, ct);
     }
@@ -42,7 +45,9 @@ public class BooksService: IBooksService
         var book = await repository.FindById(command.BookId, ct) ??
                    throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
 
-        book.MoveToEditing();
+        if (book is not Book.Draft draft) throw new InvalidOperationException();
+
+        draft.MoveToEditing();
 
         await repository.Update(book, ct);
     }
@@ -52,7 +57,9 @@ public class BooksService: IBooksService
         var book = await repository.FindById(command.BookId, ct) ??
                    throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
 
-        book.AddTranslation(command.Translation);
+        if (book is not Book.UnderEditing underEditing) throw new InvalidOperationException();
+
+        underEditing.AddTranslation(command.Translation);
 
         await repository.Update(book, ct);
     }
@@ -62,7 +69,9 @@ public class BooksService: IBooksService
         var book = await repository.FindById(command.BookId, ct) ??
                    throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
 
-        book.AddFormat(command.Format);
+        if (book is not Book.UnderEditing underEditing) throw new InvalidOperationException();
+
+        underEditing.AddFormat(command.Format);
 
         await repository.Update(book, ct);
     }
@@ -72,7 +81,9 @@ public class BooksService: IBooksService
         var book = await repository.FindById(command.BookId, ct) ??
                    throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
 
-        book.RemoveFormat(command.Format);
+        if (book is not Book.UnderEditing underEditing) throw new InvalidOperationException();
+
+        underEditing.RemoveFormat(command.Format);
 
         await repository.Update(book, ct);
     }
@@ -82,7 +93,9 @@ public class BooksService: IBooksService
         var book = await repository.FindById(command.BookId, ct) ??
                    throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
 
-        book.AddReviewer(command.Reviewer);
+        if (book is not Book.UnderEditing underEditing) throw new InvalidOperationException();
+
+        underEditing.AddReviewer(command.Reviewer);
 
         await repository.Update(book, ct);
     }
@@ -92,7 +105,9 @@ public class BooksService: IBooksService
         var book = await repository.FindById(command.BookId, ct) ??
                    throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
 
-        book.Approve(command.CommitteeApproval);
+        if (book is not Book.UnderEditing underEditing) throw new InvalidOperationException();
+
+        underEditing.Approve(command.CommitteeApproval);
 
         await repository.Update(book, ct);
     }
@@ -102,17 +117,9 @@ public class BooksService: IBooksService
         var book = await repository.FindById(command.BookId, ct) ??
                    throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
 
-        book.SetISBN(command.ISBN);
+        if (book is not Book.UnderEditing underEditing) throw new InvalidOperationException();
 
-        await repository.Update(book, ct);
-    }
-
-    public async Task MoveToPublished(MoveToPublishedCommand command, CancellationToken ct)
-    {
-        var book = await repository.FindById(command.BookId, ct) ??
-                   throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
-
-        book.MoveToPublished();
+        underEditing.SetISBN(command.ISBN);
 
         await repository.Update(book, ct);
     }
@@ -122,7 +129,21 @@ public class BooksService: IBooksService
         var book = await repository.FindById(command.BookId, ct) ??
                    throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
 
-        book.MoveToPrinting();
+        if (book is not Book.UnderEditing underEditing) throw new InvalidOperationException();
+
+        underEditing.MoveToPrinting((null as IPublishingHouse)!);
+
+        await repository.Update(book, ct);
+    }
+
+    public async Task MoveToPublished(MoveToPublishedCommand command, CancellationToken ct)
+    {
+        var book = await repository.FindById(command.BookId, ct) ??
+                   throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
+
+        if (book is not Book.InPrint inPrint) throw new InvalidOperationException();
+
+        inPrint.MoveToPublished();
 
         await repository.Update(book, ct);
     }
@@ -132,7 +153,9 @@ public class BooksService: IBooksService
         var book = await repository.FindById(command.BookId, ct) ??
                    throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
 
-        book.MoveToOutOfPrint();
+        if (book is not Book.PublishedBook published) throw new InvalidOperationException();
+
+        published.MoveToOutOfPrint();
 
         await repository.Update(book, ct);
     }

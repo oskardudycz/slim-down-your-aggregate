@@ -7,7 +7,7 @@ import { BooksService } from './booksService';
 import { AuthorProvider } from '../../persistence/authors';
 import { PublisherProvider } from '../../persistence/publishers';
 import { BooksQueryService } from './booksQueryService';
-import { Book } from '../../domain/books/book';
+import { BookFactory } from '../../domain/books/book';
 import {
   PublishingHouseOrm,
   publishingHouseOrm,
@@ -27,7 +27,7 @@ export const configureBooks = () => {
   const orm = publishingHouseOrm(seedPublishingHouse);
   return {
     service: new BooksService(
-      new BooksRepository(orm, new Book.BookFactory()),
+      new BooksRepository(orm, new BookFactory()),
       new AuthorProvider(orm),
       new PublisherProvider(orm),
     ),

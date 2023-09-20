@@ -18,7 +18,7 @@ import {
 import { BookId } from './entities/bookId';
 import { IPublishingHouse } from './services/publishingHouse';
 import { IBookFactory } from './factories/bookFactory';
-import { InvalidStateError } from '#core/errors';
+import { InvalidOperationError, InvalidStateError } from '#core/errors';
 import {
   Approved,
   BookEvent,
@@ -35,33 +35,22 @@ import {
   TranslationAdded,
 } from './bookEvent';
 
-export class Book extends Aggregate<BookId, BookEvent> {
-  #currentState: State;
-  #title: Title;
-  #author: Author;
-  #genre: Genre | null;
-  #isbn: ISBN | null;
-  #committeeApproval: CommitteeApproval | null;
-  #reviewers: Reviewer[];
-  #chapters: Chapter[];
-  #translations: Translation[];
-  #formats: Format[];
+export class Initial extends Aggregate<BookId, BookEvent> {
+  constructor(id: BookId) {
+    super(id);
+  }
 
-  static createDraft(
-    bookId: BookId,
+  createDraft(
     title: Title,
     author: Author,
-    publishingHouse: IPublishingHouse,
     publisher: Publisher,
     edition: PositiveNumber,
     genre: Genre | null,
-  ): Book {
-    const book = new Book(bookId, State.Writing, title, author, genre);
-
+  ): void {
     const event: DraftCreated = {
       type: 'DraftCreated',
       data: {
-        bookId,
+        bookId: this.id,
         title,
         author,
         publisher,
@@ -69,9 +58,19 @@ export class Book extends Aggregate<BookId, BookEvent> {
         genre,
       },
     };
-    book.addDomainEvent(event);
+    this.addDomainEvent(event);
+  }
+}
 
-    return book;
+export class Draft extends Aggregate<BookId, BookEvent> {
+  #genre: Genre | null;
+  #chapters: Chapter[];
+  public readonly status = State.Writing;
+
+  constructor(id: BookId, genre: Genre | null, chapters: Chapter[] = []) {
+    super(id);
+    this.#genre = genre;
+    this.#chapters = chapters;
   }
 
   addChapter(title: ChapterTitle, content: ChapterContent): void {
@@ -111,12 +110,6 @@ export class Book extends Aggregate<BookId, BookEvent> {
   }
 
   moveToEditing(): void {
-    if (this.#currentState !== State.Writing) {
-      throw InvalidStateError(
-        'Cannot move to Editing state from the current state.',
-      );
-    }
-
     if (this.#chapters.length < 1) {
       throw InvalidStateError(
         'A book must have at least one chapter to move to the Editing state.',
@@ -129,8 +122,6 @@ export class Book extends Aggregate<BookId, BookEvent> {
       );
     }
 
-    this.#currentState = State.Editing;
-
     const event: MovedToEditing = {
       type: 'MovedToEditing',
       data: {
@@ -140,14 +131,39 @@ export class Book extends Aggregate<BookId, BookEvent> {
 
     this.addDomainEvent(event);
   }
+}
+
+export class UnderEditing extends Aggregate<BookId, BookEvent> {
+  #isbn: ISBN | null;
+  #genre: Genre;
+  #committeeApproval: CommitteeApproval | null;
+  #reviewers: Reviewer[];
+  #translations: Translation[];
+  #formats: Format[];
+  #chapters: Chapter[];
+  public readonly status = State.Editing;
+
+  constructor(
+    id: BookId,
+    genre: Genre,
+    chapters: Chapter[],
+    reviewers: Reviewer[] = [],
+    translations: Translation[] = [],
+    formats: Format[] = [],
+    isbn?: ISBN | null,
+    committeeApproval?: CommitteeApproval | null,
+  ) {
+    super(id);
+    this.#genre = genre;
+    this.#chapters = chapters;
+    this.#reviewers = reviewers;
+    this.#translations = translations;
+    this.#formats = formats;
+    this.#isbn = isbn ?? null;
+    this.#committeeApproval = committeeApproval ?? null;
+  }
 
   addTranslation(translation: Translation): void {
-    if (this.#currentState !== State.Editing) {
-      throw InvalidStateError(
-        'Cannot add translation of a book that is not in the Editing state.',
-      );
-    }
-
     if (this.#translations.length >= 5) {
       throw InvalidStateError(
         'Cannot add more translations. Maximum 5 translations are allowed.',
@@ -168,12 +184,6 @@ export class Book extends Aggregate<BookId, BookEvent> {
   }
 
   addFormat(format: Format): void {
-    if (this.#currentState !== State.Editing) {
-      throw InvalidStateError(
-        'Cannot add format of a book that is not in the Editing state.',
-      );
-    }
-
     if (this.#formats.some((f) => f.formatType === format.formatType)) {
       throw InvalidStateError(`Format ${format.formatType} already exists.`);
     }
@@ -192,12 +202,6 @@ export class Book extends Aggregate<BookId, BookEvent> {
   }
 
   removeFormat(format: Format): void {
-    if (this.#currentState !== State.Editing) {
-      throw InvalidStateError(
-        'Cannot remove format of a book that is not in the Editing state.',
-      );
-    }
-
     const existingFormat = this.#formats.find(
       (f) => f.formatType === format.formatType,
     );
@@ -221,12 +225,6 @@ export class Book extends Aggregate<BookId, BookEvent> {
   }
 
   addReviewer(reviewer: Reviewer): void {
-    if (this.#currentState !== State.Editing) {
-      throw InvalidStateError(
-        'Cannot approve a book that is not in the Editing state.',
-      );
-    }
-
     if (this.#reviewers.some((r) => r.name === reviewer.name)) {
       const reviewerName: string = reviewer.name;
       throw InvalidStateError(`${reviewerName} is already a reviewer.`);
@@ -246,12 +244,6 @@ export class Book extends Aggregate<BookId, BookEvent> {
   }
 
   approve(committeeApproval: CommitteeApproval): void {
-    if (this.#currentState !== State.Editing) {
-      throw InvalidStateError(
-        'Cannot approve a book that is not in the Editing state.',
-      );
-    }
-
     if (this.#reviewers.length < 3) {
       throw InvalidStateError(
         'A book cannot be approved unless it has been reviewed by at least three reviewers.',
@@ -272,12 +264,6 @@ export class Book extends Aggregate<BookId, BookEvent> {
   }
 
   setISBN(isbn: ISBN): void {
-    if (this.#currentState !== State.Editing) {
-      throw InvalidStateError(
-        'Cannot approve a book that is not in the Editing state.',
-      );
-    }
-
     if (this.#isbn !== null) {
       throw InvalidStateError('Cannot change already set ISBN.');
     }
@@ -296,12 +282,6 @@ export class Book extends Aggregate<BookId, BookEvent> {
   }
 
   moveToPrinting(publishingHouse: IPublishingHouse): void {
-    if (this.#currentState !== State.Editing) {
-      throw InvalidStateError(
-        'Cannot move to printing from the current state.',
-      );
-    }
-
     if (this.#chapters.length < 1) {
       throw InvalidStateError(
         'A book must have at least one chapter to move to the printing state.',
@@ -333,8 +313,6 @@ export class Book extends Aggregate<BookId, BookEvent> {
       );
     }
 
-    this.#currentState = State.Printing;
-
     const event: MovedToPrinting = {
       type: 'MovedToPrinting',
       data: {
@@ -344,17 +322,30 @@ export class Book extends Aggregate<BookId, BookEvent> {
 
     this.addDomainEvent(event);
   }
+}
+
+export class InPrint extends Aggregate<BookId, BookEvent> {
+  #title: Title;
+  #author: Author;
+  #isbn: ISBN | null;
+  #reviewers: Reviewer[];
+  public readonly status = State.Printing;
+
+  constructor(
+    id: BookId,
+    title: Title,
+    author: Author,
+    isbn?: ISBN | null,
+    reviewers?: Reviewer[] | null,
+  ) {
+    super(id);
+    this.#title = title;
+    this.#author = author;
+    this.#isbn = isbn ?? null;
+    this.#reviewers = reviewers ?? [];
+  }
 
   moveToPublished(): void {
-    if (
-      this.#currentState !== State.Printing ||
-      this.#translations.length < 5
-    ) {
-      throw InvalidStateError(
-        'Cannot move to Published state from the current state.',
-      );
-    }
-
     if (this.#isbn === null) {
       throw InvalidStateError('Cannot move to Published state without ISBN.');
     }
@@ -364,8 +355,6 @@ export class Book extends Aggregate<BookId, BookEvent> {
         'A book cannot be moved to the Published state unless it has been reviewed by at least three reviewers.',
       );
     }
-
-    this.#currentState = State.Published;
 
     const event: Published = {
       type: 'Published',
@@ -379,14 +368,18 @@ export class Book extends Aggregate<BookId, BookEvent> {
 
     this.addDomainEvent(event);
   }
+}
+
+export class PublishedBook extends Aggregate<BookId, BookEvent> {
+  #formats: Format[];
+  public readonly status = State.Published;
+
+  constructor(id: BookId, formats: Format[]) {
+    super(id);
+    this.#formats = formats;
+  }
 
   moveToOutOfPrint(): void {
-    if (this.#currentState !== State.Published) {
-      throw InvalidStateError(
-        'Cannot move to Out of Print state from the current state.',
-      );
-    }
-
     const totalCopies = this.#formats.reduce(
       (acc, format) => acc + format.totalCopies,
       0,
@@ -402,8 +395,6 @@ export class Book extends Aggregate<BookId, BookEvent> {
       );
     }
 
-    this.#currentState = State.OutOfPrint;
-
     const event: MovedToOutOfPrint = {
       type: 'MovedToOutOfPrint',
       data: {
@@ -413,62 +404,62 @@ export class Book extends Aggregate<BookId, BookEvent> {
 
     this.addDomainEvent(event);
   }
+}
 
-  private constructor(
-    id: BookId,
-    currentState: State,
+export class OutOfPrint extends Aggregate<BookId, BookEvent> {
+  constructor(id: BookId) {
+    super(id);
+  }
+}
+
+export type Book =
+  | Initial
+  | Draft
+  | UnderEditing
+  | InPrint
+  | PublishedBook
+  | OutOfPrint;
+
+export class BookFactory implements IBookFactory {
+  create(
+    bookId: BookId,
+    state: State,
     title: Title,
     author: Author,
     genre: Genre | null,
-    isbn?: ISBN | null,
-    committeeApproval?: CommitteeApproval | null,
-    reviewers?: Reviewer[] | null,
-    chapters?: Chapter[] | null,
-    translations?: Translation[] | null,
-    formats?: Format[] | null,
-  ) {
-    super(id);
-    this.#currentState = currentState;
-    this.#title = title;
-    this.#author = author;
-    this.#genre = genre;
-    this.#isbn = isbn ?? null;
-    this.#committeeApproval = committeeApproval ?? null;
-    this.#reviewers = reviewers ?? [];
-    this.#chapters = chapters ?? [];
-    this.#translations = translations ?? [];
-    this.#formats = formats ?? [];
-  }
+    isbn: ISBN | null,
+    committeeApproval: CommitteeApproval | null,
+    reviewers: Reviewer[],
+    chapters: Chapter[],
+    translations: Translation[],
+    formats: Format[],
+  ): Book {
+    switch (state) {
+      case State.Writing:
+        return new Draft(bookId, genre, chapters);
+      case State.Editing: {
+        if (genre == null)
+          throw InvalidOperationError('Genre should be provided!');
 
-  static BookFactory = class implements IBookFactory {
-    create(
-      bookId: BookId,
-      state: State,
-      title: Title,
-      author: Author,
-      genre: Genre | null,
-      isbn: ISBN | null,
-      committeeApproval: CommitteeApproval | null,
-      reviewers: Reviewer[] | null,
-      chapters: Chapter[] | null,
-      translations: Translation[] | null,
-      formats: Format[] | null,
-    ): Book {
-      return new Book(
-        bookId,
-        state,
-        title,
-        author,
-        genre,
-        isbn,
-        committeeApproval,
-        reviewers,
-        chapters,
-        translations,
-        formats,
-      );
+        return new UnderEditing(
+          bookId,
+          genre,
+          chapters,
+          reviewers,
+          translations,
+          formats,
+          isbn,
+          committeeApproval,
+        );
+      }
+      case State.Printing:
+        return new InPrint(bookId, title, author, isbn, reviewers);
+      case State.Published:
+        return new PublishedBook(bookId, formats);
+      case State.OutOfPrint:
+        return new OutOfPrint(bookId);
     }
-  };
+  }
 }
 
 export enum State {

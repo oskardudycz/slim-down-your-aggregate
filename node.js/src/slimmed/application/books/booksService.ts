@@ -1,9 +1,15 @@
 import { IBooksRepository } from '../../domain/books/repositories';
 import { IAuthorProvider } from '../../domain/books/authors';
 import { IPublisherProvider } from '../../domain/books/publishers/publisherProvider';
-import { Book } from '../../domain/books/book';
 import { IPublishingHouse } from '../../domain/books/services';
-import { NotFoundError } from '#core/errors';
+import {
+  Draft,
+  InPrint,
+  Initial,
+  PublishedBook,
+  UnderEditing,
+} from '../../domain/books/book';
+import { InvalidOperationError, NotFoundError } from '#core/errors';
 import {
   AddChapterCommand,
   AddFormatCommand,
@@ -38,11 +44,11 @@ export class BooksService implements IBooksService {
   async createDraft(command: CreateDraftCommand): Promise<void> {
     const { bookId, title, author, publisherId, edition, genre } = command.data;
 
-    const book = Book.createDraft(
-      bookId,
+    const book = new Initial(bookId);
+
+    book.createDraft(
       title,
       await this.authorProvider.getOrCreate(author),
-      {} as IPublishingHouse,
       await this.publisherProvider.getById(publisherId),
       edition,
       genre,
@@ -58,6 +64,8 @@ export class BooksService implements IBooksService {
 
     if (!book) throw NotFoundError("Book doesn't exist");
 
+    if (!(book instanceof Draft)) throw InvalidOperationError('Invalid State');
+
     book.addChapter(chapterTitle, chapterContent);
 
     return this.repository.update(book);
@@ -67,6 +75,8 @@ export class BooksService implements IBooksService {
     const book = await this.repository.findById(command.data.bookId);
 
     if (!book) throw NotFoundError("Book doesn't exist");
+
+    if (!(book instanceof Draft)) throw InvalidOperationError('Invalid State');
 
     book.moveToEditing();
 
@@ -80,6 +90,9 @@ export class BooksService implements IBooksService {
 
     if (!book) throw NotFoundError("Book doesn't exist");
 
+    if (!(book instanceof UnderEditing))
+      throw InvalidOperationError('Invalid State');
+
     book.addTranslation(translation);
 
     return this.repository.update(book);
@@ -91,6 +104,9 @@ export class BooksService implements IBooksService {
     const book = await this.repository.findById(bookId);
 
     if (!book) throw NotFoundError("Book doesn't exist");
+
+    if (!(book instanceof UnderEditing))
+      throw InvalidOperationError('Invalid State');
 
     book.addFormat(format);
 
@@ -104,6 +120,9 @@ export class BooksService implements IBooksService {
 
     if (!book) throw NotFoundError("Book doesn't exist");
 
+    if (!(book instanceof UnderEditing))
+      throw InvalidOperationError('Invalid State');
+
     book.removeFormat(format);
 
     return this.repository.update(book);
@@ -115,6 +134,9 @@ export class BooksService implements IBooksService {
     const book = await this.repository.findById(bookId);
 
     if (!book) throw NotFoundError("Book doesn't exist");
+
+    if (!(book instanceof UnderEditing))
+      throw InvalidOperationError('Invalid State');
 
     book.addReviewer(reviewer);
 
@@ -128,6 +150,9 @@ export class BooksService implements IBooksService {
 
     if (!book) throw NotFoundError("Book doesn't exist");
 
+    if (!(book instanceof UnderEditing))
+      throw InvalidOperationError('Invalid State');
+
     book.approve(committeeApproval);
 
     return this.repository.update(book);
@@ -139,6 +164,9 @@ export class BooksService implements IBooksService {
     const book = await this.repository.findById(bookId);
 
     if (!book) throw NotFoundError("Book doesn't exist");
+
+    if (!(book instanceof UnderEditing))
+      throw InvalidOperationError('Invalid State');
 
     book.setISBN(isbn);
 
@@ -152,7 +180,10 @@ export class BooksService implements IBooksService {
 
     if (!book) throw NotFoundError("Book doesn't exist");
 
-    book.moveToPrinting();
+    if (!(book instanceof UnderEditing))
+      throw InvalidOperationError('Invalid State');
+
+    book.moveToPrinting({} as IPublishingHouse);
 
     return this.repository.update(book);
   }
@@ -163,6 +194,9 @@ export class BooksService implements IBooksService {
     const book = await this.repository.findById(bookId);
 
     if (!book) throw NotFoundError("Book doesn't exist");
+
+    if (!(book instanceof InPrint))
+      throw InvalidOperationError('Invalid State');
 
     book.moveToPublished();
 
@@ -175,6 +209,9 @@ export class BooksService implements IBooksService {
     const book = await this.repository.findById(bookId);
 
     if (!book) throw NotFoundError("Book doesn't exist");
+
+    if (!(book instanceof PublishedBook))
+      throw InvalidOperationError('Invalid State');
 
     book.moveToOutOfPrint();
 
