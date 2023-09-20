@@ -4,9 +4,8 @@ import { CreateDraftCommand } from './commands/createDraftCommand';
 import { MoveToEditingCommand } from './commands/moveToEditingCommand';
 import { IAuthorProvider } from '../../domain/books/authors';
 import { IPublisherProvider } from '../../domain/books/publishers/publisherProvider';
-import { Book } from '../../domain/books/book';
-import { IPublishingHouse } from '../../domain/books/services';
-import { NotFoundError } from '#core/errors';
+import { Draft, Initial } from '../../domain/books/book';
+import { InvalidOperationError, NotFoundError } from '#core/errors';
 
 export interface IBooksService {
   createDraft(command: CreateDraftCommand): Promise<void>;
@@ -18,11 +17,11 @@ export class BooksService implements IBooksService {
   async createDraft(command: CreateDraftCommand): Promise<void> {
     const { bookId, title, author, publisherId, edition, genre } = command.data;
 
-    const book = Book.createDraft(
-      bookId,
+    const book = new Initial(bookId);
+
+    book.createDraft(
       title,
       await this.authorProvider.getOrCreate(author),
-      {} as IPublishingHouse,
       await this.publisherProvider.getById(publisherId),
       edition,
       genre,
@@ -36,8 +35,9 @@ export class BooksService implements IBooksService {
 
     const book = await this.repository.findById(bookId);
 
-    // TODO: Add Explicit Not Found exception
     if (!book) throw NotFoundError("Book doesn't exist");
+
+    if (!(book instanceof Draft)) throw InvalidOperationError('Invalid State');
 
     book.addChapter(chapterTitle, chapterContent);
 
@@ -47,8 +47,9 @@ export class BooksService implements IBooksService {
   async moveToEditing(command: MoveToEditingCommand): Promise<void> {
     const book = await this.repository.findById(command.data.bookId);
 
-    // TODO: Add Explicit Not Found exception
     if (!book) throw NotFoundError("Book doesn't exist");
+
+    if (!(book instanceof Draft)) throw InvalidOperationError('Invalid State');
 
     book.moveToEditing();
 

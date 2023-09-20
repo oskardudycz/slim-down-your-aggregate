@@ -13,8 +13,9 @@ public class BooksService: IBooksService
     {
         var (bookId, title, author, publisherId, edition, genre) = command;
 
-        var book = Book.CreateDraft(
-            bookId,
+        var book = new Book.Initial(bookId);
+
+        book.CreateDraft(
             title,
             await authorProvider.GetOrCreate(author, ct),
             await publisherProvider.GetById(publisherId, ct),
@@ -32,7 +33,9 @@ public class BooksService: IBooksService
         var book = await repository.FindById(bookId, ct) ??
                    throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
 
-        book.AddChapter(chapterTitle, chapterContent);
+        if (book is not Book.Draft draft) throw new InvalidOperationException();
+
+        draft.AddChapter(chapterTitle, chapterContent);
 
         await repository.Update(book, ct);
     }
@@ -42,7 +45,9 @@ public class BooksService: IBooksService
         var book = await repository.FindById(command.BookId, ct) ??
                    throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
 
-        book.MoveToEditing();
+        if (book is not Book.Draft draft) throw new InvalidOperationException();
+
+        draft.MoveToEditing();
 
         await repository.Update(book, ct);
     }
