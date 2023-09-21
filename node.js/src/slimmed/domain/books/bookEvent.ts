@@ -2,7 +2,6 @@ import { PositiveNumber } from '#core/typing';
 import { DomainEvent } from '../../infrastructure/events';
 import {
   Author,
-  BookId,
   Chapter,
   CommitteeApproval,
   Format,
@@ -17,7 +16,6 @@ import {
 export type DraftCreated = DomainEvent<
   'DraftCreated',
   {
-    bookId: BookId;
     title: Title;
     author: Author;
     publisher: Publisher;
@@ -29,7 +27,6 @@ export type DraftCreated = DomainEvent<
 export type ChapterAdded = DomainEvent<
   'ChapterAdded',
   {
-    bookId: BookId;
     chapter: Chapter;
   }
 >;
@@ -37,7 +34,6 @@ export type ChapterAdded = DomainEvent<
 export type FormatAdded = DomainEvent<
   'FormatAdded',
   {
-    bookId: BookId;
     format: Format;
   }
 >;
@@ -45,7 +41,6 @@ export type FormatAdded = DomainEvent<
 export type FormatRemoved = DomainEvent<
   'FormatRemoved',
   {
-    bookId: BookId;
     format: Format;
   }
 >;
@@ -53,7 +48,6 @@ export type FormatRemoved = DomainEvent<
 export type TranslationAdded = DomainEvent<
   'TranslationAdded',
   {
-    bookId: BookId;
     translation: Translation;
   }
 >;
@@ -61,7 +55,6 @@ export type TranslationAdded = DomainEvent<
 export type TranslationRemoved = DomainEvent<
   'TranslationRemoved',
   {
-    bookId: BookId;
     translation: Translation;
   }
 >;
@@ -69,22 +62,15 @@ export type TranslationRemoved = DomainEvent<
 export type ReviewerAdded = DomainEvent<
   'ReviewerAdded',
   {
-    bookId: BookId;
     reviewer: Reviewer;
   }
 >;
 
-export type MovedToEditing = DomainEvent<
-  'MovedToEditing',
-  {
-    bookId: BookId;
-  }
->;
+export type MovedToEditing = DomainEvent<'MovedToEditing', {}>;
 
 export type Approved = DomainEvent<
   'Approved',
   {
-    bookId: BookId;
     committeeApproval: CommitteeApproval;
   }
 >;
@@ -92,44 +78,33 @@ export type Approved = DomainEvent<
 export type ISBNSet = DomainEvent<
   'ISBNSet',
   {
-    bookId: BookId;
     isbn: ISBN;
   }
 >;
 
-export type MovedToPrinting = DomainEvent<
-  'MovedToPrinting',
-  {
-    bookId: BookId;
-  }
->;
+export type MovedToPrinting = DomainEvent<'MovedToPrinting', {}>;
 
 export type Published = DomainEvent<
   'Published',
   {
-    bookId: BookId;
     isbn: ISBN;
     title: Title;
     author: Author;
   }
 >;
 
-export type MovedToOutOfPrint = DomainEvent<
-  'MovedToOutOfPrint',
-  {
-    bookId: BookId;
-  }
->;
+export type MovedToOutOfPrint = DomainEvent<'MovedToOutOfPrint', {}>;
+
+export type DraftEvent = ChapterAdded | MovedToEditing;
 
 export type BookEvent =
   | DraftCreated
-  | ChapterAdded
+  | DraftEvent
   | FormatAdded
   | FormatRemoved
   | TranslationAdded
   | TranslationRemoved
   | ReviewerAdded
-  | MovedToEditing
   | Approved
   | ISBNSet
   | MovedToPrinting

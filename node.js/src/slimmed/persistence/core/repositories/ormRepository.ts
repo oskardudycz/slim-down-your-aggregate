@@ -25,29 +25,17 @@ export abstract class OrmRepository<
     return entity != null ? this.mapToAggregate(entity) : null;
   }
 
-  public async add(aggregate: TAggregate): Promise<void> {
-    this.processEvents(this.orm, null, aggregate.domainEvents);
+  public async store(key: TKey, events: TEvent[]): Promise<void> {
+    const entity = await this.entities.findById(key);
+
+    this.processEvents(this.orm, entity ?? key, events);
 
     await this.orm.saveChanges();
-    aggregate.clearEvents();
-  }
-
-  public async update(aggregate: TAggregate): Promise<void> {
-    const id: string = aggregate.id;
-
-    const entity = await this.entities.findById(id);
-
-    if (!entity) throw new Error(`Entity with id ${id} was not found`);
-
-    this.processEvents(this.orm, entity, aggregate.domainEvents);
-
-    await this.orm.saveChanges();
-    aggregate.clearEvents();
   }
 
   private processEvents(
     orm: TOrm,
-    current: TEntity | null,
+    current: TEntity | TKey,
     events: TEvent[],
   ): void {
     const outboxTable = orm.table<OutboxMessageEntity>('outbox');
@@ -64,7 +52,7 @@ export abstract class OrmRepository<
 
   protected abstract evolve(
     orm: TOrm,
-    current: TEntity | null,
+    current: TEntity | TKey,
     event: TEvent,
   ): void;
 }

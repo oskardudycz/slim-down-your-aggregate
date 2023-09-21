@@ -25,15 +25,15 @@ export class BooksRepository
 
   protected evolve(
     orm: PublishingHouseOrm,
-    current: BookEntity | null,
+    current: BookEntity | BookId,
     event: BookEvent,
   ): void {
     const { type, data } = event;
 
     switch (type) {
       case 'DraftCreated': {
-        orm.books.add(data.bookId, {
-          id: data.bookId,
+        orm.books.add(current as BookId, {
+          id: current as BookId,
           currentState: State.Writing,
           title: data.title,
           author: {
@@ -111,7 +111,8 @@ export class BooksRepository
         break;
       }
       case 'TranslationAdded': {
-        if (!current) throw NotFoundError('Book was not found');
+        if (!current && 'id' in current)
+          throw NotFoundError('Book was not found');
 
         const {
           translation: { language, translator },
