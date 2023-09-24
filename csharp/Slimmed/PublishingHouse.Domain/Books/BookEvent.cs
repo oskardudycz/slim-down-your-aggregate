@@ -46,7 +46,8 @@ public abstract record BookEvent: IDomainEvent
     ): BookEvent;
 
     public record MovedToEditing(
-        BookId BookId
+        BookId BookId,
+        Genre Genre
     ): BookEvent;
 
     public record Approved(
@@ -65,10 +66,7 @@ public abstract record BookEvent: IDomainEvent
     ): BookEvent;
 
     public record Published(
-        BookId BookId,
-        ISBN ISBN,
-        Title Title,
-        Author Author
+        BookId BookId
     ): BookEvent;
 
     public record MovedToOutOfPrint
@@ -77,4 +75,16 @@ public abstract record BookEvent: IDomainEvent
     ): BookEvent;
 
     private BookEvent() { }
+}
+
+public abstract record BookExternalEvent: IDomainEvent
+{
+    public record Published(
+        BookId BookId,
+        ISBN ISBN,
+        Title Title,
+        AuthorId AuthorId
+    ): BookExternalEvent;
+
+    private BookExternalEvent() { }
 }

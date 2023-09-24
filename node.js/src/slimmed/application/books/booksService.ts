@@ -26,6 +26,8 @@ import {
 } from './commands';
 import { BookId } from 'src/original/domain/books/entities';
 import { BookEvent } from 'src/slimmed/domain/books/bookEvent';
+import { PositiveNumber } from '#core/typing';
+import { Ratio } from '#core/typing/ratio';
 
 export interface IBooksService {
   createDraft(command: CreateDraftCommand): Promise<void>;
@@ -91,7 +93,7 @@ export class BooksService implements IBooksService {
 
       const { translation } = command.data;
 
-      return book.addTranslation(translation);
+      return book.addTranslation(translation, this.maximumNumberOfTranslations);
     });
 
   public addFormat = async (command: AddFormatCommand): Promise<void> =>
@@ -131,7 +133,10 @@ export class BooksService implements IBooksService {
 
       const { committeeApproval } = command.data;
 
-      return book.approve(committeeApproval);
+      return book.approve(
+        committeeApproval,
+        this.minimumReviewersRequiredForApproval,
+      );
     });
 
   public setISBN = async (command: SetISBNCommand): Promise<void> =>
@@ -171,7 +176,9 @@ export class BooksService implements IBooksService {
       if (!(book instanceof PublishedBook))
         throw InvalidOperationError('Invalid State');
 
-      return book.moveToOutOfPrint();
+      return book.moveToOutOfPrint(
+        this.maxAllowedUnsoldCopiesRatioToGoOutOfPrint,
+      );
     });
 
   private handle = async (
@@ -189,8 +196,11 @@ export class BooksService implements IBooksService {
   private getDefault = (bookId: BookId) => new Initial(bookId);
 
   constructor(
-    private repository: IBooksRepository,
-    private authorProvider: IAuthorProvider,
-    private publisherProvider: IPublisherProvider,
+    private readonly repository: IBooksRepository,
+    private readonly authorProvider: IAuthorProvider,
+    private readonly publisherProvider: IPublisherProvider,
+    private readonly minimumReviewersRequiredForApproval: PositiveNumber,
+    private readonly maximumNumberOfTranslations: PositiveNumber,
+    private readonly maxAllowedUnsoldCopiesRatioToGoOutOfPrint: Ratio,
   ) {}
 }

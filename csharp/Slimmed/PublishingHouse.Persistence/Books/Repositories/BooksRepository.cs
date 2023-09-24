@@ -153,4 +153,18 @@ public class BooksRepository:
         if (current != null)
             current.Version++;
     }
+
+    protected override object Enrich(BookEvent @event, BookEntity? current)
+    {
+        if (@event is Published published && current != null)
+        {
+            return new BookExternalEvent.Published(
+                published.BookId,
+                new ISBN(current.ISBN!),
+                new Title(current.Title),
+                new AuthorId(current.Author.Id)
+            );
+        }
+        return base.Enrich(@event, current);
+    }
 }

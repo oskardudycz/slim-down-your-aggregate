@@ -2,6 +2,7 @@ import { PositiveNumber } from '#core/typing';
 import { DomainEvent } from '../../infrastructure/events';
 import {
   Author,
+  AuthorId,
   BookId,
   Chapter,
   CommitteeApproval,
@@ -78,6 +79,7 @@ export type MovedToEditing = DomainEvent<
   'MovedToEditing',
   {
     bookId: BookId;
+    genre: Genre | null;
   }
 >;
 
@@ -108,9 +110,6 @@ export type Published = DomainEvent<
   'Published',
   {
     bookId: BookId;
-    isbn: ISBN;
-    title: Title;
-    author: Author;
   }
 >;
 
@@ -134,4 +133,29 @@ export type BookEvent =
   | ISBNSet
   | MovedToPrinting
   | Published
+  | MovedToOutOfPrint;
+
+export type PublishedExternal = DomainEvent<
+  'Published',
+  {
+    bookId: BookId;
+    isbn: ISBN;
+    title: Title;
+    authorId: AuthorId;
+  }
+>;
+
+export type BookExternalEvent =
+  | DraftCreated
+  | ChapterAdded
+  | FormatAdded
+  | FormatRemoved
+  | TranslationAdded
+  | TranslationRemoved
+  | ReviewerAdded
+  | MovedToEditing
+  | Approved
+  | ISBNSet
+  | MovedToPrinting
+  | PublishedExternal
   | MovedToOutOfPrint;

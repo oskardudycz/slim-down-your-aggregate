@@ -29,17 +29,17 @@ public abstract class Book
 
     public class Draft: Book
     {
-        private readonly bool isGenreSet;
+        private readonly Genre? genre;
         private readonly List<ChapterTitle> chapterTitles;
         private int ChaptersCount => chapterTitles.Count;
 
         internal Draft(
             BookId bookId,
-            bool isGenreSet,
+            Genre? genre,
             List<ChapterTitle> chapterTitles
         ): base(bookId)
         {
-            this.isGenreSet = isGenreSet;
+            this.genre = genre;
             this.chapterTitles = chapterTitles;
         }
 
@@ -64,10 +64,10 @@ public abstract class Book
                 throw new InvalidOperationException(
                     "A book must have at least one chapter to move to the Editing state.");
 
-            if (!isGenreSet)
+            if (genre == null)
                 throw new InvalidOperationException("Book can be moved to the editing only when genre is specified");
 
-            return new MovedToEditing(Id);
+            return new MovedToEditing(Id, genre);
         }
     }
 
@@ -76,11 +76,8 @@ public abstract class Book
         private readonly Genre? genre;
         private bool isISBNSet;
         private bool isApproved;
-        private readonly PositiveInt chaptersCount;
         private readonly List<ReviewerId> reviewers;
-        private readonly PositiveInt minimumReviewersRequiredForApproval;
         private readonly List<LanguageId> translationLanguages;
-        private readonly PositiveInt maximumNumberOfTranslations;
         private readonly List<FormatType> formatTypes;
 
         internal UnderEditing(
@@ -88,26 +85,20 @@ public abstract class Book
             Genre? genre,
             bool isISBNSet,
             bool isApproved,
-            PositiveInt chaptersCount,
             List<ReviewerId> reviewers,
-            PositiveInt minimumReviewersRequiredForApproval,
             List<LanguageId> translationLanguages,
-            PositiveInt maximumNumberOfTranslations,
             List<FormatType> formatTypes
         ): base(bookId)
         {
             this.genre = genre;
             this.isISBNSet = isISBNSet;
             this.isApproved = isApproved;
-            this.chaptersCount = chaptersCount;
             this.reviewers = reviewers;
-            this.minimumReviewersRequiredForApproval = minimumReviewersRequiredForApproval;
             this.translationLanguages = translationLanguages;
-            this.maximumNumberOfTranslations = maximumNumberOfTranslations;
             this.formatTypes = formatTypes;
         }
 
-        public TranslationAdded AddTranslation(Translation translation)
+        public TranslationAdded AddTranslation(Translation translation, PositiveInt maximumNumberOfTranslations)
         {
             var languageId = translation.Language.Id;
 
@@ -152,7 +143,7 @@ public abstract class Book
             return new ReviewerAdded(Id, reviewer);
         }
 
-        public Approved Approve(CommitteeApproval committeeApproval)
+        public Approved Approve(CommitteeApproval committeeApproval, PositiveInt minimumReviewersRequiredForApproval)
         {
             if (reviewers.Count < minimumReviewersRequiredForApproval.Value)
                 throw new InvalidOperationException(
@@ -176,10 +167,6 @@ public abstract class Book
 
         public MovedToPrinting MoveToPrinting(IPublishingHouse publishingHouse)
         {
-            if (chaptersCount.Value < 1)
-                throw new InvalidOperationException(
-                    "A book must have at least one chapter to move to the printing state.");
-
             if (isApproved)
                 throw new InvalidOperationException("Cannot move to printing state until the book has been approved.");
 
@@ -195,31 +182,18 @@ public abstract class Book
 
     public class InPrint: Book
     {
-        private readonly Title title;
-        private readonly Author author;
-        private readonly ISBN isbn;
-
-        internal InPrint(
-            BookId bookId,
-            Title title,
-            Author author,
-            ISBN isbn
-        ): base(bookId)
+        internal InPrint(BookId bookId): base(bookId)
         {
-            this.title = title;
-            this.author = author;
-            this.isbn = isbn;
         }
 
         public Published MoveToPublished() =>
-            new Published(Id, isbn, title, author);
+            new Published(Id);
     }
 
     public class PublishedBook: Book
     {
         private readonly PositiveInt totalCopies;
         private readonly PositiveInt totalSoldCopies;
-        private readonly Ratio maxAllowedUnsoldCopiesRatioToGoOutOfPrint;
 
         private Ratio UnsoldCopiesRatio =>
             new((totalCopies.Value - totalSoldCopies.Value) / (decimal)totalCopies.Value);
@@ -227,16 +201,14 @@ public abstract class Book
         public PublishedBook(
             BookId bookId,
             PositiveInt totalCopies,
-            PositiveInt totalSoldCopies,
-            Ratio maxAllowedUnsoldCopiesRatioToGoOutOfPrint
+            PositiveInt totalSoldCopies
         ): base(bookId)
         {
             this.totalCopies = totalCopies;
             this.totalSoldCopies = totalSoldCopies;
-            this.maxAllowedUnsoldCopiesRatioToGoOutOfPrint = maxAllowedUnsoldCopiesRatioToGoOutOfPrint;
         }
 
-        public MovedToOutOfPrint MoveToOutOfPrint()
+        public MovedToOutOfPrint MoveToOutOfPrint(Ratio maxAllowedUnsoldCopiesRatioToGoOutOfPrint)
         {
             if (UnsoldCopiesRatio.CompareTo(maxAllowedUnsoldCopiesRatioToGoOutOfPrint) > 0)
                 throw new InvalidOperationException(
@@ -250,6 +222,49 @@ public abstract class Book
     {
         public OutOfPrint(BookId bookId): base(bookId)
         {
+        }
+    }
+
+    public static Book Evolve(Book book, BookEvent @event)
+    {
+        switch (@event)
+        {
+            case DraftCreated draftCreated:
+            {
+                return book is Initial
+                    ? new Draft(draftCreated.BookId, draftCreated.Genre, new List<ChapterTitle>())
+                    : book;
+            }
+            case MovedToEditing movedToEditing:
+            {
+                return book is Draft
+                    ? new UnderEditing(movedToEditing.BookId, movedToEditing.Genre, false, false,
+                        new List<ReviewerId>(), new List<LanguageId>(), new List<FormatType>())
+                    : book;
+            }
+            case MovedToPrinting movedToPrinting:
+            {
+                return book is Draft
+                    // TODO: Add methods to set total items per format
+                    ? new InPrint(movedToPrinting.BookId)
+                    : book;
+            }
+            case Published movedToPrinting:
+            {
+                return book is Draft
+                    // TODO: Add methods to set sold copies
+                    ? new PublishedBook(movedToPrinting.BookId, new PositiveInt(1), new PositiveInt(1))
+                    : book;
+            }
+            case MovedToOutOfPrint movedToOutOfPrint:
+            {
+                return book is Draft
+                    // TODO: Add methods to set sold copies
+                    ? new OutOfPrint(movedToOutOfPrint.BookId)
+                    : book;
+            }
+            default:
+                return book;
         }
     }
 
@@ -273,28 +288,24 @@ public abstract class Book
             state switch
             {
                 State.Writing =>
-                    new Draft(bookId, genre != null, chapters.Select(ch => ch.Title).ToList()),
+                    new Draft(bookId, genre, chapters.Select(ch => ch.Title).ToList()),
                 State.Editing =>
                     new UnderEditing(
                         bookId,
                         genre,
                         isbn != null,
                         committeeApproval != null,
-                        new PositiveInt(chapters.Count),
                         reviewers.Select(r => r.Id).ToList(),
-                        new PositiveInt(3), // this could be read from config, environment variables or database
                         translations.Select(t => t.Language.Id).ToList(),
-                        new PositiveInt(5), // this could be read from config, environment variables or database
                         formats.Select(f => f.FormatType).ToList()
                     ),
                 State.Printing =>
-                    new InPrint(bookId, title, author, isbn.AssertNotNull()),
+                    new InPrint(bookId),
                 State.Published =>
                     new PublishedBook(
                         bookId,
                         new PositiveInt(formats.Sum(f => f.TotalCopies.Value)),
-                        new PositiveInt(formats.Sum(f => f.SoldCopies.Value)),
-                        new Ratio(0.10m) // this could be read from config, environment variables or database
+                        new PositiveInt(formats.Sum(f => f.SoldCopies.Value))
                     ),
                 State.OutOfPrint =>
                     new OutOfPrint(bookId),

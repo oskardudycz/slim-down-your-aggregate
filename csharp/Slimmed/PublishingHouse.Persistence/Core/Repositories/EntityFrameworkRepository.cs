@@ -42,7 +42,7 @@ public abstract class EntityFrameworkRepository<TAggregate, TKey, TEvent, TEntit
         foreach (var @event in events)
         {
             Evolve(dbContext, entity, @event);
-            outbox.Add(OutboxMessageEntity.From(@event));
+            outbox.Add(OutboxMessageEntity.From(Enrich(@event, entity)));
         }
     }
 
@@ -52,4 +52,6 @@ public abstract class EntityFrameworkRepository<TAggregate, TKey, TEvent, TEntit
     protected abstract TAggregate MapToAggregate(TEntity entity);
 
     protected abstract void Evolve(TDbContext dbContext, TEntity? current, TEvent @event);
+
+    protected virtual object Enrich(TEvent @event, TEntity? _) => @event;
 }

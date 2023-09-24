@@ -6,8 +6,10 @@ import { bookMapper } from '../../mappers/bookMapper';
 import { PublishingHouseOrm } from '../../publishingHouseOrm';
 import { BookEntity, State } from '..';
 import { OrmRepository } from '../../core/repositories/ormRepository';
-import { BookEvent } from 'src/slimmed/domain/books/bookEvent';
+import { BookEvent, PublishedExternal } from '../../../domain/books/bookEvent';
 import { NotFoundError } from '#core/errors';
+import { DomainEvent } from '../../../infrastructure/events';
+import { nonEmptyString } from '#core/typing';
 
 export class BooksRepository
   extends OrmRepository<Book, BookId, BookEvent, BookEntity, PublishingHouseOrm>
@@ -231,5 +233,26 @@ export class BooksRepository
         break;
       }
     }
+  }
+
+  protected enrich(event: BookEvent, current: BookEntity | null): DomainEvent {
+    const { type, data } = event;
+
+    // we can enrich events published externally to outbox using data from events and entity
+    if (type == 'Published' && current !== null) {
+      const external: PublishedExternal = {
+        type: 'Published',
+        data: {
+          bookId: data.bookId,
+          isbn: nonEmptyString(current.isbn!),
+          title: nonEmptyString(current.title),
+          authorId: nonEmptyString(current.author.id),
+        },
+      };
+
+      return external;
+    }
+
+    return super.enrich(event, current);
   }
 }

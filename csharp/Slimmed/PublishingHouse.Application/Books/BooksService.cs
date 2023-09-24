@@ -5,6 +5,7 @@ using PublishingHouse.Books.Entities;
 using PublishingHouse.Books.Publishers;
 using PublishingHouse.Books.Repositories;
 using PublishingHouse.Books.Services;
+using PublishingHouse.Core.ValueObjects;
 
 namespace PublishingHouse.Application.Books;
 
@@ -39,7 +40,8 @@ public class BooksService: IBooksService
         Handle<Book.Draft>(command.BookId, book => book.MoveToEditing(), ct);
 
     public Task AddTranslation(AddTranslationCommand command, CancellationToken ct) =>
-        Handle<Book.UnderEditing>(command.BookId, book => book.AddTranslation(command.Translation), ct);
+        Handle<Book.UnderEditing>(command.BookId,
+            book => book.AddTranslation(command.Translation, maximumNumberOfTranslations), ct);
 
     public Task AddFormat(AddFormatCommand command, CancellationToken ct) =>
         Handle<Book.UnderEditing>(command.BookId, book => book.AddFormat(command.Format), ct);
@@ -51,7 +53,8 @@ public class BooksService: IBooksService
         Handle<Book.UnderEditing>(command.BookId, book => book.AddReviewer(command.Reviewer), ct);
 
     public Task Approve(ApproveCommand command, CancellationToken ct) =>
-        Handle<Book.UnderEditing>(command.BookId, book => book.Approve(command.CommitteeApproval), ct);
+        Handle<Book.UnderEditing>(command.BookId,
+            book => book.Approve(command.CommitteeApproval, minimumReviewersRequiredForApproval), ct);
 
     public Task SetISBN(SetISBNCommand command, CancellationToken ct) =>
         Handle<Book.UnderEditing>(command.BookId, book => book.SetISBN(command.ISBN), ct);
@@ -63,7 +66,8 @@ public class BooksService: IBooksService
         Handle<Book.InPrint>(command.BookId, book => book.MoveToPublished(), ct);
 
     public Task MoveToOutOfPrint(MoveToOutOfPrintCommand command, CancellationToken ct) =>
-        Handle<Book.PublishedBook>(command.BookId, book => book.MoveToOutOfPrint(), ct);
+        Handle<Book.PublishedBook>(command.BookId,
+            book => book.MoveToOutOfPrint(maxAllowedUnsoldCopiesRatioToGoOutOfPrint), ct);
 
     private async Task Handle<T>(BookId id, Func<T, BookEvent> handle, CancellationToken ct) where T : Book
     {
@@ -81,15 +85,24 @@ public class BooksService: IBooksService
     public BooksService(
         IBooksRepository repository,
         IAuthorProvider authorProvider,
-        IPublisherProvider publisherProvider
+        IPublisherProvider publisherProvider,
+        PositiveInt minimumReviewersRequiredForApproval,
+        PositiveInt maximumNumberOfTranslations,
+        Ratio maxAllowedUnsoldCopiesRatioToGoOutOfPrint
     )
     {
         this.repository = repository;
         this.authorProvider = authorProvider;
         this.publisherProvider = publisherProvider;
+        this.minimumReviewersRequiredForApproval = minimumReviewersRequiredForApproval;
+        this.maximumNumberOfTranslations = maximumNumberOfTranslations;
+        this.maxAllowedUnsoldCopiesRatioToGoOutOfPrint = maxAllowedUnsoldCopiesRatioToGoOutOfPrint;
     }
 
     private readonly IBooksRepository repository;
     private readonly IAuthorProvider authorProvider;
     private readonly IPublisherProvider publisherProvider;
+    private readonly PositiveInt minimumReviewersRequiredForApproval;
+    private readonly PositiveInt maximumNumberOfTranslations;
+    private readonly Ratio maxAllowedUnsoldCopiesRatioToGoOutOfPrint;
 }

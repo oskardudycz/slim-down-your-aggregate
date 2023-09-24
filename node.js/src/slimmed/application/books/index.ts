@@ -1,4 +1,3 @@
-import { v4 as uuid } from 'uuid';
 import {
   BookQueryRepository,
   BooksRepository,
@@ -12,14 +11,22 @@ import {
   PublishingHouseOrm,
   publishingHouseOrm,
 } from '../../persistence/publishingHouseOrm';
+import { positiveNumber } from '#core/typing';
+import { config } from '#config';
+import { ratio } from '#core/typing/ratio';
 
-export const EXISTING_PUBLISHER_ID = uuid();
-export const EXISTING_PUBLISHER_NAME = uuid();
+const {
+  existingPublisherId,
+  existingPublisherName,
+  maximumNumberOfTranslations,
+  minimumReviewersRequiredForApproval,
+  maxAllowedUnsoldCopiesRatioToGoOutOfPrint,
+} = config.application;
 
 const seedPublishingHouse = (orm: PublishingHouseOrm) => {
-  orm.publishers.add(EXISTING_PUBLISHER_ID, {
-    id: EXISTING_PUBLISHER_ID,
-    name: EXISTING_PUBLISHER_NAME,
+  orm.publishers.add(existingPublisherId, {
+    id: existingPublisherId,
+    name: existingPublisherName,
   });
 };
 
@@ -30,6 +37,9 @@ export const configureBooks = () => {
       new BooksRepository(orm, new BookFactory()),
       new AuthorProvider(orm),
       new PublisherProvider(orm),
+      positiveNumber(minimumReviewersRequiredForApproval),
+      positiveNumber(maximumNumberOfTranslations),
+      ratio(maxAllowedUnsoldCopiesRatioToGoOutOfPrint),
     ),
     queryService: new BooksQueryService(new BookQueryRepository(orm)),
   };
