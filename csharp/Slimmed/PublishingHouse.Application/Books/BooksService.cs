@@ -1,6 +1,7 @@
 using PublishingHouse.Application.Books.Commands;
 using PublishingHouse.Books;
 using PublishingHouse.Books.Authors;
+using PublishingHouse.Books.Entities;
 using PublishingHouse.Books.Publishers;
 using PublishingHouse.Books.Repositories;
 using PublishingHouse.Books.Services;
@@ -12,153 +13,70 @@ public class BooksService: IBooksService
     public async Task CreateDraft(CreateDraftCommand command, CancellationToken ct)
     {
         var (bookId, title, author, publisherId, edition, genre) = command;
+        var authorEntity = await authorProvider.GetOrCreate(author, ct);
+        var publisherEntity = await publisherProvider.GetById(publisherId, ct);
 
-        var book = new Book.Initial(bookId);
-
-        book.CreateDraft(
-            title,
-            await authorProvider.GetOrCreate(author, ct),
-            await publisherProvider.GetById(publisherId, ct),
-            edition,
-            genre
-        );
-
-        await repository.Store(book, ct);
+        await Handle<Book.Initial>(
+            bookId,
+            book =>
+                book.CreateDraft(
+                    title,
+                    authorEntity,
+                    publisherEntity,
+                    edition,
+                    genre
+                ), ct);
     }
 
-    public async Task AddChapter(AddChapterCommand command, CancellationToken ct)
+    public Task AddChapter(AddChapterCommand command, CancellationToken ct) =>
+        Handle<Book.Draft>(command.BookId, book =>
+        {
+            var (_, chapterTitle, chapterContent) = command;
+            book.AddChapter(chapterTitle, chapterContent);
+        }, ct);
+
+    public Task MoveToEditing(MoveToEditingCommand command, CancellationToken ct) =>
+        Handle<Book.Draft>(command.BookId, book => book.MoveToEditing(), ct);
+
+    public Task AddTranslation(AddTranslationCommand command, CancellationToken ct) =>
+        Handle<Book.UnderEditing>(command.BookId, book => book.AddTranslation(command.Translation), ct);
+
+    public Task AddFormat(AddFormatCommand command, CancellationToken ct) =>
+        Handle<Book.UnderEditing>(command.BookId, book => book.AddFormat(command.Format), ct);
+
+    public Task RemoveFormat(RemoveFormatCommand command, CancellationToken ct) =>
+        Handle<Book.UnderEditing>(command.BookId, book => book.RemoveFormat(command.Format), ct);
+
+    public Task AddReviewer(AddReviewerCommand command, CancellationToken ct) =>
+        Handle<Book.UnderEditing>(command.BookId, book => book.AddReviewer(command.Reviewer), ct);
+
+    public Task Approve(ApproveCommand command, CancellationToken ct) =>
+        Handle<Book.UnderEditing>(command.BookId, book => book.Approve(command.CommitteeApproval), ct);
+
+    public Task SetISBN(SetISBNCommand command, CancellationToken ct) =>
+        Handle<Book.UnderEditing>(command.BookId, book => book.SetISBN(command.ISBN), ct);
+
+    public Task MoveToPrinting(MoveToPrintingCommand command, CancellationToken ct) =>
+        Handle<Book.UnderEditing>(command.BookId, book => book.MoveToPrinting((null as IPublishingHouse)!), ct);
+
+    public Task MoveToPublished(MoveToPublishedCommand command, CancellationToken ct) =>
+        Handle<Book.InPrint>(command.BookId, book => book.MoveToPublished(), ct);
+
+    public Task MoveToOutOfPrint(MoveToOutOfPrintCommand command, CancellationToken ct) =>
+        Handle<Book.PublishedBook>(command.BookId, book => book.MoveToOutOfPrint(), ct);
+
+    private async Task Handle<T>(BookId id, Action<T> handle, CancellationToken ct) where T : Book
     {
-        var (bookId, chapterTitle, chapterContent) = command;
+        var book = await repository.FindById(id, ct) ?? GetDefault(id);
 
-        var book = await repository.FindById(bookId, ct) ??
-                   throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
+        if (book is not T typedBook) throw new InvalidOperationException();
 
-        if (book is not Book.Draft draft) throw new InvalidOperationException();
+        handle(typedBook);
 
-        draft.AddChapter(chapterTitle, chapterContent);
-
-        await repository.Store(book, ct);
+        await repository.Store(typedBook, ct);
     }
 
-    public async Task MoveToEditing(MoveToEditingCommand command, CancellationToken ct)
-    {
-        var book = await repository.FindById(command.BookId, ct) ??
-                   throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
-
-        if (book is not Book.Draft draft) throw new InvalidOperationException();
-
-        draft.MoveToEditing();
-
-        await repository.Store(book, ct);
-    }
-
-    public async Task AddTranslation(AddTranslationCommand command, CancellationToken ct)
-    {
-        var book = await repository.FindById(command.BookId, ct) ??
-                   throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
-
-        if (book is not Book.UnderEditing underEditing) throw new InvalidOperationException();
-
-        underEditing.AddTranslation(command.Translation);
-
-        await repository.Store(book, ct);
-    }
-
-    public async Task AddFormat(AddFormatCommand command, CancellationToken ct)
-    {
-        var book = await repository.FindById(command.BookId, ct) ??
-                   throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
-
-        if (book is not Book.UnderEditing underEditing) throw new InvalidOperationException();
-
-        underEditing.AddFormat(command.Format);
-
-        await repository.Store(book, ct);
-    }
-
-    public async Task RemoveFormat(RemoveFormatCommand command, CancellationToken ct)
-    {
-        var book = await repository.FindById(command.BookId, ct) ??
-                   throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
-
-        if (book is not Book.UnderEditing underEditing) throw new InvalidOperationException();
-
-        underEditing.RemoveFormat(command.Format);
-
-        await repository.Store(book, ct);
-    }
-
-    public async Task AddReviewer(AddReviewerCommand command, CancellationToken ct)
-    {
-        var book = await repository.FindById(command.BookId, ct) ??
-                   throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
-
-        if (book is not Book.UnderEditing underEditing) throw new InvalidOperationException();
-
-        underEditing.AddReviewer(command.Reviewer);
-
-        await repository.Store(book, ct);
-    }
-
-    public async Task Approve(ApproveCommand command, CancellationToken ct)
-    {
-        var book = await repository.FindById(command.BookId, ct) ??
-                   throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
-
-        if (book is not Book.UnderEditing underEditing) throw new InvalidOperationException();
-
-        underEditing.Approve(command.CommitteeApproval);
-
-        await repository.Store(book, ct);
-    }
-
-    public async Task SetISBN(SetISBNCommand command, CancellationToken ct)
-    {
-        var book = await repository.FindById(command.BookId, ct) ??
-                   throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
-
-        if (book is not Book.UnderEditing underEditing) throw new InvalidOperationException();
-
-        underEditing.SetISBN(command.ISBN);
-
-        await repository.Store(book, ct);
-    }
-
-    public async Task MoveToPrinting(MoveToPrintingCommand command, CancellationToken ct)
-    {
-        var book = await repository.FindById(command.BookId, ct) ??
-                   throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
-
-        if (book is not Book.UnderEditing underEditing) throw new InvalidOperationException();
-
-        underEditing.MoveToPrinting((null as IPublishingHouse)!);
-
-        await repository.Store(book, ct);
-    }
-
-    public async Task MoveToPublished(MoveToPublishedCommand command, CancellationToken ct)
-    {
-        var book = await repository.FindById(command.BookId, ct) ??
-                   throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
-
-        if (book is not Book.InPrint inPrint) throw new InvalidOperationException();
-
-        inPrint.MoveToPublished();
-
-        await repository.Store(book, ct);
-    }
-
-    public async Task MoveToOutOfPrint(MoveToOutOfPrintCommand command, CancellationToken ct)
-    {
-        var book = await repository.FindById(command.BookId, ct) ??
-                   throw new InvalidOperationException(); // TODO: Add Explicit Not Found exception
-
-        if (book is not Book.PublishedBook published) throw new InvalidOperationException();
-
-        published.MoveToOutOfPrint();
-
-        await repository.Store(book, ct);
-    }
+    private Book GetDefault(BookId bookId) => new Book.Initial(bookId);
 
     public BooksService(
         IBooksRepository repository,

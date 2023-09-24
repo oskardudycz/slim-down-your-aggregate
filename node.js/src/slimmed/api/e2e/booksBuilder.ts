@@ -34,7 +34,7 @@ export const createDraft = async (app: Application) => {
 
 export const addChapter = async (bookId: string, app: Application) => {
   const body = {
-    title: faker.string.sample(),
+    title: 'Chapter 1 - ' + faker.string.sample(),
     content: faker.string.sample(),
   };
 
