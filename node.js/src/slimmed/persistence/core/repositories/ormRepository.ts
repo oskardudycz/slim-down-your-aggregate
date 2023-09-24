@@ -1,5 +1,4 @@
 import { NonEmptyString } from '#core/typing';
-import { Aggregate } from '../../../infrastructure/aggregates';
 import { Database, EntitiesCollection } from '../../orm';
 import { DomainEvent } from '../../../infrastructure/events';
 import {
@@ -8,7 +7,7 @@ import {
 } from '../outbox/outboxMessageEntity';
 
 export abstract class OrmRepository<
-  TAggregate extends Aggregate<TKey, TEvent>,
+  TAggregate,
   TKey extends NonEmptyString,
   TEvent extends DomainEvent,
   TEntity,

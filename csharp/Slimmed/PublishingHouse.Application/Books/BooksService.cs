@@ -74,8 +74,6 @@ public class BooksService: IBooksService
         var @event = handle(typedBook);
 
         await repository.Store(id, new[] { @event }, ct);
-
-        typedBook.ClearEvents();
     }
 
     private Book GetDefault(BookId bookId) => new Book.Initial(bookId);

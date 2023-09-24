@@ -1,5 +1,4 @@
 import { PositiveNumber, positiveNumber } from '#core/typing';
-import { Aggregate } from '../../infrastructure/aggregates';
 import {
   Author,
   Chapter,
@@ -27,7 +26,6 @@ import {
 } from '#core/errors';
 import {
   Approved,
-  BookEvent,
   ChapterAdded,
   DraftCreated,
   FormatAdded,
@@ -43,7 +41,13 @@ import {
 import { LanguageId } from './entities/language';
 import { Ratio, ratio } from '#core/typing/ratio';
 
-export class Initial extends Aggregate<BookId, BookEvent> {
+export abstract class Book {
+  public get id() {
+    return this._id;
+  }
+  constructor(protected _id: BookId) {}
+}
+export class Initial extends Book {
   constructor(id: BookId) {
     super(id);
   }
@@ -69,7 +73,7 @@ export class Initial extends Aggregate<BookId, BookEvent> {
   }
 }
 
-export class Draft extends Aggregate<BookId, BookEvent> {
+export class Draft extends Book {
   constructor(
     id: BookId,
     private isGenreSet: boolean,
@@ -130,7 +134,7 @@ export class Draft extends Aggregate<BookId, BookEvent> {
   }
 }
 
-export class UnderEditing extends Aggregate<BookId, BookEvent> {
+export class UnderEditing extends Book {
   constructor(
     id: BookId,
     private genre: Genre,
@@ -295,7 +299,7 @@ export class UnderEditing extends Aggregate<BookId, BookEvent> {
   }
 }
 
-export class InPrint extends Aggregate<BookId, BookEvent> {
+export class InPrint extends Book {
   constructor(
     id: BookId,
     private readonly title: Title,
@@ -318,7 +322,7 @@ export class InPrint extends Aggregate<BookId, BookEvent> {
   }
 }
 
-export class PublishedBook extends Aggregate<BookId, BookEvent> {
+export class PublishedBook extends Book {
   public readonly status = State.Published;
 
   constructor(
@@ -352,19 +356,11 @@ export class PublishedBook extends Aggregate<BookId, BookEvent> {
   }
 }
 
-export class OutOfPrint extends Aggregate<BookId, BookEvent> {
+export class OutOfPrint extends Book {
   constructor(id: BookId) {
     super(id);
   }
 }
-
-export type Book =
-  | Initial
-  | Draft
-  | UnderEditing
-  | InPrint
-  | PublishedBook
-  | OutOfPrint;
 
 export class BookFactory implements IBookFactory {
   create(

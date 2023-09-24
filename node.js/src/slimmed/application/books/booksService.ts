@@ -183,8 +183,6 @@ export class BooksService implements IBooksService {
     const result = handle(book);
     const events = Array.isArray(result) ? result : [result];
 
-    book.clearEvents();
-
     return this.repository.store(id, events);
   };
 
