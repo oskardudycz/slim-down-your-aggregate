@@ -7,10 +7,9 @@ import {
 } from '../outbox/outboxMessageEntity';
 
 export abstract class OrmRepository<
-  TAggregate,
+  TEntity,
   TKey extends NonEmptyString,
   TEvent extends DomainEvent,
-  TEntity,
   TOrm extends Database,
 > {
   protected constructor(
@@ -18,14 +17,13 @@ export abstract class OrmRepository<
     protected readonly entities: EntitiesCollection<TEntity>,
   ) {}
 
-  async findById(key: TKey): Promise<TAggregate | null> {
+  public async getAndUpdate(
+    key: TKey,
+    handle: (entity: TEntity | null) => TEvent[],
+  ) {
     const entity = await this.entities.findById(key);
 
-    return entity != null ? this.mapToAggregate(entity) : null;
-  }
-
-  public async store(id: TKey, events: TEvent[]): Promise<void> {
-    const entity = await this.entities.findById(id);
+    const events = handle(entity);
 
     this.processEvents(this.orm, entity, events);
 
@@ -46,8 +44,6 @@ export abstract class OrmRepository<
       outboxTable.add(message.position.toString(), message);
     }
   }
-
-  protected abstract mapToAggregate(entity: TEntity): TAggregate;
 
   protected abstract evolve(
     orm: TOrm,

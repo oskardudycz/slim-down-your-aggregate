@@ -24,6 +24,7 @@ public static class Config
             .AddScoped<IBooksService, BooksService>(sp =>
                 new BooksService(
                     sp.GetRequiredService<IBooksRepository>(),
+                    sp.GetRequiredService<IBookFactory>(),
                     sp.GetRequiredService<IAuthorProvider>(),
                     sp.GetRequiredService<IPublisherProvider>(),
                     //TODO: Get this from config or environement variable

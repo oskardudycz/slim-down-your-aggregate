@@ -14,11 +14,14 @@ using static PublishingHouse.Books.BookEvent;
 namespace PublishingHouse.Persistence.Books.Repositories;
 
 public class BooksRepository:
-    EntityFrameworkRepository<Book, BookId, BookEvent, BookEntity, PublishingHouseDbContext>, IBooksRepository
+    EntityFrameworkRepository<BookEntity, BookId, BookEvent, PublishingHouseDbContext>, IBooksRepository
 {
     private readonly IBookFactory bookFactory;
 
-    public BooksRepository(PublishingHouseDbContext dbContext, IBookFactory bookFactory): base(dbContext) =>
+    public BooksRepository(PublishingHouseDbContext dbContext, IBookFactory bookFactory): base(
+        dbContext,
+        id => e => e.Id == id.Value
+    ) =>
         this.bookFactory = bookFactory;
 
     protected override IQueryable<BookEntity> Includes(DbSet<BookEntity> query) =>
@@ -28,9 +31,6 @@ public class BooksRepository:
             .Include(e => e.Chapters)
             .Include(e => e.Translations)
             .Include(e => e.Formats);
-
-    protected override Book MapToAggregate(BookEntity entity) =>
-        entity.MapToAggregate(bookFactory);
 
     protected override void Evolve(PublishingHouseDbContext dbContext, BookEntity? current, BookEvent @event)
     {
@@ -165,6 +165,7 @@ public class BooksRepository:
                 new AuthorId(current.Author.Id)
             );
         }
+
         return base.Enrich(@event, current);
     }
 }

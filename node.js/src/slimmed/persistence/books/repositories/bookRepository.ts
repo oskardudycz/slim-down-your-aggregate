@@ -1,8 +1,4 @@
-import { Book } from '../../../domain/books/book';
 import { BookId } from '../../../domain/books/entities';
-import { IBooksRepository } from '../../../domain/books/repositories';
-import { IBookFactory } from '../../../domain/books/factories';
-import { bookMapper } from '../../mappers/bookMapper';
 import { PublishingHouseOrm } from '../../publishingHouseOrm';
 import { BookEntity, State } from '..';
 import { OrmRepository } from '../../core/repositories/ormRepository';
@@ -11,19 +7,20 @@ import { NotFoundError } from '#core/errors';
 import { DomainEvent } from '../../../infrastructure/events';
 import { nonEmptyString } from '#core/typing';
 
+export interface IBooksRepository {
+  getAndUpdate(
+    key: BookId,
+    handle: (entity: BookEntity | null) => BookEvent[],
+  ): Promise<void>;
+}
+
 export class BooksRepository
-  extends OrmRepository<Book, BookId, BookEvent, BookEntity, PublishingHouseOrm>
+  extends OrmRepository<BookEntity, BookId, BookEvent, PublishingHouseOrm>
   implements IBooksRepository
 {
-  constructor(
-    orm: PublishingHouseOrm,
-    private bookFactory: IBookFactory,
-  ) {
+  constructor(orm: PublishingHouseOrm) {
     super(orm, orm.books);
   }
-
-  protected mapToAggregate = (entity: BookEntity): Book =>
-    bookMapper.mapFromEntity(entity, this.bookFactory);
 
   protected evolve(
     orm: PublishingHouseOrm,

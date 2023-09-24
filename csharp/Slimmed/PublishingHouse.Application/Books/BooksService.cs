@@ -2,10 +2,13 @@ using PublishingHouse.Application.Books.Commands;
 using PublishingHouse.Books;
 using PublishingHouse.Books.Authors;
 using PublishingHouse.Books.Entities;
+using PublishingHouse.Books.Factories;
 using PublishingHouse.Books.Publishers;
 using PublishingHouse.Books.Repositories;
 using PublishingHouse.Books.Services;
 using PublishingHouse.Core.ValueObjects;
+using PublishingHouse.Persistence.Books.Mappers;
+using PublishingHouse.Persistence.Books.Repositories;
 
 namespace PublishingHouse.Application.Books;
 
@@ -69,21 +72,23 @@ public class BooksService: IBooksService
         Handle<Book.PublishedBook>(command.BookId,
             book => book.MoveToOutOfPrint(maxAllowedUnsoldCopiesRatioToGoOutOfPrint), ct);
 
-    private async Task Handle<T>(BookId id, Func<T, BookEvent> handle, CancellationToken ct) where T : Book
-    {
-        var book = await repository.FindById(id, ct) ?? GetDefault(id);
+    private Task Handle<T>(BookId id, Func<T, BookEvent> handle, CancellationToken ct) where T : Book =>
+        repository.GetAndUpdate(id, (entity) =>
+        {
+            var aggregate = entity?.MapToAggregate(bookFactory) ?? GetDefault(id);
 
-        if (book is not T typedBook) throw new InvalidOperationException();
+            if (aggregate is not T typedBook) throw new InvalidOperationException();
 
-        var @event = handle(typedBook);
+            var @event = handle(typedBook);
 
-        await repository.Store(id, new[] { @event }, ct);
-    }
+            return new[] { @event };
+        }, ct);
 
     private Book GetDefault(BookId bookId) => new Book.Initial(bookId);
 
     public BooksService(
         IBooksRepository repository,
+        IBookFactory bookFactory,
         IAuthorProvider authorProvider,
         IPublisherProvider publisherProvider,
         PositiveInt minimumReviewersRequiredForApproval,
@@ -92,6 +97,7 @@ public class BooksService: IBooksService
     )
     {
         this.repository = repository;
+        this.bookFactory = bookFactory;
         this.authorProvider = authorProvider;
         this.publisherProvider = publisherProvider;
         this.minimumReviewersRequiredForApproval = minimumReviewersRequiredForApproval;
@@ -100,6 +106,7 @@ public class BooksService: IBooksService
     }
 
     private readonly IBooksRepository repository;
+    private readonly IBookFactory bookFactory;
     private readonly IAuthorProvider authorProvider;
     private readonly IPublisherProvider publisherProvider;
     private readonly PositiveInt minimumReviewersRequiredForApproval;
