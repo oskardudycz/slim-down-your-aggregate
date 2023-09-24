@@ -32,7 +32,7 @@ public class BooksService: IBooksService
         Handle<Book.Draft>(command.BookId, book =>
         {
             var (_, chapterTitle, chapterContent) = command;
-            book.AddChapter(chapterTitle, chapterContent);
+            return book.AddChapter(chapterTitle, chapterContent);
         }, ct);
 
     public Task MoveToEditing(MoveToEditingCommand command, CancellationToken ct) =>
@@ -65,15 +65,17 @@ public class BooksService: IBooksService
     public Task MoveToOutOfPrint(MoveToOutOfPrintCommand command, CancellationToken ct) =>
         Handle<Book.PublishedBook>(command.BookId, book => book.MoveToOutOfPrint(), ct);
 
-    private async Task Handle<T>(BookId id, Action<T> handle, CancellationToken ct) where T : Book
+    private async Task Handle<T>(BookId id, Func<T, BookEvent> handle, CancellationToken ct) where T : Book
     {
         var book = await repository.FindById(id, ct) ?? GetDefault(id);
 
         if (book is not T typedBook) throw new InvalidOperationException();
 
-        handle(typedBook);
+        var @event = handle(typedBook);
 
-        await repository.Store(typedBook, ct);
+        await repository.Store(id, new[] { @event }, ct);
+
+        typedBook.ClearEvents();
     }
 
     private Book GetDefault(BookId bookId) => new Book.Initial(bookId);

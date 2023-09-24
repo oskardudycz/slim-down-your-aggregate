@@ -17,7 +17,7 @@ public abstract class EntityFrameworkRepository<TAggregate, TKey, TEvent, TEntit
     protected EntityFrameworkRepository(TDbContext dbContext) =>
         DbContext = dbContext;
 
-    public async Task<TAggregate?> FindById(TKey bookId, CancellationToken ct)
+    public async Task<TAggregate?> FindById(TKey id, CancellationToken ct)
     {
         var entity = await Includes(DbContext.Set<TEntity>())
             .AsNoTracking()
@@ -26,17 +26,16 @@ public abstract class EntityFrameworkRepository<TAggregate, TKey, TEvent, TEntit
         return entity != null ? MapToAggregate(entity): default;
     }
 
-    public async Task Store(TAggregate aggregate, CancellationToken ct)
+    public async Task Store(TKey id, TEvent[] events, CancellationToken ct)
     {
         var entity = await DbContext.Set<TEntity>().FindAsync(
-            new object?[] { aggregate.Id.Value },
+            new object?[] { id.Value },
             cancellationToken: ct
         ) ?? null;
 
-        ProcessEvents(DbContext, entity, aggregate.DomainEvents);
+        ProcessEvents(DbContext, entity, events);
 
         await DbContext.SaveChangesAsync(ct);
-        aggregate.ClearEvents();
     }
 
     private void ProcessEvents(TDbContext dbContext, TEntity? entity, IReadOnlyList<TEvent> events)

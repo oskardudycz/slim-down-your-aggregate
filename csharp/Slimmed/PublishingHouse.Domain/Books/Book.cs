@@ -16,14 +16,14 @@ public abstract class Book: Aggregate<BookId, BookEvent>
     {
         public Initial(BookId bookId): base(bookId) { }
 
-        public void CreateDraft(
+        public DraftCreated CreateDraft(
             Title title,
             Author author,
             Publisher publisher,
             PositiveInt edition,
             Genre? genre
         ) =>
-            AddDomainEvent(new DraftCreated(Id, title, author, publisher, edition, genre));
+            new DraftCreated(Id, title, author, publisher, edition, genre);
     }
 
     public class Draft: Book
@@ -42,7 +42,7 @@ public abstract class Book: Aggregate<BookId, BookEvent>
             this.chapterTitles = chapterTitles;
         }
 
-        public void AddChapter(ChapterTitle title, ChapterContent content)
+        public ChapterAdded AddChapter(ChapterTitle title, ChapterContent content)
         {
             if (!title.Value.StartsWith("Chapter " + (chapterTitles.Count + 1)))
                 throw new InvalidOperationException(
@@ -54,10 +54,10 @@ public abstract class Book: Aggregate<BookId, BookEvent>
             var chapter = new Chapter(new ChapterNumber(chapterTitles.Count + 1), title, content);
             chapterTitles.Add(title);
 
-            AddDomainEvent(new ChapterAdded(Id, chapter));
+            return new ChapterAdded(Id, chapter);
         }
 
-        public void MoveToEditing()
+        public MovedToEditing MoveToEditing()
         {
             if (ChaptersCount < 1)
                 throw new InvalidOperationException(
@@ -66,7 +66,7 @@ public abstract class Book: Aggregate<BookId, BookEvent>
             if (!isGenreSet)
                 throw new InvalidOperationException("Book can be moved to the editing only when genre is specified");
 
-            AddDomainEvent(new MovedToEditing(Id));
+            return new MovedToEditing(Id);
         }
     }
 
@@ -106,7 +106,7 @@ public abstract class Book: Aggregate<BookId, BookEvent>
             this.formatTypes = formatTypes;
         }
 
-        public void AddTranslation(Translation translation)
+        public TranslationAdded AddTranslation(Translation translation)
         {
             var languageId = translation.Language.Id;
 
@@ -119,28 +119,28 @@ public abstract class Book: Aggregate<BookId, BookEvent>
 
             translationLanguages.Add(languageId);
 
-            AddDomainEvent(new TranslationAdded(Id, translation));
+            return new TranslationAdded(Id, translation);
         }
 
-        public void AddFormat(Format format)
+        public FormatAdded AddFormat(Format format)
         {
             if (formatTypes.Contains(format.FormatType))
                 throw new InvalidOperationException($"Format {format.FormatType} already exists.");
 
             formatTypes.Add(format.FormatType);
 
-            AddDomainEvent(new FormatAdded(Id, format));
+            return new FormatAdded(Id, format);
         }
 
-        public void RemoveFormat(Format format)
+        public FormatRemoved RemoveFormat(Format format)
         {
             if (!formatTypes.Remove(format.FormatType))
                 throw new InvalidOperationException($"Format {format.FormatType} does not exist.");
 
-            AddDomainEvent(new FormatRemoved(Id, format));
+            return new FormatRemoved(Id, format);
         }
 
-        public void AddReviewer(Reviewer reviewer)
+        public ReviewerAdded AddReviewer(Reviewer reviewer)
         {
             if (reviewers.Contains(reviewer.Id))
                 throw new InvalidOperationException(
@@ -148,10 +148,10 @@ public abstract class Book: Aggregate<BookId, BookEvent>
 
             reviewers.Add(reviewer.Id);
 
-            AddDomainEvent(new ReviewerAdded(Id, reviewer));
+            return new ReviewerAdded(Id, reviewer);
         }
 
-        public void Approve(CommitteeApproval committeeApproval)
+        public Approved Approve(CommitteeApproval committeeApproval)
         {
             if (reviewers.Count < minimumReviewersRequiredForApproval.Value)
                 throw new InvalidOperationException(
@@ -159,10 +159,10 @@ public abstract class Book: Aggregate<BookId, BookEvent>
 
             isApproved = true;
 
-            AddDomainEvent(new Approved(Id, committeeApproval));
+            return new Approved(Id, committeeApproval);
         }
 
-        public void SetISBN(ISBN isbn)
+        public ISBNSet SetISBN(ISBN isbn)
         {
             if (isISBNSet)
                 throw new InvalidOperationException(
@@ -170,10 +170,10 @@ public abstract class Book: Aggregate<BookId, BookEvent>
 
             isISBNSet = true;
 
-            AddDomainEvent(new ISBNSet(Id, isbn));
+            return new ISBNSet(Id, isbn);
         }
 
-        public void MoveToPrinting(IPublishingHouse publishingHouse)
+        public MovedToPrinting MoveToPrinting(IPublishingHouse publishingHouse)
         {
             if (chaptersCount.Value < 1)
                 throw new InvalidOperationException(
@@ -188,7 +188,7 @@ public abstract class Book: Aggregate<BookId, BookEvent>
             if (!publishingHouse.IsGenreLimitReached(genre))
                 throw new InvalidOperationException("Cannot move to printing until the genre limit is reached.");
 
-            AddDomainEvent(new MovedToPrinting(Id));
+            return new MovedToPrinting(Id);
         }
     }
 
@@ -210,10 +210,8 @@ public abstract class Book: Aggregate<BookId, BookEvent>
             this.isbn = isbn;
         }
 
-        public void MoveToPublished()
-        {
-            AddDomainEvent(new Published(Id, isbn, title, author));
-        }
+        public Published MoveToPublished() =>
+            new Published(Id, isbn, title, author);
     }
 
     public class PublishedBook: Book
@@ -237,13 +235,13 @@ public abstract class Book: Aggregate<BookId, BookEvent>
             this.maxAllowedUnsoldCopiesRatioToGoOutOfPrint = maxAllowedUnsoldCopiesRatioToGoOutOfPrint;
         }
 
-        public void MoveToOutOfPrint()
+        public MovedToOutOfPrint MoveToOutOfPrint()
         {
             if (UnsoldCopiesRatio.CompareTo(maxAllowedUnsoldCopiesRatioToGoOutOfPrint) > 0)
                 throw new InvalidOperationException(
                     "Cannot move to Out of Print state if more than 10% of total copies are unsold.");
 
-            AddDomainEvent(new MovedToOutOfPrint(Id));
+            return new MovedToOutOfPrint(Id);
         }
     }
 

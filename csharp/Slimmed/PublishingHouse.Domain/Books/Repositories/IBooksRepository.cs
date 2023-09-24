@@ -6,5 +6,5 @@ public interface IBooksRepository
 {
     Task<Book?> FindById(BookId bookId, CancellationToken ct);
 
-    Task Store(Book book, CancellationToken ct);
+    Task Store(BookId bookId, BookEvent[] events, CancellationToken ct);
 }
