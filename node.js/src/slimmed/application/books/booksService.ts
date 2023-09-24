@@ -1,4 +1,4 @@
-import { IBooksRepository } from '../../domain/books/repositories';
+import { IBooksRepository } from '../../persistence/books/repositories';
 import { IAuthorProvider } from '../../domain/books/authors';
 import { IPublisherProvider } from '../../domain/books/publishers/publisherProvider';
 import {
@@ -24,10 +24,12 @@ import {
   AddReviewerCommand,
   SetISBNCommand,
 } from './commands';
-import { BookId } from 'src/original/domain/books/entities';
-import { BookEvent } from 'src/slimmed/domain/books/bookEvent';
 import { PositiveNumber } from '#core/typing';
 import { Ratio } from '#core/typing/ratio';
+import { BookId } from '../../domain/books/entities';
+import { BookEvent } from '../../domain/books/bookEvent';
+import { IBookFactory } from '../../domain/books/factories';
+import { bookMapper } from '../../persistence/mappers/bookMapper';
 
 export interface IBooksService {
   createDraft(command: CreateDraftCommand): Promise<void>;
@@ -181,22 +183,26 @@ export class BooksService implements IBooksService {
       );
     });
 
-  private handle = async (
+  private handle = (
     id: BookId,
     handle: (book: Book) => BookEvent | BookEvent[],
   ): Promise<void> => {
-    const book = (await this.repository.findById(id)) ?? this.getDefault(id);
+    return this.repository.getAndUpdate(id, (entity) => {
+      const aggregate =
+        entity !== null
+          ? bookMapper.mapFromEntity(entity, this.bookFactory)
+          : this.getDefault(id);
 
-    const result = handle(book);
-    const events = Array.isArray(result) ? result : [result];
-
-    return this.repository.store(id, events);
+      const result = handle(aggregate);
+      return Array.isArray(result) ? result : [result];
+    });
   };
 
-  private getDefault = (bookId: BookId) => new Initial(bookId);
+  private getDefault = (bookId: BookId): Book => new Initial(bookId);
 
   constructor(
     private readonly repository: IBooksRepository,
+    private readonly bookFactory: IBookFactory,
     private readonly authorProvider: IAuthorProvider,
     private readonly publisherProvider: IPublisherProvider,
     private readonly minimumReviewersRequiredForApproval: PositiveNumber,

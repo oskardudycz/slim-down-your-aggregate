@@ -34,7 +34,8 @@ export const configureBooks = () => {
   const orm = publishingHouseOrm(seedPublishingHouse);
   return {
     service: new BooksService(
-      new BooksRepository(orm, new BookFactory()),
+      new BooksRepository(orm),
+      new BookFactory(),
       new AuthorProvider(orm),
       new PublisherProvider(orm),
       positiveNumber(minimumReviewersRequiredForApproval),
