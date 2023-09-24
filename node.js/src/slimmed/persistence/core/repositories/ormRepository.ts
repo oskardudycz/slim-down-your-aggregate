@@ -25,19 +25,10 @@ export abstract class OrmRepository<
     return entity != null ? this.mapToAggregate(entity) : null;
   }
 
-  public async add(aggregate: TAggregate): Promise<void> {
-    this.processEvents(this.orm, null, aggregate.domainEvents);
-
-    await this.orm.saveChanges();
-    aggregate.clearEvents();
-  }
-
-  public async update(aggregate: TAggregate): Promise<void> {
+  public async store(aggregate: TAggregate): Promise<void> {
     const id: string = aggregate.id;
 
     const entity = await this.entities.findById(id);
-
-    if (!entity) throw new Error(`Entity with id ${id} was not found`);
 
     this.processEvents(this.orm, entity, aggregate.domainEvents);
 
