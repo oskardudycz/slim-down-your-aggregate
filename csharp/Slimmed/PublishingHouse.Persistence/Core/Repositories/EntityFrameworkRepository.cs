@@ -1,12 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-using PublishingHouse.Core.Aggregates;
 using PublishingHouse.Core.ValueObjects;
 using PublishingHouse.Persistence.Core.Outbox;
 
 namespace PublishingHouse.Persistence.Core.Repositories;
 
 public abstract class EntityFrameworkRepository<TAggregate, TKey, TEvent, TEntity,  TDbContext>
-    where TAggregate: Aggregate<TKey, TEvent>
     where TKey: NonEmptyGuid
     where TEvent: class
     where TDbContext: DbContext

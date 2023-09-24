@@ -1,16 +1,17 @@
 using PublishingHouse.Books.Entities;
 using PublishingHouse.Books.Factories;
 using PublishingHouse.Books.Services;
-using PublishingHouse.Core.Aggregates;
 using PublishingHouse.Core.Validation;
 using PublishingHouse.Core.ValueObjects;
 using static PublishingHouse.Books.BookEvent;
 
 namespace PublishingHouse.Books;
 
-public abstract class Book: Aggregate<BookId, BookEvent>
+public abstract class Book
 {
     public enum State { Writing, Editing, Printing, Published, OutOfPrint }
+
+    public BookId Id { get; private set; }
 
     public class Initial: Book
     {
@@ -252,9 +253,7 @@ public abstract class Book: Aggregate<BookId, BookEvent>
         }
     }
 
-    private Book(BookId bookId): base(bookId)
-    {
-    }
+    private Book(BookId bookId) => Id = bookId;
 
     public class Factory: IBookFactory
     {
