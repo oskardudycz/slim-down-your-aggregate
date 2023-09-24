@@ -25,6 +25,7 @@ import {
   SetISBNCommand,
 } from './commands';
 import { BookId } from 'src/original/domain/books/entities';
+import { BookEvent } from 'src/slimmed/domain/books/bookEvent';
 
 export interface IBooksService {
   createDraft(command: CreateDraftCommand): Promise<void>;
@@ -52,7 +53,13 @@ export class BooksService implements IBooksService {
       if (!(book instanceof Initial))
         throw InvalidOperationError('Invalid State');
 
-      book.createDraft(title, authorEntity, publisherEntity, edition, genre);
+      return book.createDraft(
+        title,
+        authorEntity,
+        publisherEntity,
+        edition,
+        genre,
+      );
     });
   };
 
@@ -63,7 +70,7 @@ export class BooksService implements IBooksService {
 
       const { chapterTitle, chapterContent } = command.data;
 
-      book.addChapter(chapterTitle, chapterContent);
+      return book.addChapter(chapterTitle, chapterContent);
     });
   };
 
@@ -72,7 +79,7 @@ export class BooksService implements IBooksService {
       if (!(book instanceof Draft))
         throw InvalidOperationError('Invalid State');
 
-      book.moveToEditing();
+      return book.moveToEditing();
     });
 
   public addTranslation = async (
@@ -84,7 +91,7 @@ export class BooksService implements IBooksService {
 
       const { translation } = command.data;
 
-      book.addTranslation(translation);
+      return book.addTranslation(translation);
     });
 
   public addFormat = async (command: AddFormatCommand): Promise<void> =>
@@ -94,7 +101,7 @@ export class BooksService implements IBooksService {
 
       const { format } = command.data;
 
-      book.addFormat(format);
+      return book.addFormat(format);
     });
 
   public removeFormat = async (command: RemoveFormatCommand): Promise<void> =>
@@ -104,7 +111,7 @@ export class BooksService implements IBooksService {
 
       const { format } = command.data;
 
-      book.removeFormat(format);
+      return book.removeFormat(format);
     });
 
   public addReviewer = async (command: AddReviewerCommand): Promise<void> =>
@@ -114,7 +121,7 @@ export class BooksService implements IBooksService {
 
       const { reviewer } = command.data;
 
-      book.addReviewer(reviewer);
+      return book.addReviewer(reviewer);
     });
 
   public approve = async (command: ApproveCommand): Promise<void> =>
@@ -124,7 +131,7 @@ export class BooksService implements IBooksService {
 
       const { committeeApproval } = command.data;
 
-      book.approve(committeeApproval);
+      return book.approve(committeeApproval);
     });
 
   public setISBN = async (command: SetISBNCommand): Promise<void> =>
@@ -134,7 +141,7 @@ export class BooksService implements IBooksService {
 
       const { isbn } = command.data;
 
-      book.setISBN(isbn);
+      return book.setISBN(isbn);
     });
 
   public moveToPrinting = async (
@@ -144,7 +151,7 @@ export class BooksService implements IBooksService {
       if (!(book instanceof UnderEditing))
         throw InvalidOperationError('Invalid State');
 
-      book.moveToPrinting({ isGenreLimitReached: () => true });
+      return book.moveToPrinting({ isGenreLimitReached: () => true });
     });
 
   public moveToPublished = async (
@@ -154,7 +161,7 @@ export class BooksService implements IBooksService {
       if (!(book instanceof InPrint))
         throw InvalidOperationError('Invalid State');
 
-      book.moveToPublished();
+      return book.moveToPublished();
     });
 
   public moveToOutOfPrint = async (
@@ -164,18 +171,21 @@ export class BooksService implements IBooksService {
       if (!(book instanceof PublishedBook))
         throw InvalidOperationError('Invalid State');
 
-      book.moveToOutOfPrint();
+      return book.moveToOutOfPrint();
     });
 
   private handle = async (
     id: BookId,
-    handle: (book: Book) => void,
+    handle: (book: Book) => BookEvent | BookEvent[],
   ): Promise<void> => {
     const book = (await this.repository.findById(id)) ?? this.getDefault(id);
 
-    handle(book);
+    const result = handle(book);
+    const events = Array.isArray(result) ? result : [result];
 
-    return this.repository.store(book);
+    book.clearEvents();
+
+    return this.repository.store(id, events);
   };
 
   private getDefault = (bookId: BookId) => new Initial(bookId);

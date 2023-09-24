@@ -25,7 +25,21 @@ import {
   InvalidStateError,
   ValidationError,
 } from '#core/errors';
-import { BookEvent, DraftCreated, MovedToEditing } from './bookEvent';
+import {
+  Approved,
+  BookEvent,
+  ChapterAdded,
+  DraftCreated,
+  FormatAdded,
+  FormatRemoved,
+  ISBNSet,
+  MovedToEditing,
+  MovedToOutOfPrint,
+  MovedToPrinting,
+  Published,
+  ReviewerAdded,
+  TranslationAdded,
+} from './bookEvent';
 import { LanguageId } from './entities/language';
 import { Ratio, ratio } from '#core/typing/ratio';
 
@@ -40,8 +54,8 @@ export class Initial extends Aggregate<BookId, BookEvent> {
     publisher: Publisher,
     edition: PositiveNumber,
     genre: Genre | null,
-  ): void {
-    const event: DraftCreated = {
+  ): DraftCreated {
+    return {
       type: 'DraftCreated',
       data: {
         bookId: this.id,
@@ -52,7 +66,6 @@ export class Initial extends Aggregate<BookId, BookEvent> {
         genre,
       },
     };
-    this.addDomainEvent(event);
   }
 }
 
@@ -65,7 +78,7 @@ export class Draft extends Aggregate<BookId, BookEvent> {
     super(id);
   }
 
-  addChapter(title: ChapterTitle, content: ChapterContent): void {
+  addChapter(title: ChapterTitle, content: ChapterContent): ChapterAdded {
     if (this.chapterTitles.includes(title)) {
       throw InvalidStateError(`Chapter with title ${title} already exists.`);
     }
@@ -86,16 +99,16 @@ export class Draft extends Aggregate<BookId, BookEvent> {
 
     this.chapterTitles.push(title);
 
-    this.addDomainEvent({
+    return {
       type: 'ChapterAdded',
       data: {
         bookId: this.id,
         chapter,
       },
-    });
+    };
   }
 
-  moveToEditing(): void {
+  moveToEditing(): MovedToEditing {
     if (this.chapterTitles.length < 1) {
       throw InvalidStateError(
         'A book must have at least one chapter to move to the Editing state.',
@@ -108,14 +121,12 @@ export class Draft extends Aggregate<BookId, BookEvent> {
       );
     }
 
-    const event: MovedToEditing = {
+    return {
       type: 'MovedToEditing',
       data: {
         bookId: this.id,
       },
     };
-
-    this.addDomainEvent(event);
   }
 }
 
@@ -135,7 +146,7 @@ export class UnderEditing extends Aggregate<BookId, BookEvent> {
     super(id);
   }
 
-  addTranslation(translation: Translation): void {
+  addTranslation(translation: Translation): TranslationAdded {
     const { language } = translation;
 
     if (this.translationLanguages.includes(language.id))
@@ -151,16 +162,16 @@ export class UnderEditing extends Aggregate<BookId, BookEvent> {
 
     this.translationLanguages.push(language.id);
 
-    this.addDomainEvent({
+    return {
       type: 'TranslationAdded',
       data: {
         bookId: this.id,
         translation,
       },
-    });
+    };
   }
 
-  addFormat(format: Format): void {
+  addFormat(format: Format): FormatAdded {
     const { formatType } = format;
 
     if (this.formatTypes.includes(formatType)) {
@@ -169,16 +180,16 @@ export class UnderEditing extends Aggregate<BookId, BookEvent> {
 
     this.formatTypes.push(formatType);
 
-    this.addDomainEvent({
+    return {
       type: 'FormatAdded',
       data: {
         bookId: this.id,
         format,
       },
-    });
+    };
   }
 
-  removeFormat(format: Format): void {
+  removeFormat(format: Format): FormatRemoved {
     const { formatType } = format;
 
     if (!this.formatTypes.includes(formatType)) {
@@ -187,16 +198,16 @@ export class UnderEditing extends Aggregate<BookId, BookEvent> {
 
     this.formatTypes = this.formatTypes.filter((f) => f !== format.formatType);
 
-    this.addDomainEvent({
+    return {
       type: 'FormatRemoved',
       data: {
         bookId: this.id,
         format,
       },
-    });
+    };
   }
 
-  addReviewer(reviewer: Reviewer): void {
+  addReviewer(reviewer: Reviewer): ReviewerAdded {
     const { id: reviewerId } = reviewer;
 
     if (this.reviewers.includes(reviewerId)) {
@@ -206,16 +217,16 @@ export class UnderEditing extends Aggregate<BookId, BookEvent> {
 
     this.reviewers.push(reviewerId);
 
-    this.addDomainEvent({
+    return {
       type: 'ReviewerAdded',
       data: {
         bookId: this.id,
         reviewer,
       },
-    });
+    };
   }
 
-  approve(committeeApproval: CommitteeApproval): void {
+  approve(committeeApproval: CommitteeApproval): Approved {
     if (this.reviewers.length < this.minimumReviewersRequiredForApproval) {
       throw InvalidStateError(
         'A book cannot be approved unless it has been reviewed by at least three reviewers.',
@@ -224,32 +235,32 @@ export class UnderEditing extends Aggregate<BookId, BookEvent> {
 
     this.isApproved = true;
 
-    this.addDomainEvent({
+    return {
       type: 'Approved',
       data: {
         bookId: this.id,
         committeeApproval,
       },
-    });
+    };
   }
 
-  setISBN(isbn: ISBN): void {
+  setISBN(isbn: ISBN): ISBNSet {
     if (this.isISBNSet) {
       throw InvalidStateError('Cannot change already set ISBN.');
     }
 
     this.isISBNSet = true;
 
-    this.addDomainEvent({
+    return {
       type: 'ISBNSet',
       data: {
         bookId: this.id,
         isbn,
       },
-    });
+    };
   }
 
-  moveToPrinting(publishingHouse: IPublishingHouse): void {
+  moveToPrinting(publishingHouse: IPublishingHouse): MovedToPrinting {
     if (this.chapterCount < 1) {
       throw InvalidStateError(
         'A book must have at least one chapter to move to the printing state.',
@@ -275,12 +286,12 @@ export class UnderEditing extends Aggregate<BookId, BookEvent> {
       );
     }
 
-    this.addDomainEvent({
+    return {
       type: 'MovedToPrinting',
       data: {
         bookId: this.id,
       },
-    });
+    };
   }
 }
 
@@ -294,8 +305,8 @@ export class InPrint extends Aggregate<BookId, BookEvent> {
     super(id);
   }
 
-  moveToPublished(): void {
-    this.addDomainEvent({
+  moveToPublished(): Published {
+    return {
       type: 'Published',
       data: {
         bookId: this.id,
@@ -303,7 +314,7 @@ export class InPrint extends Aggregate<BookId, BookEvent> {
         title: this.title,
         author: this.author,
       },
-    });
+    };
   }
 }
 
@@ -323,7 +334,7 @@ export class PublishedBook extends Aggregate<BookId, BookEvent> {
     return ratio((this.totalCopies - this.totalSoldCopies) / this.totalCopies);
   }
 
-  moveToOutOfPrint(): void {
+  moveToOutOfPrint(): MovedToOutOfPrint {
     if (
       this.unsoldCopiesRatio > this.maxAllowedUnsoldCopiesRatioToGoOutOfPrint
     ) {
@@ -332,12 +343,12 @@ export class PublishedBook extends Aggregate<BookId, BookEvent> {
       );
     }
 
-    this.addDomainEvent({
+    return {
       type: 'MovedToOutOfPrint',
       data: {
         bookId: this.id,
       },
-    });
+    };
   }
 }
 
