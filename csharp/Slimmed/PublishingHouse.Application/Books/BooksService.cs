@@ -23,7 +23,7 @@ public class BooksService: IBooksService
             genre
         );
 
-        await repository.Add(book, ct);
+        await repository.Store(book, ct);
     }
 
     public async Task AddChapter(AddChapterCommand command, CancellationToken ct)
@@ -37,7 +37,7 @@ public class BooksService: IBooksService
 
         draft.AddChapter(chapterTitle, chapterContent);
 
-        await repository.Update(book, ct);
+        await repository.Store(book, ct);
     }
 
     public async Task MoveToEditing(MoveToEditingCommand command, CancellationToken ct)
@@ -49,7 +49,7 @@ public class BooksService: IBooksService
 
         draft.MoveToEditing();
 
-        await repository.Update(book, ct);
+        await repository.Store(book, ct);
     }
 
     public async Task AddTranslation(AddTranslationCommand command, CancellationToken ct)
@@ -61,7 +61,7 @@ public class BooksService: IBooksService
 
         underEditing.AddTranslation(command.Translation);
 
-        await repository.Update(book, ct);
+        await repository.Store(book, ct);
     }
 
     public async Task AddFormat(AddFormatCommand command, CancellationToken ct)
@@ -73,7 +73,7 @@ public class BooksService: IBooksService
 
         underEditing.AddFormat(command.Format);
 
-        await repository.Update(book, ct);
+        await repository.Store(book, ct);
     }
 
     public async Task RemoveFormat(RemoveFormatCommand command, CancellationToken ct)
@@ -85,7 +85,7 @@ public class BooksService: IBooksService
 
         underEditing.RemoveFormat(command.Format);
 
-        await repository.Update(book, ct);
+        await repository.Store(book, ct);
     }
 
     public async Task AddReviewer(AddReviewerCommand command, CancellationToken ct)
@@ -97,7 +97,7 @@ public class BooksService: IBooksService
 
         underEditing.AddReviewer(command.Reviewer);
 
-        await repository.Update(book, ct);
+        await repository.Store(book, ct);
     }
 
     public async Task Approve(ApproveCommand command, CancellationToken ct)
@@ -109,7 +109,7 @@ public class BooksService: IBooksService
 
         underEditing.Approve(command.CommitteeApproval);
 
-        await repository.Update(book, ct);
+        await repository.Store(book, ct);
     }
 
     public async Task SetISBN(SetISBNCommand command, CancellationToken ct)
@@ -121,7 +121,7 @@ public class BooksService: IBooksService
 
         underEditing.SetISBN(command.ISBN);
 
-        await repository.Update(book, ct);
+        await repository.Store(book, ct);
     }
 
     public async Task MoveToPrinting(MoveToPrintingCommand command, CancellationToken ct)
@@ -133,7 +133,7 @@ public class BooksService: IBooksService
 
         underEditing.MoveToPrinting((null as IPublishingHouse)!);
 
-        await repository.Update(book, ct);
+        await repository.Store(book, ct);
     }
 
     public async Task MoveToPublished(MoveToPublishedCommand command, CancellationToken ct)
@@ -145,7 +145,7 @@ public class BooksService: IBooksService
 
         inPrint.MoveToPublished();
 
-        await repository.Update(book, ct);
+        await repository.Store(book, ct);
     }
 
     public async Task MoveToOutOfPrint(MoveToOutOfPrintCommand command, CancellationToken ct)
@@ -157,7 +157,7 @@ public class BooksService: IBooksService
 
         published.MoveToOutOfPrint();
 
-        await repository.Update(book, ct);
+        await repository.Store(book, ct);
     }
 
     public BooksService(

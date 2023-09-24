@@ -54,7 +54,7 @@ export class BooksService implements IBooksService {
       genre,
     );
 
-    return this.repository.add(book);
+    return this.repository.store(book);
   }
 
   async addChapter(command: AddChapterCommand): Promise<void> {
@@ -68,7 +68,7 @@ export class BooksService implements IBooksService {
 
     book.addChapter(chapterTitle, chapterContent);
 
-    return this.repository.update(book);
+    return this.repository.store(book);
   }
 
   async moveToEditing(command: MoveToEditingCommand): Promise<void> {
@@ -80,7 +80,7 @@ export class BooksService implements IBooksService {
 
     book.moveToEditing();
 
-    return this.repository.update(book);
+    return this.repository.store(book);
   }
 
   async addTranslation(command: AddTranslationCommand): Promise<void> {
@@ -95,7 +95,7 @@ export class BooksService implements IBooksService {
 
     book.addTranslation(translation);
 
-    return this.repository.update(book);
+    return this.repository.store(book);
   }
 
   async addFormat(command: AddFormatCommand): Promise<void> {
@@ -110,7 +110,7 @@ export class BooksService implements IBooksService {
 
     book.addFormat(format);
 
-    return this.repository.update(book);
+    return this.repository.store(book);
   }
 
   async removeFormat(command: RemoveFormatCommand): Promise<void> {
@@ -125,7 +125,7 @@ export class BooksService implements IBooksService {
 
     book.removeFormat(format);
 
-    return this.repository.update(book);
+    return this.repository.store(book);
   }
 
   async addReviewer(command: AddReviewerCommand): Promise<void> {
@@ -140,7 +140,7 @@ export class BooksService implements IBooksService {
 
     book.addReviewer(reviewer);
 
-    return this.repository.update(book);
+    return this.repository.store(book);
   }
 
   async approve(command: ApproveCommand): Promise<void> {
@@ -155,7 +155,7 @@ export class BooksService implements IBooksService {
 
     book.approve(committeeApproval);
 
-    return this.repository.update(book);
+    return this.repository.store(book);
   }
 
   async setISBN(command: SetISBNCommand): Promise<void> {
@@ -170,7 +170,7 @@ export class BooksService implements IBooksService {
 
     book.setISBN(isbn);
 
-    return this.repository.update(book);
+    return this.repository.store(book);
   }
 
   async moveToPrinting(command: MoveToPrintingCommand): Promise<void> {
@@ -185,7 +185,7 @@ export class BooksService implements IBooksService {
 
     book.moveToPrinting({} as IPublishingHouse);
 
-    return this.repository.update(book);
+    return this.repository.store(book);
   }
 
   async moveToPublished(command: MoveToPublishedCommand): Promise<void> {
@@ -200,7 +200,7 @@ export class BooksService implements IBooksService {
 
     book.moveToPublished();
 
-    return this.repository.update(book);
+    return this.repository.store(book);
   }
 
   async moveToOutOfPrint(command: MoveToOutOfPrintCommand): Promise<void> {
@@ -215,7 +215,7 @@ export class BooksService implements IBooksService {
 
     book.moveToOutOfPrint();
 
-    return this.repository.update(book);
+    return this.repository.store(book);
   }
 
   constructor(

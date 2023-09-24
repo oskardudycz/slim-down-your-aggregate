@@ -15,7 +15,7 @@ public abstract class EntityFrameworkRepository<TAggregate, TKey, TEvent, TEntit
     protected readonly TDbContext DbContext;
 
     protected EntityFrameworkRepository(TDbContext dbContext) =>
-        this.DbContext = dbContext;
+        DbContext = dbContext;
 
     public async Task<TAggregate?> FindById(TKey bookId, CancellationToken ct)
     {
@@ -26,20 +26,12 @@ public abstract class EntityFrameworkRepository<TAggregate, TKey, TEvent, TEntit
         return entity != null ? MapToAggregate(entity): default;
     }
 
-    public async Task Add(TAggregate aggregate, CancellationToken ct)
-    {
-        ProcessEvents(DbContext, null, aggregate.DomainEvents);
-
-        await DbContext.SaveChangesAsync(ct);
-        aggregate.ClearEvents();
-    }
-
-    public async Task Update(TAggregate aggregate, CancellationToken ct)
+    public async Task Store(TAggregate aggregate, CancellationToken ct)
     {
         var entity = await DbContext.Set<TEntity>().FindAsync(
             new object?[] { aggregate.Id.Value },
             cancellationToken: ct
-        ) ?? throw new InvalidOperationException();
+        ) ?? null;
 
         ProcessEvents(DbContext, entity, aggregate.DomainEvents);
 
