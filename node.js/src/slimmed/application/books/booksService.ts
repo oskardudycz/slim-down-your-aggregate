@@ -1,15 +1,15 @@
 import { IBooksRepository } from '../../domain/books/repositories';
 import { IAuthorProvider } from '../../domain/books/authors';
 import { IPublisherProvider } from '../../domain/books/publishers/publisherProvider';
-import { IPublishingHouse } from '../../domain/books/services';
 import {
+  Book,
   Draft,
   InPrint,
   Initial,
   PublishedBook,
   UnderEditing,
 } from '../../domain/books/book';
-import { InvalidOperationError, NotFoundError } from '#core/errors';
+import { InvalidOperationError } from '#core/errors';
 import {
   AddChapterCommand,
   AddFormatCommand,
@@ -24,6 +24,7 @@ import {
   AddReviewerCommand,
   SetISBNCommand,
 } from './commands';
+import { BookId } from 'src/original/domain/books/entities';
 
 export interface IBooksService {
   createDraft(command: CreateDraftCommand): Promise<void>;
@@ -41,182 +42,143 @@ export interface IBooksService {
 }
 
 export class BooksService implements IBooksService {
-  async createDraft(command: CreateDraftCommand): Promise<void> {
+  public createDraft = async (command: CreateDraftCommand): Promise<void> => {
     const { bookId, title, author, publisherId, edition, genre } = command.data;
 
-    const book = new Initial(bookId);
+    const authorEntity = await this.authorProvider.getOrCreate(author);
+    const publisherEntity = await this.publisherProvider.getById(publisherId);
 
-    book.createDraft(
-      title,
-      await this.authorProvider.getOrCreate(author),
-      await this.publisherProvider.getById(publisherId),
-      edition,
-      genre,
-    );
+    return this.handle(bookId, (book) => {
+      if (!(book instanceof Initial))
+        throw InvalidOperationError('Invalid State');
 
-    return this.repository.store(book);
-  }
+      book.createDraft(title, authorEntity, publisherEntity, edition, genre);
+    });
+  };
 
-  async addChapter(command: AddChapterCommand): Promise<void> {
-    const { bookId, chapterTitle, chapterContent } = command.data;
+  public addChapter = async (command: AddChapterCommand): Promise<void> => {
+    return this.handle(command.data.bookId, (book) => {
+      if (!(book instanceof Draft))
+        throw InvalidOperationError('Invalid State');
 
-    const book = await this.repository.findById(bookId);
+      const { chapterTitle, chapterContent } = command.data;
 
-    if (!book) throw NotFoundError("Book doesn't exist");
+      book.addChapter(chapterTitle, chapterContent);
+    });
+  };
 
-    if (!(book instanceof Draft)) throw InvalidOperationError('Invalid State');
+  public moveToEditing = async (command: MoveToEditingCommand): Promise<void> =>
+    this.handle(command.data.bookId, (book) => {
+      if (!(book instanceof Draft))
+        throw InvalidOperationError('Invalid State');
 
-    book.addChapter(chapterTitle, chapterContent);
+      book.moveToEditing();
+    });
 
-    return this.repository.store(book);
-  }
+  public addTranslation = async (
+    command: AddTranslationCommand,
+  ): Promise<void> =>
+    this.handle(command.data.bookId, (book) => {
+      if (!(book instanceof UnderEditing))
+        throw InvalidOperationError('Invalid State');
 
-  async moveToEditing(command: MoveToEditingCommand): Promise<void> {
-    const book = await this.repository.findById(command.data.bookId);
+      const { translation } = command.data;
 
-    if (!book) throw NotFoundError("Book doesn't exist");
+      book.addTranslation(translation);
+    });
 
-    if (!(book instanceof Draft)) throw InvalidOperationError('Invalid State');
+  public addFormat = async (command: AddFormatCommand): Promise<void> =>
+    this.handle(command.data.bookId, (book) => {
+      if (!(book instanceof UnderEditing))
+        throw InvalidOperationError('Invalid State');
 
-    book.moveToEditing();
+      const { format } = command.data;
 
-    return this.repository.store(book);
-  }
+      book.addFormat(format);
+    });
 
-  async addTranslation(command: AddTranslationCommand): Promise<void> {
-    const { bookId, translation } = command.data;
+  public removeFormat = async (command: RemoveFormatCommand): Promise<void> =>
+    this.handle(command.data.bookId, (book) => {
+      if (!(book instanceof UnderEditing))
+        throw InvalidOperationError('Invalid State');
 
-    const book = await this.repository.findById(bookId);
+      const { format } = command.data;
 
-    if (!book) throw NotFoundError("Book doesn't exist");
+      book.removeFormat(format);
+    });
 
-    if (!(book instanceof UnderEditing))
-      throw InvalidOperationError('Invalid State');
+  public addReviewer = async (command: AddReviewerCommand): Promise<void> =>
+    this.handle(command.data.bookId, (book) => {
+      if (!(book instanceof UnderEditing))
+        throw InvalidOperationError('Invalid State');
 
-    book.addTranslation(translation);
+      const { reviewer } = command.data;
 
-    return this.repository.store(book);
-  }
+      book.addReviewer(reviewer);
+    });
 
-  async addFormat(command: AddFormatCommand): Promise<void> {
-    const { bookId, format } = command.data;
+  public approve = async (command: ApproveCommand): Promise<void> =>
+    this.handle(command.data.bookId, (book) => {
+      if (!(book instanceof UnderEditing))
+        throw InvalidOperationError('Invalid State');
 
-    const book = await this.repository.findById(bookId);
+      const { committeeApproval } = command.data;
 
-    if (!book) throw NotFoundError("Book doesn't exist");
+      book.approve(committeeApproval);
+    });
 
-    if (!(book instanceof UnderEditing))
-      throw InvalidOperationError('Invalid State');
+  public setISBN = async (command: SetISBNCommand): Promise<void> =>
+    this.handle(command.data.bookId, (book) => {
+      if (!(book instanceof UnderEditing))
+        throw InvalidOperationError('Invalid State');
 
-    book.addFormat(format);
+      const { isbn } = command.data;
 
-    return this.repository.store(book);
-  }
+      book.setISBN(isbn);
+    });
 
-  async removeFormat(command: RemoveFormatCommand): Promise<void> {
-    const { bookId, format } = command.data;
+  public moveToPrinting = async (
+    command: MoveToPrintingCommand,
+  ): Promise<void> =>
+    this.handle(command.data.bookId, (book) => {
+      if (!(book instanceof UnderEditing))
+        throw InvalidOperationError('Invalid State');
 
-    const book = await this.repository.findById(bookId);
+      book.moveToPrinting({ isGenreLimitReached: () => true });
+    });
 
-    if (!book) throw NotFoundError("Book doesn't exist");
+  public moveToPublished = async (
+    command: MoveToPublishedCommand,
+  ): Promise<void> =>
+    this.handle(command.data.bookId, (book) => {
+      if (!(book instanceof InPrint))
+        throw InvalidOperationError('Invalid State');
 
-    if (!(book instanceof UnderEditing))
-      throw InvalidOperationError('Invalid State');
+      book.moveToPublished();
+    });
 
-    book.removeFormat(format);
+  public moveToOutOfPrint = async (
+    command: MoveToOutOfPrintCommand,
+  ): Promise<void> =>
+    this.handle(command.data.bookId, (book) => {
+      if (!(book instanceof PublishedBook))
+        throw InvalidOperationError('Invalid State');
 
-    return this.repository.store(book);
-  }
+      book.moveToOutOfPrint();
+    });
 
-  async addReviewer(command: AddReviewerCommand): Promise<void> {
-    const { bookId, reviewer } = command.data;
+  private handle = async (
+    id: BookId,
+    handle: (book: Book) => void,
+  ): Promise<void> => {
+    const book = (await this.repository.findById(id)) ?? this.getDefault(id);
 
-    const book = await this.repository.findById(bookId);
-
-    if (!book) throw NotFoundError("Book doesn't exist");
-
-    if (!(book instanceof UnderEditing))
-      throw InvalidOperationError('Invalid State');
-
-    book.addReviewer(reviewer);
-
-    return this.repository.store(book);
-  }
-
-  async approve(command: ApproveCommand): Promise<void> {
-    const { bookId, committeeApproval } = command.data;
-
-    const book = await this.repository.findById(bookId);
-
-    if (!book) throw NotFoundError("Book doesn't exist");
-
-    if (!(book instanceof UnderEditing))
-      throw InvalidOperationError('Invalid State');
-
-    book.approve(committeeApproval);
-
-    return this.repository.store(book);
-  }
-
-  async setISBN(command: SetISBNCommand): Promise<void> {
-    const { bookId, isbn } = command.data;
-
-    const book = await this.repository.findById(bookId);
-
-    if (!book) throw NotFoundError("Book doesn't exist");
-
-    if (!(book instanceof UnderEditing))
-      throw InvalidOperationError('Invalid State');
-
-    book.setISBN(isbn);
-
-    return this.repository.store(book);
-  }
-
-  async moveToPrinting(command: MoveToPrintingCommand): Promise<void> {
-    const { bookId } = command.data;
-
-    const book = await this.repository.findById(bookId);
-
-    if (!book) throw NotFoundError("Book doesn't exist");
-
-    if (!(book instanceof UnderEditing))
-      throw InvalidOperationError('Invalid State');
-
-    book.moveToPrinting({} as IPublishingHouse);
+    handle(book);
 
     return this.repository.store(book);
-  }
+  };
 
-  async moveToPublished(command: MoveToPublishedCommand): Promise<void> {
-    const { bookId } = command.data;
-
-    const book = await this.repository.findById(bookId);
-
-    if (!book) throw NotFoundError("Book doesn't exist");
-
-    if (!(book instanceof InPrint))
-      throw InvalidOperationError('Invalid State');
-
-    book.moveToPublished();
-
-    return this.repository.store(book);
-  }
-
-  async moveToOutOfPrint(command: MoveToOutOfPrintCommand): Promise<void> {
-    const { bookId } = command.data;
-
-    const book = await this.repository.findById(bookId);
-
-    if (!book) throw NotFoundError("Book doesn't exist");
-
-    if (!(book instanceof PublishedBook))
-      throw InvalidOperationError('Invalid State');
-
-    book.moveToOutOfPrint();
-
-    return this.repository.store(book);
-  }
+  private getDefault = (bookId: BookId) => new Initial(bookId);
 
   constructor(
     private repository: IBooksRepository,

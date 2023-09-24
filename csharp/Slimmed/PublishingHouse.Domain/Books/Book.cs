@@ -2,6 +2,7 @@ using PublishingHouse.Books.Entities;
 using PublishingHouse.Books.Factories;
 using PublishingHouse.Books.Services;
 using PublishingHouse.Core.Aggregates;
+using PublishingHouse.Core.Validation;
 using PublishingHouse.Core.ValueObjects;
 using static PublishingHouse.Books.BookEvent;
 
@@ -27,41 +28,42 @@ public abstract class Book: Aggregate<BookId, BookEvent>
 
     public class Draft: Book
     {
-        private readonly Genre? genre;
-        private readonly List<Chapter> chapters;
+        private readonly bool isGenreSet;
+        private readonly List<ChapterTitle> chapterTitles;
+        private int ChaptersCount => chapterTitles.Count;
 
         internal Draft(
             BookId bookId,
-            Genre? genre,
-            List<Chapter>? chapters = null
+            bool isGenreSet,
+            List<ChapterTitle> chapterTitles
         ): base(bookId)
         {
-            this.genre = genre;
-            this.chapters = chapters ?? new List<Chapter>();
+            this.isGenreSet = isGenreSet;
+            this.chapterTitles = chapterTitles;
         }
 
         public void AddChapter(ChapterTitle title, ChapterContent content)
         {
-            if (chapters.Any(chap => chap.Title.Value == title.Value))
+            if (!title.Value.StartsWith("Chapter " + (chapterTitles.Count + 1)))
+                throw new InvalidOperationException(
+                    $"Chapter should be added in sequence. The title of the next chapter should be 'Chapter {chapterTitles.Count + 1}'");
+
+            if (chapterTitles.Contains(title))
                 throw new InvalidOperationException($"Chapter with title {title.Value} already exists.");
 
-            if (chapters.Count > 0 && !chapters.Last().Title.Value.StartsWith("Chapter " + (chapters.Count)))
-                throw new InvalidOperationException(
-                    $"Chapter should be added in sequence. The title of the next chapter should be 'Chapter {chapters.Count + 1}'");
-
-            var chapter = new Chapter(new ChapterNumber(chapters.Count + 1), title, content);
-            chapters.Add(chapter);
+            var chapter = new Chapter(new ChapterNumber(chapterTitles.Count + 1), title, content);
+            chapterTitles.Add(title);
 
             AddDomainEvent(new ChapterAdded(Id, chapter));
         }
 
         public void MoveToEditing()
         {
-            if (chapters.Count < 1)
+            if (ChaptersCount < 1)
                 throw new InvalidOperationException(
                     "A book must have at least one chapter to move to the Editing state.");
 
-            if (genre == null)
+            if (!isGenreSet)
                 throw new InvalidOperationException("Book can be moved to the editing only when genre is specified");
 
             AddDomainEvent(new MovedToEditing(Id));
@@ -71,110 +73,114 @@ public abstract class Book: Aggregate<BookId, BookEvent>
     public class UnderEditing: Book
     {
         private readonly Genre? genre;
-        private ISBN? isbn;
-        private CommitteeApproval? committeeApproval;
-        private readonly List<Reviewer> reviewers;
-        private readonly List<Chapter> chapters;
-        private readonly List<Translation> translations;
-        private readonly List<Format> formats;
+        private bool isISBNSet;
+        private bool isApproved;
+        private readonly PositiveInt chaptersCount;
+        private readonly List<ReviewerId> reviewers;
+        private readonly PositiveInt minimumReviewersRequiredForApproval;
+        private readonly List<LanguageId> translationLanguages;
+        private readonly PositiveInt maximumNumberOfTranslations;
+        private readonly List<FormatType> formatTypes;
 
         internal UnderEditing(
             BookId bookId,
             Genre? genre,
-            ISBN? isbn = null,
-            CommitteeApproval? committeeApproval = null,
-            List<Reviewer>? reviewers = null,
-            List<Chapter>? chapters = null,
-            List<Translation>? translations = null,
-            List<Format>? formats = null
+            bool isISBNSet,
+            bool isApproved,
+            PositiveInt chaptersCount,
+            List<ReviewerId> reviewers,
+            PositiveInt minimumReviewersRequiredForApproval,
+            List<LanguageId> translationLanguages,
+            PositiveInt maximumNumberOfTranslations,
+            List<FormatType> formatTypes
         ): base(bookId)
         {
             this.genre = genre;
-            this.isbn = isbn;
-            this.committeeApproval = committeeApproval;
-            this.reviewers = reviewers ?? new List<Reviewer>();
-            this.chapters = chapters ?? new List<Chapter>();
-            this.translations = translations ?? new List<Translation>();
-            this.formats = formats ?? new List<Format>();
+            this.isISBNSet = isISBNSet;
+            this.isApproved = isApproved;
+            this.chaptersCount = chaptersCount;
+            this.reviewers = reviewers;
+            this.minimumReviewersRequiredForApproval = minimumReviewersRequiredForApproval;
+            this.translationLanguages = translationLanguages;
+            this.maximumNumberOfTranslations = maximumNumberOfTranslations;
+            this.formatTypes = formatTypes;
         }
 
         public void AddTranslation(Translation translation)
         {
-            if (translations.Count >= 5)
-                throw new InvalidOperationException(
-                    "Cannot add more translations. Maximum 5 translations are allowed.");
+            var languageId = translation.Language.Id;
 
-            translations.Add(translation);
+            if (translationLanguages.Contains(languageId))
+                throw new InvalidOperationException($"Translation to {translation.Language.Name} already exists.");
+
+            if (translationLanguages.Count >= maximumNumberOfTranslations.Value)
+                throw new InvalidOperationException(
+                    $"Cannot add more translations. Maximum {maximumNumberOfTranslations.Value} translations are allowed.");
+
+            translationLanguages.Add(languageId);
 
             AddDomainEvent(new TranslationAdded(Id, translation));
         }
 
         public void AddFormat(Format format)
         {
-            if (formats.Any(f => f.FormatType == format.FormatType))
+            if (formatTypes.Contains(format.FormatType))
                 throw new InvalidOperationException($"Format {format.FormatType} already exists.");
 
-            formats.Add(format);
+            formatTypes.Add(format.FormatType);
 
             AddDomainEvent(new FormatAdded(Id, format));
         }
 
         public void RemoveFormat(Format format)
         {
-            var existingFormat = formats.FirstOrDefault(f => f.FormatType == format.FormatType);
-            if (existingFormat == null)
+            if (!formatTypes.Remove(format.FormatType))
                 throw new InvalidOperationException($"Format {format.FormatType} does not exist.");
-
-            formats.Remove(existingFormat);
 
             AddDomainEvent(new FormatRemoved(Id, format));
         }
 
         public void AddReviewer(Reviewer reviewer)
         {
-            if (reviewers.Contains(reviewer))
+            if (reviewers.Contains(reviewer.Id))
                 throw new InvalidOperationException(
                     $"{reviewer.Name} is already a reviewer.");
 
-            reviewers.Add(reviewer);
+            reviewers.Add(reviewer.Id);
 
             AddDomainEvent(new ReviewerAdded(Id, reviewer));
         }
 
         public void Approve(CommitteeApproval committeeApproval)
         {
-            if (reviewers.Count < 3)
+            if (reviewers.Count < minimumReviewersRequiredForApproval.Value)
                 throw new InvalidOperationException(
                     "A book cannot be approved unless it has been reviewed by at least three reviewers.");
 
-            this.committeeApproval = committeeApproval;
+            isApproved = true;
 
             AddDomainEvent(new Approved(Id, committeeApproval));
         }
 
         public void SetISBN(ISBN isbn)
         {
-            if (this.isbn != null)
+            if (isISBNSet)
                 throw new InvalidOperationException(
                     "Cannot change already set ISBN.");
 
-            this.isbn = isbn;
+            isISBNSet = true;
 
             AddDomainEvent(new ISBNSet(Id, isbn));
         }
 
         public void MoveToPrinting(IPublishingHouse publishingHouse)
         {
-            if (chapters.Count < 1)
+            if (chaptersCount.Value < 1)
                 throw new InvalidOperationException(
                     "A book must have at least one chapter to move to the printing state.");
 
-            if (committeeApproval == null)
+            if (isApproved)
                 throw new InvalidOperationException("Cannot move to printing state until the book has been approved.");
-
-            if (reviewers.Count < 3)
-                throw new InvalidOperationException(
-                    "A book cannot be moved to the Printing state unless it has been reviewed by at least three reviewers.");
 
             if (genre == null)
                 throw new InvalidOperationException("Book can be moved to the printing only when genre is specified");
@@ -190,54 +196,50 @@ public abstract class Book: Aggregate<BookId, BookEvent>
     {
         private readonly Title title;
         private readonly Author author;
-        private ISBN? isbn;
-        private readonly List<Reviewer> reviewers;
+        private readonly ISBN isbn;
 
         internal InPrint(
             BookId bookId,
             Title title,
             Author author,
-            ISBN? isbn = null,
-            List<Reviewer>? reviewers = null
+            ISBN isbn
         ): base(bookId)
         {
             this.title = title;
             this.author = author;
             this.isbn = isbn;
-            this.reviewers = reviewers ?? new List<Reviewer>();
         }
 
         public void MoveToPublished()
         {
-            if (isbn == null)
-                throw new InvalidOperationException("Cannot move to Published state without ISBN.");
-
-            if (reviewers.Count < 3)
-                throw new InvalidOperationException(
-                    "A book cannot be moved to the Published state unless it has been reviewed by at least three reviewers.");
-
             AddDomainEvent(new Published(Id, isbn, title, author));
         }
     }
 
     public class PublishedBook: Book
     {
-        private List<Format> formats;
+        private readonly PositiveInt totalCopies;
+        private readonly PositiveInt totalSoldCopies;
+        private readonly Ratio maxAllowedUnsoldCopiesRatioToGoOutOfPrint;
+
+        private Ratio UnsoldCopiesRatio =>
+            new((totalCopies.Value - totalSoldCopies.Value) / (decimal)totalCopies.Value);
 
         public PublishedBook(
             BookId bookId,
-            List<Format> formats
+            PositiveInt totalCopies,
+            PositiveInt totalSoldCopies,
+            Ratio maxAllowedUnsoldCopiesRatioToGoOutOfPrint
         ): base(bookId)
         {
-            this.formats = formats;
+            this.totalCopies = totalCopies;
+            this.totalSoldCopies = totalSoldCopies;
+            this.maxAllowedUnsoldCopiesRatioToGoOutOfPrint = maxAllowedUnsoldCopiesRatioToGoOutOfPrint;
         }
-
 
         public void MoveToOutOfPrint()
         {
-            double totalCopies = formats.Sum(f => f.TotalCopies.Value);
-            double totalSoldCopies = formats.Sum(f => f.SoldCopies.Value);
-            if ((totalSoldCopies / totalCopies) > 0.1)
+            if (UnsoldCopiesRatio.CompareTo(maxAllowedUnsoldCopiesRatioToGoOutOfPrint) > 0)
                 throw new InvalidOperationException(
                     "Cannot move to Out of Print state if more than 10% of total copies are unsold.");
 
@@ -274,22 +276,29 @@ public abstract class Book: Aggregate<BookId, BookEvent>
             state switch
             {
                 State.Writing =>
-                    new Draft(bookId, genre, chapters),
+                    new Draft(bookId, genre != null, chapters.Select(ch => ch.Title).ToList()),
                 State.Editing =>
                     new UnderEditing(
                         bookId,
                         genre,
-                        isbn,
-                        committeeApproval,
-                        reviewers,
-                        chapters,
-                        translations,
-                        formats
-                        ),
+                        isbn != null,
+                        committeeApproval != null,
+                        new PositiveInt(chapters.Count),
+                        reviewers.Select(r => r.Id).ToList(),
+                        new PositiveInt(3), // this could be read from config, environment variables or database
+                        translations.Select(t => t.Language.Id).ToList(),
+                        new PositiveInt(5), // this could be read from config, environment variables or database
+                        formats.Select(f => f.FormatType).ToList()
+                    ),
                 State.Printing =>
-                    new InPrint(bookId, title, author, isbn, reviewers),
+                    new InPrint(bookId, title, author, isbn.AssertNotNull()),
                 State.Published =>
-                    new PublishedBook(bookId, formats),
+                    new PublishedBook(
+                        bookId,
+                        new PositiveInt(formats.Sum(f => f.TotalCopies.Value)),
+                        new PositiveInt(formats.Sum(f => f.SoldCopies.Value)),
+                        new Ratio(0.10m) // this could be read from config, environment variables or database
+                    ),
                 State.OutOfPrint =>
                     new OutOfPrint(bookId),
                 _ => throw new InvalidOperationException()

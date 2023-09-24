@@ -18,7 +18,7 @@ describe('Publishing House', () => {
       await request(app)
         .post(`/api/books/${existingBook.id}/chapters`)
         .send({
-          title: faker.string.sample(),
+          title: 'Chapter 1 - ' + faker.string.sample(),
           content: faker.string.sample(),
         })
         .expect(204);

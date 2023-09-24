@@ -1,4 +1,4 @@
-import { PositiveNumber } from '#core/typing';
+import { PositiveNumber, positiveNumber } from '#core/typing';
 import { Aggregate } from '../../infrastructure/aggregates';
 import {
   Author,
@@ -7,10 +7,12 @@ import {
   ChapterTitle,
   CommitteeApproval,
   Format,
+  FormatType,
   Genre,
   ISBN,
   Publisher,
   Reviewer,
+  ReviewerId,
   Title,
   Translation,
   chapterNumber,
@@ -18,22 +20,14 @@ import {
 import { BookId } from './entities/bookId';
 import { IPublishingHouse } from './services/publishingHouse';
 import { IBookFactory } from './factories/bookFactory';
-import { InvalidOperationError, InvalidStateError } from '#core/errors';
 import {
-  Approved,
-  BookEvent,
-  ChapterAdded,
-  DraftCreated,
-  FormatAdded,
-  FormatRemoved,
-  ISBNSet,
-  MovedToEditing,
-  MovedToOutOfPrint,
-  MovedToPrinting,
-  Published,
-  ReviewerAdded,
-  TranslationAdded,
-} from './bookEvent';
+  InvalidOperationError,
+  InvalidStateError,
+  ValidationError,
+} from '#core/errors';
+import { BookEvent, DraftCreated, MovedToEditing } from './bookEvent';
+import { LanguageId } from './entities/language';
+import { Ratio, ratio } from '#core/typing/ratio';
 
 export class Initial extends Aggregate<BookId, BookEvent> {
   constructor(id: BookId) {
@@ -63,60 +57,52 @@ export class Initial extends Aggregate<BookId, BookEvent> {
 }
 
 export class Draft extends Aggregate<BookId, BookEvent> {
-  #genre: Genre | null;
-  #chapters: Chapter[];
-  public readonly status = State.Writing;
-
-  constructor(id: BookId, genre: Genre | null, chapters: Chapter[] = []) {
+  constructor(
+    id: BookId,
+    private isGenreSet: boolean,
+    private chapterTitles: ChapterTitle[] = [],
+  ) {
     super(id);
-    this.#genre = genre;
-    this.#chapters = chapters;
   }
 
   addChapter(title: ChapterTitle, content: ChapterContent): void {
-    if (this.#chapters.some((chap) => chap.title === title)) {
+    if (this.chapterTitles.includes(title)) {
       throw InvalidStateError(`Chapter with title ${title} already exists.`);
     }
 
-    if (
-      this.#chapters.length > 0 &&
-      !this.#chapters[this.#chapters.length - 1].title.startsWith(
-        `Chapter ${this.#chapters.length}`,
-      )
-    ) {
+    if (!title.startsWith(`Chapter ${this.chapterTitles.length + 1}`)) {
       throw InvalidStateError(
         `Chapter should be added in sequence. The title of the next chapter should be 'Chapter ${
-          this.#chapters.length + 1
+          this.chapterTitles.length + 1
         }'`,
       );
     }
 
     const chapter = new Chapter(
-      chapterNumber(this.#chapters.length + 1),
+      chapterNumber(this.chapterTitles.length + 1),
       title,
       content,
     );
-    this.#chapters.push(chapter);
 
-    const event: ChapterAdded = {
+    this.chapterTitles.push(title);
+
+    this.addDomainEvent({
       type: 'ChapterAdded',
       data: {
         bookId: this.id,
         chapter,
       },
-    };
-
-    this.addDomainEvent(event);
+    });
   }
 
   moveToEditing(): void {
-    if (this.#chapters.length < 1) {
+    if (this.chapterTitles.length < 1) {
       throw InvalidStateError(
         'A book must have at least one chapter to move to the Editing state.',
       );
     }
 
-    if (this.#genre === null) {
+    if (!this.isGenreSet) {
       throw InvalidStateError(
         'Book can be moved to editing only when genre is specified',
       );
@@ -134,275 +120,224 @@ export class Draft extends Aggregate<BookId, BookEvent> {
 }
 
 export class UnderEditing extends Aggregate<BookId, BookEvent> {
-  #isbn: ISBN | null;
-  #genre: Genre;
-  #committeeApproval: CommitteeApproval | null;
-  #reviewers: Reviewer[];
-  #translations: Translation[];
-  #formats: Format[];
-  #chapters: Chapter[];
-  public readonly status = State.Editing;
-
   constructor(
     id: BookId,
-    genre: Genre,
-    chapters: Chapter[],
-    reviewers: Reviewer[] = [],
-    translations: Translation[] = [],
-    formats: Format[] = [],
-    isbn?: ISBN | null,
-    committeeApproval?: CommitteeApproval | null,
+    private genre: Genre,
+    private isISBNSet: boolean,
+    private isApproved: boolean,
+    private chapterCount: PositiveNumber,
+    private reviewers: ReviewerId[],
+    private readonly minimumReviewersRequiredForApproval: PositiveNumber,
+    private translationLanguages: LanguageId[],
+    private readonly maximumNumberOfTranslations: PositiveNumber,
+    private formatTypes: FormatType[],
   ) {
     super(id);
-    this.#genre = genre;
-    this.#chapters = chapters;
-    this.#reviewers = reviewers;
-    this.#translations = translations;
-    this.#formats = formats;
-    this.#isbn = isbn ?? null;
-    this.#committeeApproval = committeeApproval ?? null;
   }
 
   addTranslation(translation: Translation): void {
-    if (this.#translations.length >= 5) {
+    const { language } = translation;
+
+    if (this.translationLanguages.includes(language.id))
       throw InvalidStateError(
-        'Cannot add more translations. Maximum 5 translations are allowed.',
+        `Translation to ${language.name} already exists.`,
+      );
+
+    if (this.translationLanguages.length > this.maximumNumberOfTranslations) {
+      throw InvalidStateError(
+        `Cannot add more translations. Maximum ${this.maximumNumberOfTranslations} translations are allowed.`,
       );
     }
 
-    this.#translations.push(translation);
+    this.translationLanguages.push(language.id);
 
-    const event: TranslationAdded = {
+    this.addDomainEvent({
       type: 'TranslationAdded',
       data: {
         bookId: this.id,
         translation,
       },
-    };
-
-    this.addDomainEvent(event);
+    });
   }
 
   addFormat(format: Format): void {
-    if (this.#formats.some((f) => f.formatType === format.formatType)) {
+    const { formatType } = format;
+
+    if (this.formatTypes.includes(formatType)) {
       throw InvalidStateError(`Format ${format.formatType} already exists.`);
     }
 
-    this.#formats.push(format);
+    this.formatTypes.push(formatType);
 
-    const event: FormatAdded = {
+    this.addDomainEvent({
       type: 'FormatAdded',
       data: {
         bookId: this.id,
         format,
       },
-    };
-
-    this.addDomainEvent(event);
+    });
   }
 
   removeFormat(format: Format): void {
-    const existingFormat = this.#formats.find(
-      (f) => f.formatType === format.formatType,
-    );
-    if (!existingFormat) {
+    const { formatType } = format;
+
+    if (!this.formatTypes.includes(formatType)) {
       throw InvalidStateError(`Format ${format.formatType} does not exist.`);
     }
 
-    this.#formats = this.#formats.filter(
-      (f) => f.formatType !== format.formatType,
-    );
+    this.formatTypes = this.formatTypes.filter((f) => f !== format.formatType);
 
-    const event: FormatRemoved = {
+    this.addDomainEvent({
       type: 'FormatRemoved',
       data: {
         bookId: this.id,
         format,
       },
-    };
-
-    this.addDomainEvent(event);
+    });
   }
 
   addReviewer(reviewer: Reviewer): void {
-    if (this.#reviewers.some((r) => r.name === reviewer.name)) {
+    const { id: reviewerId } = reviewer;
+
+    if (this.reviewers.includes(reviewerId)) {
       const reviewerName: string = reviewer.name;
       throw InvalidStateError(`${reviewerName} is already a reviewer.`);
     }
 
-    this.#reviewers.push(reviewer);
+    this.reviewers.push(reviewerId);
 
-    const event: ReviewerAdded = {
+    this.addDomainEvent({
       type: 'ReviewerAdded',
       data: {
         bookId: this.id,
         reviewer,
       },
-    };
-
-    this.addDomainEvent(event);
+    });
   }
 
   approve(committeeApproval: CommitteeApproval): void {
-    if (this.#reviewers.length < 3) {
+    if (this.reviewers.length < this.minimumReviewersRequiredForApproval) {
       throw InvalidStateError(
         'A book cannot be approved unless it has been reviewed by at least three reviewers.',
       );
     }
 
-    this.#committeeApproval = committeeApproval;
+    this.isApproved = true;
 
-    const event: Approved = {
+    this.addDomainEvent({
       type: 'Approved',
       data: {
         bookId: this.id,
         committeeApproval,
       },
-    };
-
-    this.addDomainEvent(event);
+    });
   }
 
   setISBN(isbn: ISBN): void {
-    if (this.#isbn !== null) {
+    if (this.isISBNSet) {
       throw InvalidStateError('Cannot change already set ISBN.');
     }
 
-    this.#isbn = isbn;
+    this.isISBNSet = true;
 
-    const event: ISBNSet = {
+    this.addDomainEvent({
       type: 'ISBNSet',
       data: {
         bookId: this.id,
         isbn,
       },
-    };
-
-    this.addDomainEvent(event);
+    });
   }
 
   moveToPrinting(publishingHouse: IPublishingHouse): void {
-    if (this.#chapters.length < 1) {
+    if (this.chapterCount < 1) {
       throw InvalidStateError(
         'A book must have at least one chapter to move to the printing state.',
       );
     }
 
-    if (this.#committeeApproval === null) {
+    if (this.isApproved === null) {
       throw InvalidStateError(
         'Cannot move to printing state until the book has been approved.',
       );
     }
 
-    if (this.#reviewers.length < 3) {
-      throw InvalidStateError(
-        'A book cannot be moved to the Printing state unless it has been reviewed by at least three reviewers.',
-      );
-    }
-
-    if (this.#genre === null) {
+    if (this.genre === null) {
       throw InvalidStateError(
         'Book can be moved to the printing only when genre is specified',
       );
     }
 
     // Check for genre limit
-    if (!publishingHouse.isGenreLimitReached(this.#genre)) {
+    if (!publishingHouse.isGenreLimitReached(this.genre)) {
       throw InvalidStateError(
         'Cannot move to printing until the genre limit is reached.',
       );
     }
 
-    const event: MovedToPrinting = {
+    this.addDomainEvent({
       type: 'MovedToPrinting',
       data: {
         bookId: this.id,
       },
-    };
-
-    this.addDomainEvent(event);
+    });
   }
 }
 
 export class InPrint extends Aggregate<BookId, BookEvent> {
-  #title: Title;
-  #author: Author;
-  #isbn: ISBN | null;
-  #reviewers: Reviewer[];
-  public readonly status = State.Printing;
-
   constructor(
     id: BookId,
-    title: Title,
-    author: Author,
-    isbn?: ISBN | null,
-    reviewers?: Reviewer[] | null,
+    private readonly title: Title,
+    private readonly author: Author,
+    private readonly isbn: ISBN,
   ) {
     super(id);
-    this.#title = title;
-    this.#author = author;
-    this.#isbn = isbn ?? null;
-    this.#reviewers = reviewers ?? [];
   }
 
   moveToPublished(): void {
-    if (this.#isbn === null) {
-      throw InvalidStateError('Cannot move to Published state without ISBN.');
-    }
-
-    if (this.#reviewers.length < 3) {
-      throw InvalidStateError(
-        'A book cannot be moved to the Published state unless it has been reviewed by at least three reviewers.',
-      );
-    }
-
-    const event: Published = {
+    this.addDomainEvent({
       type: 'Published',
       data: {
         bookId: this.id,
-        isbn: this.#isbn,
-        title: this.#title,
-        author: this.#author,
+        isbn: this.isbn,
+        title: this.title,
+        author: this.author,
       },
-    };
-
-    this.addDomainEvent(event);
+    });
   }
 }
 
 export class PublishedBook extends Aggregate<BookId, BookEvent> {
-  #formats: Format[];
   public readonly status = State.Published;
 
-  constructor(id: BookId, formats: Format[]) {
+  constructor(
+    id: BookId,
+    private readonly totalCopies: PositiveNumber,
+    private readonly totalSoldCopies: PositiveNumber,
+    private readonly maxAllowedUnsoldCopiesRatioToGoOutOfPrint: Ratio,
+  ) {
     super(id);
-    this.#formats = formats;
+  }
+
+  private get unsoldCopiesRatio(): Ratio {
+    return ratio((this.totalCopies - this.totalSoldCopies) / this.totalCopies);
   }
 
   moveToOutOfPrint(): void {
-    const totalCopies = this.#formats.reduce(
-      (acc, format) => acc + format.totalCopies,
-      0,
-    );
-    const totalSoldCopies = this.#formats.reduce(
-      (acc, format) => acc + format.soldCopies,
-      0,
-    );
-
-    if (totalSoldCopies / totalCopies > 0.1) {
+    if (
+      this.unsoldCopiesRatio > this.maxAllowedUnsoldCopiesRatioToGoOutOfPrint
+    ) {
       throw InvalidStateError(
         'Cannot move to Out of Print state if more than 10% of total copies are unsold.',
       );
     }
 
-    const event: MovedToOutOfPrint = {
+    this.addDomainEvent({
       type: 'MovedToOutOfPrint',
       data: {
         bookId: this.id,
       },
-    };
-
-    this.addDomainEvent(event);
+    });
   }
 }
 
@@ -436,7 +371,11 @@ export class BookFactory implements IBookFactory {
   ): Book {
     switch (state) {
       case State.Writing:
-        return new Draft(bookId, genre, chapters);
+        return new Draft(
+          bookId,
+          !!genre,
+          chapters.map((ch) => ch.title),
+        );
       case State.Editing: {
         if (genre == null)
           throw InvalidOperationError('Genre should be provided!');
@@ -444,18 +383,38 @@ export class BookFactory implements IBookFactory {
         return new UnderEditing(
           bookId,
           genre,
-          chapters,
-          reviewers,
-          translations,
-          formats,
-          isbn,
-          committeeApproval,
+          !!isbn,
+          !!committeeApproval,
+          positiveNumber(chapters.length),
+          reviewers.map((r) => r.id),
+          positiveNumber(3),
+          translations.map((r) => r.language.id),
+          positiveNumber(5),
+          formats.map((f) => f.formatType),
         );
       }
-      case State.Printing:
-        return new InPrint(bookId, title, author, isbn, reviewers);
-      case State.Published:
-        return new PublishedBook(bookId, formats);
+      case State.Printing: {
+        if (!isbn) throw ValidationError('ISBN needs to be set');
+
+        return new InPrint(bookId, title, author, isbn);
+      }
+      case State.Published: {
+        const totalCopies = formats.reduce(
+          (acc, format) => acc + format.totalCopies,
+          0,
+        );
+        const totalSoldCopies = formats.reduce(
+          (acc, format) => acc + format.soldCopies,
+          0,
+        );
+
+        return new PublishedBook(
+          bookId,
+          positiveNumber(totalCopies),
+          positiveNumber(totalSoldCopies),
+          ratio(0.1),
+        );
+      }
       case State.OutOfPrint:
         return new OutOfPrint(bookId);
     }
