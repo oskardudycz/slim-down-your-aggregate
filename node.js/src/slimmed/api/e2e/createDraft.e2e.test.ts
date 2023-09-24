@@ -3,7 +3,7 @@ import { Application } from 'express';
 import { faker } from '@faker-js/faker';
 import { TestResponse } from '#testing/api/testResponse';
 import initApp from '../app';
-import { EXISTING_PUBLISHER_ID } from '../../application/books';
+import { config } from '#config';
 
 describe('Publishing House', () => {
   let app: Application;
@@ -22,7 +22,7 @@ describe('Publishing House', () => {
             firstName: faker.person.firstName(),
             lastName: faker.person.lastName(),
           },
-          publisherId: EXISTING_PUBLISHER_ID,
+          publisherId: config.application.existingPublisherId,
           edition: faker.number.int({ min: 0 }),
           genre: faker.string.sample(),
         })

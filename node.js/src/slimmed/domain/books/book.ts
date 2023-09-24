@@ -19,13 +19,10 @@ import {
 import { BookId } from './entities/bookId';
 import { IPublishingHouse } from './services/publishingHouse';
 import { IBookFactory } from './factories/bookFactory';
-import {
-  InvalidOperationError,
-  InvalidStateError,
-  ValidationError,
-} from '#core/errors';
+import { InvalidOperationError, InvalidStateError } from '#core/errors';
 import {
   Approved,
+  BookEvent,
   ChapterAdded,
   DraftCreated,
   FormatAdded,
@@ -46,6 +43,54 @@ export abstract class Book {
     return this._id;
   }
   constructor(protected _id: BookId) {}
+
+  public static evolve(book: Book, event: BookEvent) {
+    const { type, data } = event;
+
+    switch (type) {
+      case 'DraftCreated': {
+        if (!(book instanceof Initial)) return book;
+
+        const { bookId, genre } = data;
+
+        return new Draft(bookId, genre, []);
+      }
+      case 'MovedToEditing': {
+        if (!(book instanceof Draft)) return book;
+
+        const { bookId, genre } = data;
+
+        return new UnderEditing(bookId, genre, false, false, [], [], []);
+      }
+      case 'MovedToPrinting': {
+        if (!(book instanceof UnderEditing)) return book;
+
+        const { bookId } = data;
+
+        // TODO: Add methods to set total items per format
+        return new InPrint(bookId);
+      }
+      case 'Published': {
+        if (!(book instanceof InPrint)) return book;
+
+        const { bookId } = data;
+
+        // TODO: Add methods to set sold copies
+        return new PublishedBook(bookId, positiveNumber(1), positiveNumber(1));
+      }
+      case 'MovedToOutOfPrint': {
+        if (!(book instanceof PublishedBook)) return book;
+
+        const { bookId } = data;
+
+        return new OutOfPrint(bookId);
+      }
+
+      default: {
+        return book;
+      }
+    }
+  }
 }
 export class Initial extends Book {
   constructor(id: BookId) {
@@ -76,7 +121,7 @@ export class Initial extends Book {
 export class Draft extends Book {
   constructor(
     id: BookId,
-    private isGenreSet: boolean,
+    private genre: Genre | null,
     private chapterTitles: ChapterTitle[] = [],
   ) {
     super(id);
@@ -119,7 +164,7 @@ export class Draft extends Book {
       );
     }
 
-    if (!this.isGenreSet) {
+    if (!this.genre) {
       throw InvalidStateError(
         'Book can be moved to editing only when genre is specified',
       );
@@ -129,6 +174,7 @@ export class Draft extends Book {
       type: 'MovedToEditing',
       data: {
         bookId: this.id,
+        genre: this.genre,
       },
     };
   }
@@ -137,20 +183,20 @@ export class Draft extends Book {
 export class UnderEditing extends Book {
   constructor(
     id: BookId,
-    private genre: Genre,
+    private genre: Genre | null,
     private isISBNSet: boolean,
     private isApproved: boolean,
-    private chapterCount: PositiveNumber,
     private reviewers: ReviewerId[],
-    private readonly minimumReviewersRequiredForApproval: PositiveNumber,
     private translationLanguages: LanguageId[],
-    private readonly maximumNumberOfTranslations: PositiveNumber,
     private formatTypes: FormatType[],
   ) {
     super(id);
   }
 
-  addTranslation(translation: Translation): TranslationAdded {
+  addTranslation(
+    translation: Translation,
+    maximumNumberOfTranslations: PositiveNumber,
+  ): TranslationAdded {
     const { language } = translation;
 
     if (this.translationLanguages.includes(language.id))
@@ -158,9 +204,9 @@ export class UnderEditing extends Book {
         `Translation to ${language.name} already exists.`,
       );
 
-    if (this.translationLanguages.length > this.maximumNumberOfTranslations) {
+    if (this.translationLanguages.length > maximumNumberOfTranslations) {
       throw InvalidStateError(
-        `Cannot add more translations. Maximum ${this.maximumNumberOfTranslations} translations are allowed.`,
+        `Cannot add more translations. Maximum ${maximumNumberOfTranslations} translations are allowed.`,
       );
     }
 
@@ -230,8 +276,11 @@ export class UnderEditing extends Book {
     };
   }
 
-  approve(committeeApproval: CommitteeApproval): Approved {
-    if (this.reviewers.length < this.minimumReviewersRequiredForApproval) {
+  approve(
+    committeeApproval: CommitteeApproval,
+    minimumReviewersRequiredForApproval: PositiveNumber,
+  ): Approved {
+    if (this.reviewers.length < minimumReviewersRequiredForApproval) {
       throw InvalidStateError(
         'A book cannot be approved unless it has been reviewed by at least three reviewers.',
       );
@@ -265,12 +314,6 @@ export class UnderEditing extends Book {
   }
 
   moveToPrinting(publishingHouse: IPublishingHouse): MovedToPrinting {
-    if (this.chapterCount < 1) {
-      throw InvalidStateError(
-        'A book must have at least one chapter to move to the printing state.',
-      );
-    }
-
     if (this.isApproved === null) {
       throw InvalidStateError(
         'Cannot move to printing state until the book has been approved.',
@@ -300,12 +343,7 @@ export class UnderEditing extends Book {
 }
 
 export class InPrint extends Book {
-  constructor(
-    id: BookId,
-    private readonly title: Title,
-    private readonly author: Author,
-    private readonly isbn: ISBN,
-  ) {
+  constructor(id: BookId) {
     super(id);
   }
 
@@ -314,9 +352,6 @@ export class InPrint extends Book {
       type: 'Published',
       data: {
         bookId: this.id,
-        isbn: this.isbn,
-        title: this.title,
-        author: this.author,
       },
     };
   }
@@ -329,7 +364,6 @@ export class PublishedBook extends Book {
     id: BookId,
     private readonly totalCopies: PositiveNumber,
     private readonly totalSoldCopies: PositiveNumber,
-    private readonly maxAllowedUnsoldCopiesRatioToGoOutOfPrint: Ratio,
   ) {
     super(id);
   }
@@ -338,10 +372,10 @@ export class PublishedBook extends Book {
     return ratio((this.totalCopies - this.totalSoldCopies) / this.totalCopies);
   }
 
-  moveToOutOfPrint(): MovedToOutOfPrint {
-    if (
-      this.unsoldCopiesRatio > this.maxAllowedUnsoldCopiesRatioToGoOutOfPrint
-    ) {
+  moveToOutOfPrint(
+    maxAllowedUnsoldCopiesRatioToGoOutOfPrint: Ratio,
+  ): MovedToOutOfPrint {
+    if (this.unsoldCopiesRatio > maxAllowedUnsoldCopiesRatioToGoOutOfPrint) {
       throw InvalidStateError(
         'Cannot move to Out of Print state if more than 10% of total copies are unsold.',
       );
@@ -380,7 +414,7 @@ export class BookFactory implements IBookFactory {
       case State.Writing:
         return new Draft(
           bookId,
-          !!genre,
+          genre,
           chapters.map((ch) => ch.title),
         );
       case State.Editing: {
@@ -392,18 +426,13 @@ export class BookFactory implements IBookFactory {
           genre,
           !!isbn,
           !!committeeApproval,
-          positiveNumber(chapters.length),
           reviewers.map((r) => r.id),
-          positiveNumber(3),
           translations.map((r) => r.language.id),
-          positiveNumber(5),
           formats.map((f) => f.formatType),
         );
       }
       case State.Printing: {
-        if (!isbn) throw ValidationError('ISBN needs to be set');
-
-        return new InPrint(bookId, title, author, isbn);
+        return new InPrint(bookId);
       }
       case State.Published: {
         const totalCopies = formats.reduce(
@@ -419,7 +448,6 @@ export class BookFactory implements IBookFactory {
           bookId,
           positiveNumber(totalCopies),
           positiveNumber(totalSoldCopies),
-          ratio(0.1),
         );
       }
       case State.OutOfPrint:

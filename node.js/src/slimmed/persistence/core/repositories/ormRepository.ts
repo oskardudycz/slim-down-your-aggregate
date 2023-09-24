@@ -42,7 +42,7 @@ export abstract class OrmRepository<
     for (const event of events) {
       this.evolve(orm, current, event);
 
-      const message = outboxMessage(event);
+      const message = outboxMessage(this.enrich(event, current));
       outboxTable.add(message.position.toString(), message);
     }
   }
@@ -54,4 +54,8 @@ export abstract class OrmRepository<
     current: TEntity | null,
     event: TEvent,
   ): void;
+
+  protected enrich(event: TEvent, _current: TEntity | null): DomainEvent {
+    return event;
+  }
 }

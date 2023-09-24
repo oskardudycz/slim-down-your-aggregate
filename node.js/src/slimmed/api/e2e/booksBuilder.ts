@@ -1,8 +1,8 @@
 import request from 'supertest';
 import { faker } from '@faker-js/faker';
-import { EXISTING_PUBLISHER_ID } from '../../application/books';
 import { Application } from 'express';
 import { TestResponse } from '#testing/api/testResponse';
+import { config } from '#config';
 
 export const createDraft = async (app: Application) => {
   const body = {
@@ -11,7 +11,7 @@ export const createDraft = async (app: Application) => {
       firstName: faker.person.firstName(),
       lastName: faker.person.lastName(),
     },
-    publisherId: EXISTING_PUBLISHER_ID,
+    publisherId: config.application.existingPublisherId,
     edition: faker.number.int({ min: 0 }),
     genre: faker.string.sample(),
   };
