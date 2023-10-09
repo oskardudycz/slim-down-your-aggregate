@@ -1,7 +1,6 @@
 using PublishingHouse.Books.Entities;
 using PublishingHouse.Books.Factories;
 using PublishingHouse.Books.Services;
-using PublishingHouse.Core.Validation;
 using PublishingHouse.Core.ValueObjects;
 using static PublishingHouse.Books.BookEvent;
 
@@ -225,50 +224,33 @@ public abstract class Book
         }
     }
 
-    public static Book Evolve(Book book, BookEvent @event)
-    {
-        switch (@event)
+    public static Book Evolve(Book book, BookEvent @event) =>
+        @event switch
         {
-            case DraftCreated draftCreated:
-            {
-                return book is Initial
-                    ? new Draft(draftCreated.BookId, draftCreated.Genre, new List<ChapterTitle>())
-                    : book;
-            }
-            case MovedToEditing movedToEditing:
-            {
-                return book is Draft
-                    ? new UnderEditing(movedToEditing.BookId, movedToEditing.Genre, false, false,
-                        new List<ReviewerId>(), new List<LanguageId>(), new List<FormatType>())
-                    : book;
-            }
-            case MovedToPrinting movedToPrinting:
-            {
-                return book is Draft
-                    // TODO: Add methods to set total items per format
-                    ? new InPrint(movedToPrinting.BookId)
-                    : book;
-            }
-            case Published movedToPrinting:
-            {
-                return book is Draft
-                    // TODO: Add methods to set sold copies
-                    ? new PublishedBook(movedToPrinting.BookId, new PositiveInt(1), new PositiveInt(1))
-                    : book;
-            }
-            case MovedToOutOfPrint movedToOutOfPrint:
-            {
-                return book is Draft
-                    // TODO: Add methods to set sold copies
-                    ? new OutOfPrint(movedToOutOfPrint.BookId)
-                    : book;
-            }
-            default:
-                return book;
-        }
-    }
+            DraftCreated draftCreated => book is Initial
+                ? new Draft(draftCreated.BookId, draftCreated.Genre, new List<ChapterTitle>())
+                : book,
+            MovedToEditing movedToEditing => book is Draft
+                ? new UnderEditing(movedToEditing.BookId, movedToEditing.Genre, false, false, new List<ReviewerId>(),
+                    new List<LanguageId>(), new List<FormatType>())
+                : book,
+            MovedToPrinting movedToPrinting => book is Draft
+                // TODO: Add methods to set total items per format
+                ? new InPrint(movedToPrinting.BookId)
+                : book,
+            Published movedToPrinting => book is Draft
+                // TODO: Add methods to set sold copies
+                ? new PublishedBook(movedToPrinting.BookId, new PositiveInt(1), new PositiveInt(1))
+                : book,
+            MovedToOutOfPrint movedToOutOfPrint => book is Draft
+                // TODO: Add methods to set sold copies
+                ? new OutOfPrint(movedToOutOfPrint.BookId)
+                : book,
+            _ => book
+        };
 
-    private Book(BookId bookId) => Id = bookId;
+    private Book(BookId bookId) =>
+        Id = bookId;
 
     public class Factory: IBookFactory
     {

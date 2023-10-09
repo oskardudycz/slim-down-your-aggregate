@@ -4,9 +4,9 @@ import {
   parsePositiveNumber,
 } from '#core/typing';
 import { Request } from 'express';
-import { CreateDraftCommand } from '../../application/books/commands/createDraftCommand';
 import { BookId } from '../../domain/books/entities';
 import { DeepReadonly } from 'ts-essentials';
+import { CreateDraft } from '../../application/books/bookCommand';
 
 export type CreateDraftRequest = DeepReadonly<
   Request<
@@ -30,7 +30,7 @@ export type CreateDraftRequest = DeepReadonly<
 export const toCreateDraftCommand = (
   bookId: BookId,
   request: CreateDraftRequest,
-): CreateDraftCommand => {
+): CreateDraft => {
   const { title, publisherId, author, edition, genre } = {
     author: { authorId: undefined },
     ...request.body,

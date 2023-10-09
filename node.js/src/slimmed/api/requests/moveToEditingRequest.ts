@@ -1,6 +1,6 @@
 import { parseNonEmptyString } from '#core/typing';
 import { Request } from 'express';
-import { MoveToEditingCommand } from '../../application/books/commands/moveToEditingCommand';
+import { MoveToEditing } from '../../application/books/bookCommand';
 import { DeepReadonly } from 'ts-essentials';
 
 export type MoveToEditingRequest = DeepReadonly<
@@ -9,7 +9,7 @@ export type MoveToEditingRequest = DeepReadonly<
 
 export const toMoveToEditingCommand = (
   request: MoveToEditingRequest,
-): MoveToEditingCommand => {
+): MoveToEditing => {
   const { bookId } = request.params;
 
   return {
