@@ -1,6 +1,6 @@
 import { parseNonEmptyString } from '#core/typing';
 import { Request } from 'express';
-import { AddChapterCommand } from '../../application/books/commands/addChapterCommand';
+import { AddChapter } from '../../application/books/bookCommand';
 import { chapterContent } from '../../domain/books/entities';
 import { DeepReadonly } from 'ts-essentials';
 
@@ -12,9 +12,7 @@ export type AddChapterRequest = DeepReadonly<
   >
 >;
 
-export const toAddChapterCommand = (
-  request: AddChapterRequest,
-): AddChapterCommand => {
+export const toAddChapterCommand = (request: AddChapterRequest): AddChapter => {
   const { bookId } = request.params;
   const { title, content } = request.body;
 
