@@ -14,11 +14,11 @@ using static PublishingHouse.Books.BookEvent.OutOfPrintEvent;
 
 namespace PublishingHouse.Books;
 
-public abstract class Book
+public abstract record Book
 {
     public enum State { Writing, Editing, Printing, Published, OutOfPrint }
 
-    public BookId Id { get; private set; }
+    public BookId Id { get; }
 
     public static Book Evolve(Book book, BookEvent @event) =>
         @event switch

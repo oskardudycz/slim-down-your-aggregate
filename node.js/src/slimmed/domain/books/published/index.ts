@@ -10,7 +10,7 @@ export class PublishedBook {
     return this._id;
   }
   constructor(
-    private _id: BookId,
+    private readonly _id: BookId,
     private readonly totalCopies: PositiveNumber,
     private readonly totalSoldCopies: PositiveNumber,
   ) {}

@@ -21,13 +21,13 @@ export class UnderEditing {
     return this._id;
   }
   constructor(
-    private _id: BookId,
-    private genre: Genre | null,
-    private isISBNSet: boolean,
-    private isApproved: boolean,
-    private reviewers: ReviewerId[],
-    private translationLanguages: LanguageId[],
-    private formatTypes: FormatType[],
+    private readonly _id: BookId,
+    private readonly genre: Genre | null,
+    private readonly isISBNSet: boolean,
+    private readonly isApproved: boolean,
+    private readonly reviewers: ReviewerId[],
+    private readonly translationLanguages: LanguageId[],
+    private readonly formatTypes: FormatType[],
   ) {}
 
   addTranslation(
@@ -47,8 +47,6 @@ export class UnderEditing {
       );
     }
 
-    this.translationLanguages.push(language.id);
-
     return {
       type: 'TranslationAdded',
       data: {
@@ -64,8 +62,6 @@ export class UnderEditing {
     if (this.formatTypes.includes(formatType)) {
       throw InvalidStateError(`Format ${format.formatType} already exists.`);
     }
-
-    this.formatTypes.push(formatType);
 
     return {
       type: 'FormatAdded',
@@ -83,8 +79,6 @@ export class UnderEditing {
       throw InvalidStateError(`Format ${format.formatType} does not exist.`);
     }
 
-    this.formatTypes = this.formatTypes.filter((f) => f !== format.formatType);
-
     return {
       type: 'FormatRemoved',
       data: {
@@ -101,8 +95,6 @@ export class UnderEditing {
       const reviewerName: string = reviewer.name;
       throw InvalidStateError(`${reviewerName} is already a reviewer.`);
     }
-
-    this.reviewers.push(reviewerId);
 
     return {
       type: 'ReviewerAdded',
@@ -123,8 +115,6 @@ export class UnderEditing {
       );
     }
 
-    this.isApproved = true;
-
     return {
       type: 'Approved',
       data: {
@@ -138,8 +128,6 @@ export class UnderEditing {
     if (this.isISBNSet) {
       throw InvalidStateError('Cannot change already set ISBN.');
     }
-
-    this.isISBNSet = true;
 
     return {
       type: 'ISBNSet',

@@ -5,7 +5,7 @@ export class OutOfPrint {
   public get id() {
     return this._id;
   }
-  constructor(private _id: BookId) {}
+  constructor(private readonly _id: BookId) {}
 
   public static evolve(_: OutOfPrint, event: OutOfPrintEvent): OutOfPrint {
     const { type, data } = event;
