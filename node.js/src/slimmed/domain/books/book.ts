@@ -34,7 +34,7 @@ export const evolve = (book: Book, event: BookEvent): Book => {
   switch (event.type) {
     case 'DraftCreated': {
       if (!(book instanceof Initial)) return book;
-      return Draft.evolve(new Draft(book.id, null, []), event);
+      return Draft.evolve(new Draft(null, []), event);
     }
     case 'ChapterAdded': {
       if (!(book instanceof Draft)) return book;
@@ -45,7 +45,7 @@ export const evolve = (book: Book, event: BookEvent): Book => {
       if (!(book instanceof Draft)) return book;
 
       return UnderEditing.evolve(
-        new UnderEditing(book.id, null, false, false, [], [], []),
+        new UnderEditing(null, false, false, [], [], []),
         event,
       );
     }
@@ -63,20 +63,20 @@ export const evolve = (book: Book, event: BookEvent): Book => {
     case 'MovedToPrinting': {
       if (!(book instanceof UnderEditing)) return book;
 
-      return InPrint.evolve(new InPrint(book.id), event);
+      return InPrint.evolve(new InPrint(), event);
     }
     case 'Published': {
       if (!(book instanceof InPrint)) return book;
 
       return PublishedBook.evolve(
-        new PublishedBook(book.id, 0 as PositiveNumber, 0 as PositiveNumber),
+        new PublishedBook(0 as PositiveNumber, 0 as PositiveNumber),
         event,
       );
     }
     case 'MovedToOutOfPrint': {
       if (!(book instanceof PublishedBook)) return book;
 
-      return OutOfPrint.evolve(new OutOfPrint(book.id), event);
+      return OutOfPrint.evolve(new OutOfPrint(), event);
     }
 
     default: {
@@ -110,7 +110,6 @@ export type BookExternalEvent =
 
 export class BookFactory implements IBookFactory {
   create(
-    bookId: BookId,
     state: State,
     title: Title,
     author: Author,
@@ -125,7 +124,6 @@ export class BookFactory implements IBookFactory {
     switch (state) {
       case State.Writing:
         return new Draft(
-          bookId,
           genre,
           chapters.map((ch) => ch.title),
         );
@@ -134,7 +132,6 @@ export class BookFactory implements IBookFactory {
           throw InvalidOperationError('Genre should be provided!');
 
         return new UnderEditing(
-          bookId,
           genre,
           !!isbn,
           !!committeeApproval,
@@ -144,7 +141,7 @@ export class BookFactory implements IBookFactory {
         );
       }
       case State.Printing: {
-        return new InPrint(bookId);
+        return new InPrint();
       }
       case State.Published: {
         const totalCopies = formats.reduce(
@@ -157,13 +154,12 @@ export class BookFactory implements IBookFactory {
         );
 
         return new PublishedBook(
-          bookId,
           positiveNumber(totalCopies),
           positiveNumber(totalSoldCopies),
         );
       }
       case State.OutOfPrint:
-        return new OutOfPrint(bookId);
+        return new OutOfPrint();
     }
   }
 }

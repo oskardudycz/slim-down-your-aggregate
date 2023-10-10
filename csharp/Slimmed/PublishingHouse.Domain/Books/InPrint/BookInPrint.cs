@@ -1,24 +1,22 @@
-using PublishingHouse.Books.Entities;
-
 namespace PublishingHouse.Books.InPrint;
 
-using static BookEvent;
-using static BookEvent.InPrintEvent;
+using static InPrintEvent;
 using static BookEvent.PublishedEvent;
 
-public record BookInPrint(BookId Id): Book(Id)
+public record BookInPrint: Book
 {
     public Published MoveToPublished() =>
-        new Published(Id);
+        new Published();
 
     public static BookInPrint Evolve(BookInPrint book, InPrintEvent @event) =>
         @event switch
         {
-            MovedToPrinting movedToPrinting =>
-                new BookInPrint(
-                    movedToPrinting.BookId
-                ),
+            MovedToPrinting => new BookInPrint(),
 
             _ => book
         };
+}
+public abstract record InPrintEvent: BookEvent
+{
+    public record MovedToPrinting: InPrintEvent;
 }

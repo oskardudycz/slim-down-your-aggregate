@@ -4,7 +4,7 @@ import { BookEntity, State } from '..';
 import { OrmRepository } from '../../core/repositories/ormRepository';
 import { BookEvent, PublishedExternal } from '../../../domain/books/book';
 import { NotFoundError } from '#core/errors';
-import { DomainEvent } from '../../../infrastructure/events';
+import { EventEnvelope } from '../../../infrastructure/events';
 import { nonEmptyString } from '#core/typing';
 
 export interface IBooksRepository {
@@ -25,14 +25,17 @@ export class BooksRepository
   protected evolve(
     orm: PublishingHouseOrm,
     current: BookEntity | null,
-    event: BookEvent,
+    eventEnvelope: EventEnvelope<BookEvent>,
   ): void {
-    const { type, data } = event;
+    const {
+      metadata: { recordId: id },
+    } = eventEnvelope;
+    const { type, data } = eventEnvelope.event;
 
     switch (type) {
       case 'DraftCreated': {
-        orm.books.add(data.bookId, {
-          id: data.bookId,
+        orm.books.add(id, {
+          id,
           currentState: State.Writing,
           title: data.title,
           author: {
@@ -57,13 +60,13 @@ export class BooksRepository
         const { number, title, content } = data.chapter;
 
         const chapter = {
-          bookId: current.id,
+          bookId: id,
           number,
           title,
           content,
         };
 
-        orm.books.patch(current.id, {
+        orm.books.patch(id, {
           version: current.version + 1,
           // line below is needed as my dummy orm is indeed dummy
           // normally we have relational db joins
@@ -232,24 +235,27 @@ export class BooksRepository
     }
   }
 
-  protected enrich(event: BookEvent, current: BookEntity | null): DomainEvent {
-    const { type, data } = event;
+  protected enrich(
+    eventEnvelope: EventEnvelope<BookEvent>,
+    current: BookEntity | null,
+  ): EventEnvelope {
+    const { type } = eventEnvelope.event;
 
     // we can enrich events published externally to outbox using data from events and entity
     if (type == 'Published' && current !== null) {
       const external: PublishedExternal = {
         type: 'Published',
         data: {
-          bookId: data.bookId,
+          bookId: nonEmptyString(current.id),
           isbn: nonEmptyString(current.isbn!),
           title: nonEmptyString(current.title),
           authorId: nonEmptyString(current.author.id),
         },
       };
 
-      return external;
+      return { event: external, metadata: eventEnvelope.metadata };
     }
 
-    return super.enrich(event, current);
+    return super.enrich(eventEnvelope, current);
   }
 }

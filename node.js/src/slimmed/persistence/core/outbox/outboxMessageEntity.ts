@@ -1,5 +1,5 @@
 import { v4 as uuid } from 'uuid';
-import { DomainEvent } from '../../../infrastructure/events';
+import { EventEnvelope } from '../../../infrastructure/events';
 
 export type OutboxMessageEntity = {
   readonly position?: number;
@@ -11,13 +11,13 @@ export type OutboxMessageEntity = {
 
 let globalAutoincrementedIdCounter = 0;
 
-export const outboxMessage = (message: DomainEvent) => {
+export const outboxMessage = (envelope: EventEnvelope) => {
   return {
     // simulate autoincremented id
     position: ++globalAutoincrementedIdCounter,
     messageId: uuid(),
-    messageType: message.type,
-    data: JSON.stringify(message.data),
+    messageType: envelope.event.type,
+    data: JSON.stringify(envelope.event.data),
     scheduled: new Date(),
   };
 };

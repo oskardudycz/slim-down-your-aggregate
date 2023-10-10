@@ -1,15 +1,16 @@
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
+using PublishingHouse.Core.Events;
 using PublishingHouse.Core.ValueObjects;
 using PublishingHouse.Persistence.Core.Outbox;
 
 namespace PublishingHouse.Persistence.Core.Repositories;
 
-public abstract class EntityFrameworkRepository<TEntity,  TKey, TEvent, TDbContext>
+public abstract class EntityFrameworkRepository<TEntity, TKey, TEvent, TDbContext>
     where TEntity : class
-    where TKey: NonEmptyGuid
-    where TEvent: class
-    where TDbContext: DbContext
+    where TKey : NonEmptyGuid
+    where TEvent : class
+    where TDbContext : DbContext
 {
     protected readonly TDbContext DbContext;
     private readonly Func<TKey, Expression<Func<TEntity, bool>>> getId;
@@ -27,25 +28,29 @@ public abstract class EntityFrameworkRepository<TEntity,  TKey, TEvent, TDbConte
 
         var events = handle(entity);
 
-        ProcessEvents(DbContext, entity, events);
+        ProcessEvents(
+            DbContext,
+            entity,
+            events.Select(e => new EventEnvelope<TEvent>(e, new EventMetadata(id))).ToList()
+        );
 
         await DbContext.SaveChangesAsync(ct);
     }
 
-    private void ProcessEvents(TDbContext dbContext, TEntity? entity, IReadOnlyList<TEvent> events)
+    private void ProcessEvents(TDbContext dbContext, TEntity? entity, IReadOnlyList<EventEnvelope<TEvent>> events)
     {
         var outbox = dbContext.Set<OutboxMessageEntity>();
-        foreach (var @event in events)
+        foreach (var eventEnvelope in events)
         {
-            Evolve(dbContext, entity, @event);
-            outbox.Add(OutboxMessageEntity.From(Enrich(@event, entity)));
+            Evolve(dbContext, entity, eventEnvelope);
+            outbox.Add(OutboxMessageEntity.From(Enrich(eventEnvelope, entity)));
         }
     }
 
     protected virtual IQueryable<TEntity> Includes(DbSet<TEntity> query) =>
         query;
 
-    protected abstract void Evolve(TDbContext dbContext, TEntity? current, TEvent @event);
+    protected abstract void Evolve(TDbContext dbContext, TEntity? current, EventEnvelope<TEvent> eventEnvelope);
 
-    protected virtual object Enrich(TEvent @event, TEntity? _) => @event;
+    protected virtual IEventEnvelope Enrich(EventEnvelope<TEvent> eventEnvelope, TEntity? _) => eventEnvelope;
 }

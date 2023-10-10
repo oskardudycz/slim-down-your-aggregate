@@ -1,7 +1,6 @@
 import { State, Book } from '../book';
 import {
   Author,
-  BookId,
   Chapter,
   CommitteeApproval,
   Format,
@@ -14,7 +13,6 @@ import {
 
 export interface IBookFactory {
   create(
-    bookId: BookId,
     state: State,
     title: Title,
     author: Author,

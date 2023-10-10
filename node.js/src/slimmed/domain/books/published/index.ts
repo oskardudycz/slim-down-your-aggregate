@@ -1,16 +1,11 @@
 import { InvalidStateError } from '#core/errors';
 import { PositiveNumber, positiveNumber } from '#core/typing';
 import { Ratio, ratio } from '#core/typing/ratio';
-import { DomainEvent } from '../../../infrastructure/events';
-import { BookId } from '../entities';
+import { DomainEvent, EmptyData } from '../../../infrastructure/events';
 import { MovedToOutOfPrint } from '../outOfPrint';
 
 export class PublishedBook {
-  public get id() {
-    return this._id;
-  }
   constructor(
-    private readonly _id: BookId,
     private readonly totalCopies: PositiveNumber,
     private readonly totalSoldCopies: PositiveNumber,
   ) {}
@@ -30,9 +25,7 @@ export class PublishedBook {
 
     return {
       type: 'MovedToOutOfPrint',
-      data: {
-        bookId: this.id,
-      },
+      data: {},
     };
   }
 
@@ -40,24 +33,17 @@ export class PublishedBook {
     book: PublishedBook,
     event: PublishedEvent,
   ): PublishedBook {
-    const { type, data } = event;
+    const { type } = event;
 
     switch (type) {
       case 'Published': {
-        const { bookId } = data;
-
         // TODO: Add methods to set sold copies
-        return new PublishedBook(bookId, positiveNumber(1), positiveNumber(1));
+        return new PublishedBook(positiveNumber(1), positiveNumber(1));
       }
     }
   }
 }
 
-export type Published = DomainEvent<
-  'Published',
-  {
-    bookId: BookId;
-  }
->;
+export type Published = DomainEvent<'Published', EmptyData>;
 
 export type PublishedEvent = Published;

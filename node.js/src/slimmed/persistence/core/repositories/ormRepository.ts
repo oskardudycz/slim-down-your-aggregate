@@ -1,6 +1,6 @@
 import { NonEmptyString } from '#core/typing';
 import { Database, EntitiesCollection } from '../../orm';
-import { DomainEvent } from '../../../infrastructure/events';
+import { DomainEvent, EventEnvelope } from '../../../infrastructure/events';
 import {
   OutboxMessageEntity,
   outboxMessage,
@@ -25,7 +25,13 @@ export abstract class OrmRepository<
 
     const events = handle(entity);
 
-    this.processEvents(this.orm, entity, events);
+    this.processEvents(
+      this.orm,
+      entity,
+      events.map((e) => {
+        return { event: e, metadata: { recordId: key } };
+      }),
+    );
 
     await this.orm.saveChanges();
   }
@@ -33,14 +39,14 @@ export abstract class OrmRepository<
   private processEvents(
     orm: TOrm,
     current: TEntity | null,
-    events: TEvent[],
+    events: EventEnvelope<TEvent>[],
   ): void {
     const outboxTable = orm.table<OutboxMessageEntity>('outbox');
 
-    for (const event of events) {
-      this.evolve(orm, current, event);
+    for (const eventEnvelope of events) {
+      this.evolve(orm, current, eventEnvelope);
 
-      const message = outboxMessage(this.enrich(event, current));
+      const message = outboxMessage(this.enrich(eventEnvelope, current));
       outboxTable.add(message.position.toString(), message);
     }
   }
@@ -48,10 +54,13 @@ export abstract class OrmRepository<
   protected abstract evolve(
     orm: TOrm,
     current: TEntity | null,
-    event: TEvent,
+    event: EventEnvelope<TEvent>,
   ): void;
 
-  protected enrich(event: TEvent, _current: TEntity | null): DomainEvent {
+  protected enrich(
+    event: EventEnvelope<TEvent>,
+    _current: TEntity | null,
+  ): EventEnvelope {
     return event;
   }
 }

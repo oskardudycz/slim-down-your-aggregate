@@ -1,10 +1,12 @@
+using PublishingHouse.Books.Draft;
 using PublishingHouse.Books.Entities;
 using PublishingHouse.Core.ValueObjects;
-using static PublishingHouse.Books.BookEvent.DraftEvent;
 
 namespace PublishingHouse.Books.Initial;
 
-public record InitialBook(BookId Id): Book(Id)
+using static DraftEvent;
+
+public record InitialBook: Book
 {
     public DraftCreated CreateDraft(
         Title title,
@@ -13,5 +15,5 @@ public record InitialBook(BookId Id): Book(Id)
         PositiveInt edition,
         Genre? genre
     ) =>
-        new DraftCreated(Id, title, author, publisher, edition, genre);
+        new DraftCreated(title, author, publisher, edition, genre);
 }

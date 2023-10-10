@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using PublishingHouse.Core.Events;
 
 namespace PublishingHouse.Persistence.Core.Outbox;
 
@@ -10,12 +11,12 @@ public class OutboxMessageEntity
     public required string Data { get; init; }
     public required DateTimeOffset Scheduled { get; init; }
 
-    public static OutboxMessageEntity From<T>(T message) where T : class =>
+    public static OutboxMessageEntity From(IEventEnvelope eventEnvelope) =>
         new()
         {
             MessageId = Guid.NewGuid().ToString(),
-            Data = JsonSerializer.Serialize(message, message.GetType()),
+            Data = JsonSerializer.Serialize(eventEnvelope.Event, eventEnvelope.Event.GetType()),
             Scheduled = DateTimeOffset.UtcNow,
-            MessageType = typeof(T).FullName ?? "Unknown"
+            MessageType = eventEnvelope.Event.GetType().FullName ?? "Unknown"
         };
 }

@@ -1,11 +1,12 @@
 using PublishingHouse.Books.Entities;
+using PublishingHouse.Books.InPrint;
 using PublishingHouse.Books.Services;
 using PublishingHouse.Core.ValueObjects;
 
 namespace PublishingHouse.Books.UnderEditing;
 
-using static BookEvent.UnderEditingEvent;
-using static BookEvent.InPrintEvent;
+using static UnderEditingEvent;
+using static InPrintEvent;
 
 public record BookUnderEditing: Book
 {
@@ -17,14 +18,13 @@ public record BookUnderEditing: Book
     private readonly List<FormatType> formatTypes;
 
     internal BookUnderEditing(
-        BookId bookId,
         Genre? genre,
         bool isISBNSet,
         bool isApproved,
         List<ReviewerId> reviewers,
         List<LanguageId> translationLanguages,
         List<FormatType> formatTypes
-    ): base(bookId)
+    )
     {
         this.genre = genre;
         this.isISBNSet = isISBNSet;
@@ -45,7 +45,7 @@ public record BookUnderEditing: Book
             throw new InvalidOperationException(
                 $"Cannot add more translations. Maximum {maximumNumberOfTranslations.Value} translations are allowed.");
 
-        return new TranslationAdded(Id, translation);
+        return new TranslationAdded(translation);
     }
 
     public FormatAdded AddFormat(Format format)
@@ -53,7 +53,7 @@ public record BookUnderEditing: Book
         if (formatTypes.Contains(format.FormatType))
             throw new InvalidOperationException($"Format {format.FormatType} already exists.");
 
-        return new FormatAdded(Id, format);
+        return new FormatAdded(format);
     }
 
     public FormatRemoved RemoveFormat(Format format)
@@ -61,7 +61,7 @@ public record BookUnderEditing: Book
         if (!formatTypes.Remove(format.FormatType))
             throw new InvalidOperationException($"Format {format.FormatType} does not exist.");
 
-        return new FormatRemoved(Id, format);
+        return new FormatRemoved(format);
     }
 
     public ReviewerAdded AddReviewer(Reviewer reviewer)
@@ -70,7 +70,7 @@ public record BookUnderEditing: Book
             throw new InvalidOperationException(
                 $"{reviewer.Name} is already a reviewer.");
 
-        return new ReviewerAdded(Id, reviewer);
+        return new ReviewerAdded(reviewer);
     }
 
     public Approved Approve(CommitteeApproval committeeApproval, PositiveInt minimumReviewersRequiredForApproval)
@@ -79,7 +79,7 @@ public record BookUnderEditing: Book
             throw new InvalidOperationException(
                 "A book cannot be approved unless it has been reviewed by at least three reviewers.");
 
-        return new Approved(Id, committeeApproval);
+        return new Approved(committeeApproval);
     }
 
     public ISBNSet SetISBN(ISBN isbn)
@@ -88,7 +88,7 @@ public record BookUnderEditing: Book
             throw new InvalidOperationException(
                 "Cannot change already set ISBN.");
 
-        return new ISBNSet(Id, isbn);
+        return new ISBNSet(isbn);
     }
 
     public MovedToPrinting MoveToPrinting(IPublishingHouse publishingHouse)
@@ -102,15 +102,14 @@ public record BookUnderEditing: Book
         if (!publishingHouse.IsGenreLimitReached(genre))
             throw new InvalidOperationException("Cannot move to printing until the genre limit is reached.");
 
-        return new MovedToPrinting(Id);
+        return new MovedToPrinting();
     }
 
-    public static BookUnderEditing Evolve(BookUnderEditing book, BookEvent.UnderEditingEvent @event) =>
+    public static BookUnderEditing Evolve(BookUnderEditing book, UnderEditingEvent @event) =>
         @event switch
         {
             MovedToEditing movedToEditing =>
                 new BookUnderEditing(
-                    movedToEditing.BookId,
                     movedToEditing.Genre,
                     false,
                     false,
@@ -119,9 +118,8 @@ public record BookUnderEditing: Book
                     new List<FormatType>()
                 ),
 
-            TranslationAdded(_, var translation) =>
+            TranslationAdded(var translation) =>
                 new BookUnderEditing(
-                    book.Id,
                     book.genre,
                     book.isISBNSet,
                     book.isApproved,
@@ -130,9 +128,8 @@ public record BookUnderEditing: Book
                     book.formatTypes
                 ),
 
-            TranslationRemoved(_, var translation) =>
+            TranslationRemoved(var translation) =>
                 new BookUnderEditing(
-                    book.Id,
                     book.genre,
                     book.isISBNSet,
                     book.isApproved,
@@ -141,9 +138,8 @@ public record BookUnderEditing: Book
                     book.formatTypes
                 ),
 
-            FormatAdded(_, var format) =>
+            FormatAdded(var format) =>
                 new BookUnderEditing(
-                    book.Id,
                     book.genre,
                     book.isISBNSet,
                     book.isApproved,
@@ -152,9 +148,8 @@ public record BookUnderEditing: Book
                     book.formatTypes.Union(new[] { format.FormatType }).ToList()
                 ),
 
-            FormatRemoved(_, var format) =>
+            FormatRemoved(var format) =>
                 new BookUnderEditing(
-                    book.Id,
                     book.genre,
                     book.isISBNSet,
                     book.isApproved,
@@ -163,9 +158,8 @@ public record BookUnderEditing: Book
                     book.formatTypes.Where(t => t != format.FormatType).ToList()
                 ),
 
-            ReviewerAdded(_, var reviewer) =>
+            ReviewerAdded(var reviewer) =>
                 new BookUnderEditing(
-                    book.Id,
                     book.genre,
                     book.isISBNSet,
                     book.isApproved,
@@ -176,7 +170,6 @@ public record BookUnderEditing: Book
 
             Approved =>
                 new BookUnderEditing(
-                    book.Id,
                     book.genre,
                     book.isISBNSet,
                     true,
@@ -187,7 +180,6 @@ public record BookUnderEditing: Book
 
             ISBNSet =>
                 new BookUnderEditing(
-                    book.Id,
                     book.genre,
                     true,
                     book.isApproved,
@@ -198,4 +190,23 @@ public record BookUnderEditing: Book
 
             _ => book
         };
+}
+
+public abstract record UnderEditingEvent: BookEvent
+{
+    public record MovedToEditing(Genre Genre): UnderEditingEvent;
+
+    public record TranslationAdded(Translation Translation): UnderEditingEvent;
+
+    public record TranslationRemoved(Translation Translation): UnderEditingEvent;
+
+    public record FormatAdded(Format Format): UnderEditingEvent;
+
+    public record FormatRemoved(Format Format): UnderEditingEvent;
+
+    public record ReviewerAdded(Reviewer Reviewer): UnderEditingEvent;
+
+    public record Approved(CommitteeApproval CommitteeApproval): UnderEditingEvent;
+
+    public record ISBNSet(ISBN ISBN): UnderEditingEvent;
 }

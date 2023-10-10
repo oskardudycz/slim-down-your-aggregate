@@ -7,7 +7,6 @@ import { Chapter, chapterContent, Format } from '../../domain/books/entities';
 export const bookMapper = {
   mapFromEntity: (entity: BookEntity, bookFactory: IBookFactory): Book => {
     return bookFactory.create(
-      nonEmptyString(entity.id),
       entity.currentState,
       nonEmptyString(entity.title),
       {

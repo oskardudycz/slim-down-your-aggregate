@@ -1,19 +1,22 @@
 using Microsoft.EntityFrameworkCore;
 using PublishingHouse.Books;
+using PublishingHouse.Books.Draft;
 using PublishingHouse.Books.Entities;
 using PublishingHouse.Books.Factories;
+using PublishingHouse.Books.InPrint;
+using PublishingHouse.Books.OutOfPrint;
+using PublishingHouse.Books.UnderEditing;
+using PublishingHouse.Core.Events;
 using PublishingHouse.Core.Validation;
 using PublishingHouse.Persistence.Books.Entities;
 using PublishingHouse.Persistence.Books.ValueObjects;
 using PublishingHouse.Persistence.Core.Repositories;
 using PublishingHouse.Persistence.Reviewers;
-using static PublishingHouse.Books.BookEvent.DraftEvent;
-using static PublishingHouse.Books.BookEvent.UnderEditingEvent;
-using static PublishingHouse.Books.BookEvent.InPrintEvent;
 using static PublishingHouse.Books.BookEvent.PublishedEvent;
-using static PublishingHouse.Books.BookEvent.OutOfPrintEvent;
 
 namespace PublishingHouse.Persistence.Books.Repositories;
+
+using static DraftEvent;
 
 public class BooksRepository:
     EntityFrameworkRepository<BookEntity, BookId, BookEvent, PublishingHouseDbContext>, IBooksRepository
@@ -34,15 +37,22 @@ public class BooksRepository:
             .Include(e => e.Translations)
             .Include(e => e.Formats);
 
-    protected override void Evolve(PublishingHouseDbContext dbContext, BookEntity? current, BookEvent @event)
+    protected override void Evolve(
+        PublishingHouseDbContext dbContext,
+        BookEntity? current,
+        EventEnvelope<BookEvent> eventEnvelope
+    )
     {
+        var @event = eventEnvelope.Event;
+        var id = eventEnvelope.Metadata.RecordId.Value;
+
         switch (@event)
         {
-            case DraftCreated(var bookId, var title, var author, var publisher, var positiveInt, var genre):
+            case DraftCreated(var title, var author, var publisher, var positiveInt, var genre):
             {
                 dbContext.Books.Add(new BookEntity
                 {
-                    Id = bookId.Value,
+                    Id = id,
                     CurrentState = BookEntity.State.Writing,
                     Title = title.Value,
                     AuthorId = author.Id.Value,
@@ -57,7 +67,7 @@ public class BooksRepository:
                 });
                 break;
             }
-            case ChapterAdded(_, var chapter):
+            case ChapterAdded(var chapter):
             {
                 current.AssertNotNull()
                     .Chapters
@@ -67,7 +77,7 @@ public class BooksRepository:
                     });
                 break;
             }
-            case FormatAdded(_, var format):
+            case UnderEditingEvent.FormatAdded(var format):
             {
                 current.AssertNotNull()
                     .Formats
@@ -79,7 +89,7 @@ public class BooksRepository:
                     });
                 break;
             }
-            case FormatRemoved(_, var format):
+            case UnderEditingEvent.FormatRemoved(var format):
             {
                 var formatToRemove = current.AssertNotNull()
                     .Formats
@@ -87,7 +97,7 @@ public class BooksRepository:
                 current.Formats.Remove(formatToRemove);
                 break;
             }
-            case TranslationAdded(_, var (language, translator)):
+            case UnderEditingEvent.TranslationAdded(var (language, translator)):
             {
                 current.AssertNotNull().Translations.Add(new TranslationVO
                 {
@@ -95,7 +105,7 @@ public class BooksRepository:
                 });
                 break;
             }
-            case TranslationRemoved(_, var (language, translator)):
+            case UnderEditingEvent.TranslationRemoved(var (language, translator)):
             {
                 var translationToRemove = current.AssertNotNull()
                     .Translations
@@ -104,33 +114,33 @@ public class BooksRepository:
                 current.Translations.Remove(translationToRemove);
                 break;
             }
-            case ReviewerAdded(_, var reviewer):
+            case UnderEditingEvent.ReviewerAdded(var reviewer):
             {
                 current.AssertNotNull()
                     .Reviewers
                     .Add(new ReviewerEntity { Id = reviewer.Id.Value, Name = reviewer.Name.Value });
                 break;
             }
-            case MovedToEditing _:
+            case UnderEditingEvent.MovedToEditing _:
             {
                 current.AssertNotNull()
                     .CurrentState = BookEntity.State.Editing;
                 break;
             }
-            case Approved (_, var committeeApproval):
+            case UnderEditingEvent.Approved (var committeeApproval):
             {
                 current.AssertNotNull()
                         .CommitteeApproval =
                     new CommitteeApprovalVO(committeeApproval.IsApproved, committeeApproval.Feedback.Value);
                 break;
             }
-            case ISBNSet (_, var isbn):
+            case UnderEditingEvent.ISBNSet (var isbn):
             {
                 current.AssertNotNull()
                     .ISBN = isbn.Value;
                 break;
             }
-            case MovedToPrinting _:
+            case InPrintEvent.MovedToPrinting _:
             {
                 current.AssertNotNull()
                     .CurrentState = BookEntity.State.Printing;
@@ -142,7 +152,7 @@ public class BooksRepository:
                     .CurrentState = BookEntity.State.Published;
                 break;
             }
-            case MovedToOutOfPrint _:
+            case OutOfPrintEvent.MovedToOutOfPrint _:
             {
                 current.AssertNotNull()
                     .CurrentState = BookEntity.State.OutOfPrint;
@@ -156,18 +166,24 @@ public class BooksRepository:
             current.Version++;
     }
 
-    protected override object Enrich(BookEvent @event, BookEntity? current)
+    protected override IEventEnvelope Enrich(EventEnvelope<BookEvent> eventEnvelope, BookEntity? current)
     {
+        var @event = eventEnvelope.Event;
+        var id = eventEnvelope.Metadata.RecordId.Value;
+
         if (@event is Published published && current != null)
         {
-            return new BookExternalEvent.Published(
-                published.BookId,
-                new ISBN(current.ISBN!),
-                new Title(current.Title),
-                new AuthorId(current.Author.Id)
+            return new EventEnvelope<BookExternalEvent.Published>(
+                new BookExternalEvent.Published(
+                    new BookId(id),
+                    new ISBN(current.ISBN!),
+                    new Title(current.Title),
+                    new AuthorId(current.Author.Id)
+                ),
+                eventEnvelope.Metadata
             );
         }
 
-        return base.Enrich(@event, current);
+        return base.Enrich(eventEnvelope, current);
     }
 }

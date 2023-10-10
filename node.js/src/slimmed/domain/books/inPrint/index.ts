@@ -1,40 +1,25 @@
-import { DomainEvent } from '../../../infrastructure/events';
-import { BookId } from '../entities';
+import { DomainEvent, EmptyData } from '../../../infrastructure/events';
 import { Published } from '../published';
 
 export class InPrint {
-  public get id() {
-    return this._id;
-  }
-  constructor(private readonly _id: BookId) {}
-
   moveToPublished(): Published {
     return {
       type: 'Published',
-      data: {
-        bookId: this.id,
-      },
+      data: {},
     };
   }
 
   public static evolve(_: InPrint, event: InPrintEvent): InPrint {
-    const { type, data } = event;
+    const { type } = event;
 
     switch (type) {
       case 'MovedToPrinting': {
-        const { bookId } = data;
-
-        return new InPrint(bookId);
+        return new InPrint();
       }
     }
   }
 }
 
-export type MovedToPrinting = DomainEvent<
-  'MovedToPrinting',
-  {
-    bookId: BookId;
-  }
->;
+export type MovedToPrinting = DomainEvent<'MovedToPrinting', EmptyData>;
 
 export type InPrintEvent = MovedToPrinting;

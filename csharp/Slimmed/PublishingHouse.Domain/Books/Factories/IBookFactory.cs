@@ -5,7 +5,6 @@ namespace PublishingHouse.Books.Factories;
 public interface IBookFactory
 {
     Book Create(
-        BookId bookId,
         Book.State state,
         Title title,
         Author author,
