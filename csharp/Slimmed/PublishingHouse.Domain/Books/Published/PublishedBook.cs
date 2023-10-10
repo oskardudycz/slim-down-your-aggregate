@@ -3,14 +3,11 @@ using PublishingHouse.Core.ValueObjects;
 
 namespace PublishingHouse.Books.Published;
 
-using static PublishingHouse.Books.BookEvent;
-using static PublishingHouse.Books.BookEvent.DraftEvent;
-using static PublishingHouse.Books.BookEvent.UnderEditingEvent;
-using static PublishingHouse.Books.BookEvent.InPrintEvent;
-using static PublishingHouse.Books.BookEvent.PublishedEvent;
-using static PublishingHouse.Books.BookEvent.OutOfPrintEvent;
+using static BookEvent;
+using static BookEvent.PublishedEvent;
+using static BookEvent.OutOfPrintEvent;
 
-public class PublishedBook: Book
+public record PublishedBook: Book
 {
     private readonly PositiveInt totalCopies;
     private readonly PositiveInt totalSoldCopies;

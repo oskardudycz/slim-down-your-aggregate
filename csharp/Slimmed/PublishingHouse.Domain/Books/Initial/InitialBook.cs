@@ -4,10 +4,8 @@ using static PublishingHouse.Books.BookEvent.DraftEvent;
 
 namespace PublishingHouse.Books.Initial;
 
-public class InitialBook: Book
+public record InitialBook(BookId Id): Book(Id)
 {
-    public InitialBook(BookId bookId): base(bookId) { }
-
     public DraftCreated CreateDraft(
         Title title,
         Author author,

@@ -7,7 +7,7 @@ export class Initial {
     return this._id;
   }
 
-  constructor(private _id: BookId) {}
+  constructor(private readonly _id: BookId) {}
 
   createDraft(
     title: Title,

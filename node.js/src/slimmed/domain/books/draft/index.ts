@@ -19,9 +19,9 @@ export class Draft {
     return this._id;
   }
   constructor(
-    private _id: BookId,
-    private genre: Genre | null,
-    private chapterTitles: ChapterTitle[] = [],
+    private readonly _id: BookId,
+    private readonly genre: Genre | null,
+    private readonly chapterTitles: ChapterTitle[] = [],
   ) {}
 
   addChapter(title: ChapterTitle, content: ChapterContent): ChapterAdded {
@@ -42,8 +42,6 @@ export class Draft {
       title,
       content,
     );
-
-    this.chapterTitles.push(title);
 
     return {
       type: 'ChapterAdded',

@@ -6,7 +6,7 @@ export class InPrint {
   public get id() {
     return this._id;
   }
-  constructor(private _id: BookId) {}
+  constructor(private readonly _id: BookId) {}
 
   moveToPublished(): Published {
     return {
