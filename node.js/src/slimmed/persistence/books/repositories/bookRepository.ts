@@ -2,7 +2,7 @@ import { BookId } from '../../../domain/books/entities';
 import { PublishingHouseOrm } from '../../publishingHouseOrm';
 import { BookEntity, State } from '..';
 import { OrmRepository } from '../../core/repositories/ormRepository';
-import { BookEvent, PublishedExternal } from '../../../domain/books/bookEvent';
+import { BookEvent, PublishedExternal } from '../../../domain/books/book';
 import { NotFoundError } from '#core/errors';
 import { DomainEvent } from '../../../infrastructure/events';
 import { nonEmptyString } from '#core/typing';

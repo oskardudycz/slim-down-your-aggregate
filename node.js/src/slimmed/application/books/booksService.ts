@@ -1,14 +1,7 @@
 import { IBooksRepository } from '../../persistence/books/repositories';
 import { IAuthorProvider } from '../../domain/books/authors';
 import { IPublisherProvider } from '../../domain/books/publishers/publisherProvider';
-import {
-  Book,
-  Draft,
-  InPrint,
-  Initial,
-  PublishedBook,
-  UnderEditing,
-} from '../../domain/books/book';
+import { Book } from '../../domain/books/book';
 import { InvalidOperationError } from '#core/errors';
 import {
   AddChapter,
@@ -27,9 +20,14 @@ import {
 import { PositiveNumber } from '#core/typing';
 import { Ratio } from '#core/typing/ratio';
 import { BookId } from '../../domain/books/entities';
-import { BookEvent } from '../../domain/books/bookEvent';
+import { BookEvent } from '../../domain/books/book';
 import { IBookFactory } from '../../domain/books/factories';
 import { bookMapper } from '../../persistence/mappers/bookMapper';
+import { Draft } from '../../domain/books/draft';
+import { InPrint } from '../../domain/books/inPrint';
+import { Initial } from '../../domain/books/initial';
+import { PublishedBook } from '../../domain/books/published';
+import { UnderEditing } from '../../domain/books/underEditing';
 
 export interface IBooksService {
   createDraft(command: CreateDraft): Promise<void>;
