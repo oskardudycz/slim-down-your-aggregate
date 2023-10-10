@@ -10,7 +10,6 @@ public static class BookEntityMapper
 {
     public static Book MapToAggregate(this BookEntity book, IBookFactory bookFactory) =>
         bookFactory.Create(
-            new BookId(book.Id),
             (Book.State)book.CurrentState,
             new Title(book.Title),
             new Author(new AuthorId(book.Author.Id), new AuthorFirstName(book.Author.FirstName),

@@ -181,14 +181,14 @@ export class BooksService implements IBooksService {
       const aggregate =
         entity !== null
           ? bookMapper.mapFromEntity(entity, this.bookFactory)
-          : this.getDefault(id);
+          : this.getDefault();
 
       const result = handle(aggregate);
       return Array.isArray(result) ? result : [result];
     });
   };
 
-  private getDefault = (bookId: BookId): Book => new Initial(bookId);
+  private getDefault = (): Book => new Initial();
 
   constructor(
     private readonly repository: IBooksRepository,

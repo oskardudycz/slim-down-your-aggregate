@@ -2,7 +2,6 @@ import { InvalidStateError } from '#core/errors';
 import { PositiveNumber } from '#core/typing';
 import { DomainEvent } from '../../../infrastructure/events';
 import {
-  BookId,
   Genre,
   ChapterTitle,
   ChapterContent,
@@ -15,11 +14,7 @@ import {
 import { MovedToEditing } from '../underEditing';
 
 export class Draft {
-  public get id() {
-    return this._id;
-  }
   constructor(
-    private readonly _id: BookId,
     private readonly genre: Genre | null,
     private readonly chapterTitles: ChapterTitle[] = [],
   ) {}
@@ -46,7 +41,6 @@ export class Draft {
     return {
       type: 'ChapterAdded',
       data: {
-        bookId: this.id,
         chapter,
       },
     };
@@ -68,7 +62,6 @@ export class Draft {
     return {
       type: 'MovedToEditing',
       data: {
-        bookId: this.id,
         genre: this.genre,
       },
     };
@@ -79,17 +72,14 @@ export class Draft {
 
     switch (type) {
       case 'DraftCreated': {
-        const { bookId, genre } = data;
+        const { genre } = data;
 
-        return new Draft(bookId, genre, []);
+        return new Draft(genre, []);
       }
       case 'ChapterAdded': {
-        const { bookId, chapter } = data;
+        const { chapter } = data;
 
-        return new Draft(bookId, book.genre, [
-          ...book.chapterTitles,
-          chapter.title,
-        ]);
+        return new Draft(book.genre, [...book.chapterTitles, chapter.title]);
       }
     }
   }
@@ -98,7 +88,6 @@ export class Draft {
 export type DraftCreated = DomainEvent<
   'DraftCreated',
   {
-    bookId: BookId;
     title: Title;
     author: Author;
     publisher: Publisher;
@@ -110,7 +99,6 @@ export type DraftCreated = DomainEvent<
 export type ChapterAdded = DomainEvent<
   'ChapterAdded',
   {
-    bookId: BookId;
     chapter: Chapter;
   }
 >;

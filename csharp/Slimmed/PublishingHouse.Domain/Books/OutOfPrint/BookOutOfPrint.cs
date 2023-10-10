@@ -1,17 +1,18 @@
-using PublishingHouse.Books.Entities;
-
 namespace PublishingHouse.Books.OutOfPrint;
 
-using static BookEvent.OutOfPrintEvent;
+using static OutOfPrintEvent;
 
-public record BookOutOfPrint(BookId Id): Book(Id)
+public record BookOutOfPrint: Book
 {
-    public static BookOutOfPrint Evolve(BookOutOfPrint book, BookEvent.OutOfPrintEvent @event) =>
+    public static BookOutOfPrint Evolve(BookOutOfPrint book, OutOfPrintEvent @event) =>
         @event switch
         {
-            MovedToOutOfPrint draftCreated =>
-                new BookOutOfPrint(draftCreated.BookId),
-
+            MovedToOutOfPrint => new BookOutOfPrint(),
             _ => book
         };
+}
+
+public abstract record OutOfPrintEvent: BookEvent
+{
+    public record MovedToOutOfPrint: OutOfPrintEvent;
 }

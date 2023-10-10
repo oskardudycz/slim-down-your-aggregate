@@ -1,11 +1,10 @@
-using PublishingHouse.Books.Entities;
 using PublishingHouse.Core.ValueObjects;
 
 namespace PublishingHouse.Books.Published;
 
 using static BookEvent;
 using static BookEvent.PublishedEvent;
-using static BookEvent.OutOfPrintEvent;
+using static OutOfPrint.OutOfPrintEvent;
 
 public record PublishedBook: Book
 {
@@ -16,10 +15,9 @@ public record PublishedBook: Book
         new((totalCopies.Value - totalSoldCopies.Value) / (decimal)totalCopies.Value);
 
     public PublishedBook(
-        BookId bookId,
         PositiveInt totalCopies,
         PositiveInt totalSoldCopies
-    ): base(bookId)
+    )
     {
         this.totalCopies = totalCopies;
         this.totalSoldCopies = totalSoldCopies;
@@ -31,15 +29,14 @@ public record PublishedBook: Book
             throw new InvalidOperationException(
                 "Cannot move to Out of Print state if more than 10% of total copies are unsold.");
 
-        return new MovedToOutOfPrint(Id);
+        return new MovedToOutOfPrint();
     }
 
     public static PublishedBook Evolve(PublishedBook book, PublishedEvent @event) =>
         @event switch
         {
-            Published published =>
+            Published =>
                 new PublishedBook(
-                    published.BookId,
                     // TODO: Add methods to set sold copies
                     new PositiveInt(1),
                     new PositiveInt(1)

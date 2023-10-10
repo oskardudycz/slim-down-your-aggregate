@@ -2,7 +2,6 @@ import { InvalidStateError } from '#core/errors';
 import { PositiveNumber } from '#core/typing';
 import { DomainEvent } from '../../../infrastructure/events';
 import {
-  BookId,
   Genre,
   ReviewerId,
   FormatType,
@@ -17,11 +16,7 @@ import { IPublishingHouse } from '../services';
 import { MovedToPrinting } from '../inPrint';
 
 export class UnderEditing {
-  public get id() {
-    return this._id;
-  }
   constructor(
-    private readonly _id: BookId,
     private readonly genre: Genre | null,
     private readonly isISBNSet: boolean,
     private readonly isApproved: boolean,
@@ -50,7 +45,6 @@ export class UnderEditing {
     return {
       type: 'TranslationAdded',
       data: {
-        bookId: this.id,
         translation,
       },
     };
@@ -66,7 +60,6 @@ export class UnderEditing {
     return {
       type: 'FormatAdded',
       data: {
-        bookId: this.id,
         format,
       },
     };
@@ -82,7 +75,6 @@ export class UnderEditing {
     return {
       type: 'FormatRemoved',
       data: {
-        bookId: this.id,
         format,
       },
     };
@@ -99,7 +91,6 @@ export class UnderEditing {
     return {
       type: 'ReviewerAdded',
       data: {
-        bookId: this.id,
         reviewer,
       },
     };
@@ -118,7 +109,6 @@ export class UnderEditing {
     return {
       type: 'Approved',
       data: {
-        bookId: this.id,
         committeeApproval,
       },
     };
@@ -132,7 +122,6 @@ export class UnderEditing {
     return {
       type: 'ISBNSet',
       data: {
-        bookId: this.id,
         isbn,
       },
     };
@@ -160,9 +149,7 @@ export class UnderEditing {
 
     return {
       type: 'MovedToPrinting',
-      data: {
-        bookId: this.id,
-      },
+      data: {},
     };
   }
 
@@ -174,20 +161,18 @@ export class UnderEditing {
 
     switch (type) {
       case 'MovedToEditing': {
-        const { bookId, genre } = data;
+        const { genre } = data;
 
-        return new UnderEditing(bookId, genre, false, false, [], [], []);
+        return new UnderEditing(genre, false, false, [], [], []);
       }
       case 'TranslationAdded': {
         const {
-          bookId,
           translation: {
             language: { id: languageId },
           },
         } = data;
 
         return new UnderEditing(
-          bookId,
           book.genre,
           book.isISBNSet,
           book.isApproved,
@@ -198,14 +183,12 @@ export class UnderEditing {
       }
       case 'TranslationRemoved': {
         const {
-          bookId,
           translation: {
             language: { id: languageId },
           },
         } = data;
 
         return new UnderEditing(
-          bookId,
           book.genre,
           book.isISBNSet,
           book.isApproved,
@@ -216,12 +199,10 @@ export class UnderEditing {
       }
       case 'FormatAdded': {
         const {
-          bookId,
           format: { formatType },
         } = data;
 
         return new UnderEditing(
-          bookId,
           book.genre,
           book.isISBNSet,
           book.isApproved,
@@ -232,12 +213,10 @@ export class UnderEditing {
       }
       case 'FormatRemoved': {
         const {
-          bookId,
           format: { formatType },
         } = data;
 
         return new UnderEditing(
-          bookId,
           book.genre,
           book.isISBNSet,
           book.isApproved,
@@ -248,12 +227,10 @@ export class UnderEditing {
       }
       case 'ReviewerAdded': {
         const {
-          bookId,
           reviewer: { id: reviewerId },
         } = data;
 
         return new UnderEditing(
-          bookId,
           book.genre,
           book.isISBNSet,
           book.isApproved,
@@ -263,10 +240,7 @@ export class UnderEditing {
         );
       }
       case 'Approved': {
-        const { bookId } = data;
-
         return new UnderEditing(
-          bookId,
           book.genre,
           book.isISBNSet,
           true,
@@ -276,10 +250,7 @@ export class UnderEditing {
         );
       }
       case 'ISBNSet': {
-        const { bookId } = data;
-
         return new UnderEditing(
-          bookId,
           book.genre,
           true,
           book.isApproved,
@@ -295,7 +266,6 @@ export class UnderEditing {
 export type FormatAdded = DomainEvent<
   'FormatAdded',
   {
-    bookId: BookId;
     format: Format;
   }
 >;
@@ -303,7 +273,6 @@ export type FormatAdded = DomainEvent<
 export type FormatRemoved = DomainEvent<
   'FormatRemoved',
   {
-    bookId: BookId;
     format: Format;
   }
 >;
@@ -311,7 +280,6 @@ export type FormatRemoved = DomainEvent<
 export type TranslationAdded = DomainEvent<
   'TranslationAdded',
   {
-    bookId: BookId;
     translation: Translation;
   }
 >;
@@ -319,7 +287,6 @@ export type TranslationAdded = DomainEvent<
 export type TranslationRemoved = DomainEvent<
   'TranslationRemoved',
   {
-    bookId: BookId;
     translation: Translation;
   }
 >;
@@ -327,7 +294,6 @@ export type TranslationRemoved = DomainEvent<
 export type ReviewerAdded = DomainEvent<
   'ReviewerAdded',
   {
-    bookId: BookId;
     reviewer: Reviewer;
   }
 >;
@@ -335,7 +301,6 @@ export type ReviewerAdded = DomainEvent<
 export type MovedToEditing = DomainEvent<
   'MovedToEditing',
   {
-    bookId: BookId;
     genre: Genre | null;
   }
 >;
@@ -343,7 +308,6 @@ export type MovedToEditing = DomainEvent<
 export type Approved = DomainEvent<
   'Approved',
   {
-    bookId: BookId;
     committeeApproval: CommitteeApproval;
   }
 >;
@@ -351,7 +315,6 @@ export type Approved = DomainEvent<
 export type ISBNSet = DomainEvent<
   'ISBNSet',
   {
-    bookId: BookId;
     isbn: ISBN;
   }
 >;

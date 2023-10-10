@@ -80,7 +80,7 @@ public class BooksService: IBooksService
     private Task Handle<T>(BookId id, Func<T, BookEvent> handle, CancellationToken ct) where T : Book =>
         repository.GetAndUpdate(id, (entity) =>
         {
-            var aggregate = entity?.MapToAggregate(bookFactory) ?? GetDefault(id);
+            var aggregate = entity?.MapToAggregate(bookFactory) ?? GetDefault();
 
             if (aggregate is not T typedBook) throw new InvalidOperationException();
 
@@ -89,7 +89,7 @@ public class BooksService: IBooksService
             return new[] { @event };
         }, ct);
 
-    private Book GetDefault(BookId bookId) => new InitialBook(bookId);
+    private Book GetDefault() => new InitialBook();
 
     public BooksService(
         IBooksRepository repository,
