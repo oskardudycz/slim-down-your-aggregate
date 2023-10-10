@@ -1,3 +1,5 @@
+using PublishingHouse.Core.Events;
+
 namespace PublishingHouse.Core.Aggregates;
 
 public abstract class Aggregate<TKey>

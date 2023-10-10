@@ -1,5 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using PublishingHouse.Api.Core;
 using PublishingHouse.Application;
@@ -44,6 +42,9 @@ if (environment == "Development" && !useInMemory)
 app.Run();
 
 // Needed for tests
-public partial class Program
+namespace PublishingHouse.Api
 {
+    public partial class Program
+    {
+    }
 }

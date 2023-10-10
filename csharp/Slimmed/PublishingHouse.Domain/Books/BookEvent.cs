@@ -1,5 +1,6 @@
 using PublishingHouse.Books.Entities;
 using PublishingHouse.Core;
+using PublishingHouse.Core.Events;
 using PublishingHouse.Core.ValueObjects;
 
 namespace PublishingHouse.Books;
