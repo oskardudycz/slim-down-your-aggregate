@@ -1,15 +1,7 @@
 using PublishingHouse.Books;
 using PublishingHouse.Books.Entities;
 using PublishingHouse.Books.Factories;
-using PublishingHouse.Books.Services;
-using PublishingHouse.Core.Tracking;
 using PublishingHouse.Core.ValueObjects;
-using PublishingHouse.Persistence.Authors;
-using PublishingHouse.Persistence.Books.Entities;
-using PublishingHouse.Persistence.Languages;
-using PublishingHouse.Persistence.Publishers;
-using PublishingHouse.Persistence.Reviewers;
-using PublishingHouse.Persistence.Translators;
 using Format = PublishingHouse.Books.Entities.Format;
 
 namespace PublishingHouse.Persistence.Books.Mappers;

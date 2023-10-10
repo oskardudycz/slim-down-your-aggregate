@@ -3,6 +3,11 @@ using PublishingHouse.Books.Factories;
 using PublishingHouse.Books.Services;
 using PublishingHouse.Core.ValueObjects;
 using static PublishingHouse.Books.BookEvent;
+using static PublishingHouse.Books.BookEvent.DraftEvent;
+using static PublishingHouse.Books.BookEvent.UnderEditingEvent;
+using static PublishingHouse.Books.BookEvent.InPrintEvent;
+using static PublishingHouse.Books.BookEvent.PublishedEvent;
+using static PublishingHouse.Books.BookEvent.OutOfPrintEvent;
 
 namespace PublishingHouse.Books;
 
@@ -68,6 +73,25 @@ public abstract class Book
 
             return new MovedToEditing(Id, genre);
         }
+
+        public static Draft Evolve(Draft book, DraftEvent @event) =>
+            @event switch
+            {
+                DraftCreated draftCreated =>
+                    new Draft(
+                        draftCreated.BookId,
+                        draftCreated.Genre,
+                        new List<ChapterTitle>()
+                    ),
+
+                ChapterAdded chapterAdded =>
+                    new Draft(
+                        chapterAdded.BookId,
+                        book.genre,
+                        book.chapterTitles.Union(new[] { chapterAdded.Chapter.Title }).ToList()
+                    ),
+                _ => book
+            };
     }
 
     public class UnderEditing: Book
@@ -177,6 +201,100 @@ public abstract class Book
 
             return new MovedToPrinting(Id);
         }
+
+        public static UnderEditing Evolve(UnderEditing book, UnderEditingEvent @event) =>
+            @event switch
+            {
+                MovedToEditing movedToEditing =>
+                    new UnderEditing(
+                        movedToEditing.BookId,
+                        movedToEditing.Genre,
+                        false,
+                        false,
+                        new List<ReviewerId>(),
+                        new List<LanguageId>(),
+                        new List<FormatType>()
+                    ),
+
+                TranslationAdded(_, var translation) =>
+                    new UnderEditing(
+                        book.Id,
+                        book.genre,
+                        book.isISBNSet,
+                        book.isApproved,
+                        book.reviewers,
+                        book.translationLanguages.Union(new[] { translation.Language.Id }).ToList(),
+                        book.formatTypes
+                    ),
+
+                TranslationRemoved(_, var translation) =>
+                    new UnderEditing(
+                        book.Id,
+                        book.genre,
+                        book.isISBNSet,
+                        book.isApproved,
+                        book.reviewers,
+                        book.translationLanguages.Where(t => t != translation.Language.Id).ToList(),
+                        book.formatTypes
+                    ),
+
+                FormatAdded(_, var format) =>
+                    new UnderEditing(
+                        book.Id,
+                        book.genre,
+                        book.isISBNSet,
+                        book.isApproved,
+                        book.reviewers,
+                        book.translationLanguages,
+                        book.formatTypes.Union(new[] { format.FormatType }).ToList()
+                    ),
+
+                FormatRemoved(_, var format) =>
+                    new UnderEditing(
+                        book.Id,
+                        book.genre,
+                        book.isISBNSet,
+                        book.isApproved,
+                        book.reviewers,
+                        book.translationLanguages,
+                        book.formatTypes.Where(t => t != format.FormatType).ToList()
+                    ),
+
+                ReviewerAdded(_, var reviewer) =>
+                    new UnderEditing(
+                        book.Id,
+                        book.genre,
+                        book.isISBNSet,
+                        book.isApproved,
+                        book.reviewers.Union(new[] { reviewer.Id }).ToList(),
+                        book.translationLanguages,
+                        book.formatTypes
+                    ),
+
+                Approved =>
+                    new UnderEditing(
+                        book.Id,
+                        book.genre,
+                        book.isISBNSet,
+                        true,
+                        book.reviewers,
+                        book.translationLanguages,
+                        book.formatTypes
+                    ),
+
+                ISBNSet =>
+                    new UnderEditing(
+                        book.Id,
+                        book.genre,
+                        true,
+                        book.isApproved,
+                        book.reviewers,
+                        book.translationLanguages,
+                        book.formatTypes
+                    ),
+
+                _ => book
+            };
     }
 
     public class InPrint: Book
@@ -187,6 +305,17 @@ public abstract class Book
 
         public Published MoveToPublished() =>
             new Published(Id);
+
+        public static InPrint Evolve(InPrint book, InPrintEvent @event) =>
+            @event switch
+            {
+                MovedToPrinting movedToPrinting =>
+                    new InPrint(
+                        movedToPrinting.BookId
+                    ),
+
+                _ => book
+            };
     }
 
     public class PublishedBook: Book
@@ -215,6 +344,20 @@ public abstract class Book
 
             return new MovedToOutOfPrint(Id);
         }
+
+        public static PublishedBook Evolve(PublishedBook book, PublishedEvent @event) =>
+            @event switch
+            {
+                Published published =>
+                    new PublishedBook(
+                        published.BookId,
+                        // TODO: Add methods to set sold copies
+                        new PositiveInt(1),
+                        new PositiveInt(1)
+                    ),
+
+                _ => book
+            };
     }
 
     public class OutOfPrint: Book
@@ -222,29 +365,49 @@ public abstract class Book
         public OutOfPrint(BookId bookId): base(bookId)
         {
         }
+
+        public static OutOfPrint Evolve(OutOfPrint book, OutOfPrintEvent @event) =>
+            @event switch
+            {
+                MovedToOutOfPrint draftCreated =>
+                    new OutOfPrint(draftCreated.BookId),
+
+                _ => book
+            };
     }
 
     public static Book Evolve(Book book, BookEvent @event) =>
         @event switch
         {
-            DraftCreated draftCreated => book is Initial
-                ? new Draft(draftCreated.BookId, draftCreated.Genre, new List<ChapterTitle>())
+            DraftEvent draftEvent => book is Initial
+                ? Draft.Evolve(new Draft(book.Id, null, new List<ChapterTitle>()), draftEvent)
                 : book,
+
             MovedToEditing movedToEditing => book is Draft
-                ? new UnderEditing(movedToEditing.BookId, movedToEditing.Genre, false, false, new List<ReviewerId>(),
-                    new List<LanguageId>(), new List<FormatType>())
+                ? UnderEditing.Evolve(
+                    new UnderEditing(
+                        book.Id, null, false, false, new List<ReviewerId>(),
+                        new List<LanguageId>(), new List<FormatType>()
+                    ),
+                    movedToEditing)
                 : book,
-            MovedToPrinting movedToPrinting => book is Draft
+
+            UnderEditingEvent underEditingEvent => book is UnderEditing underEditing
+                ? UnderEditing.Evolve(underEditing, underEditingEvent)
+                : book,
+            MovedToPrinting movedToPrinting => book is UnderEditing
                 // TODO: Add methods to set total items per format
-                ? new InPrint(movedToPrinting.BookId)
+                ? InPrint.Evolve(new InPrint(movedToPrinting.BookId), movedToPrinting)
                 : book,
-            Published movedToPrinting => book is Draft
+            Published published => book is Draft
                 // TODO: Add methods to set sold copies
-                ? new PublishedBook(movedToPrinting.BookId, new PositiveInt(1), new PositiveInt(1))
+                ? PublishedBook.Evolve(
+                    new PublishedBook(book.Id, new PositiveInt(1), new PositiveInt(1)),
+                    published
+                )
                 : book,
             MovedToOutOfPrint movedToOutOfPrint => book is Draft
-                // TODO: Add methods to set sold copies
-                ? new OutOfPrint(movedToOutOfPrint.BookId)
+                ? OutOfPrint.Evolve(new OutOfPrint(movedToOutOfPrint.BookId), movedToOutOfPrint)
                 : book,
             _ => book
         };

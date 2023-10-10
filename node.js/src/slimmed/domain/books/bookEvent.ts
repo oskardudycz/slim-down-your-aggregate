@@ -120,20 +120,30 @@ export type MovedToOutOfPrint = DomainEvent<
   }
 >;
 
-export type BookEvent =
-  | DraftCreated
-  | ChapterAdded
-  | FormatAdded
-  | FormatRemoved
+export type DraftEvent = DraftCreated | ChapterAdded;
+
+export type UnderEditingEvent =
+  | MovedToEditing
   | TranslationAdded
   | TranslationRemoved
+  | FormatAdded
+  | FormatRemoved
   | ReviewerAdded
-  | MovedToEditing
   | Approved
-  | ISBNSet
-  | MovedToPrinting
-  | Published
-  | MovedToOutOfPrint;
+  | ISBNSet;
+
+export type InPrintEvent = MovedToPrinting;
+
+export type PublishedEvent = Published;
+
+export type OutOfPrintEvent = MovedToOutOfPrint;
+
+export type BookEvent =
+  | DraftEvent
+  | UnderEditingEvent
+  | InPrintEvent
+  | PublishedEvent
+  | OutOfPrintEvent;
 
 export type PublishedExternal = DomainEvent<
   'Published',
@@ -146,16 +156,7 @@ export type PublishedExternal = DomainEvent<
 >;
 
 export type BookExternalEvent =
-  | DraftCreated
-  | ChapterAdded
-  | FormatAdded
-  | FormatRemoved
-  | TranslationAdded
-  | TranslationRemoved
-  | ReviewerAdded
-  | MovedToEditing
-  | Approved
-  | ISBNSet
-  | MovedToPrinting
+  | DraftEvent
+  | UnderEditingEvent
   | PublishedExternal
-  | MovedToOutOfPrint;
+  | OutOfPrintEvent;

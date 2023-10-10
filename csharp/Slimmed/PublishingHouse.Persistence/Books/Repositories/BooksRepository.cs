@@ -4,11 +4,14 @@ using PublishingHouse.Books.Entities;
 using PublishingHouse.Books.Factories;
 using PublishingHouse.Core.Validation;
 using PublishingHouse.Persistence.Books.Entities;
-using PublishingHouse.Persistence.Books.Mappers;
 using PublishingHouse.Persistence.Books.ValueObjects;
 using PublishingHouse.Persistence.Core.Repositories;
 using PublishingHouse.Persistence.Reviewers;
-using static PublishingHouse.Books.BookEvent;
+using static PublishingHouse.Books.BookEvent.DraftEvent;
+using static PublishingHouse.Books.BookEvent.UnderEditingEvent;
+using static PublishingHouse.Books.BookEvent.InPrintEvent;
+using static PublishingHouse.Books.BookEvent.PublishedEvent;
+using static PublishingHouse.Books.BookEvent.OutOfPrintEvent;
 
 namespace PublishingHouse.Persistence.Books.Repositories;
 
