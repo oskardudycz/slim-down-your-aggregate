@@ -1,6 +1,6 @@
-import { BookDetails } from '../../domain/books/dtos';
+import { BookDetails } from '../../persistence/books/dtos';
 import { FindDetailsByIdQuery } from './queries';
-import { IBooksQueryRepository } from '../../domain/books/repositories';
+import { IBooksQueryRepository } from '../../persistence/books/repositories';
 
 export interface IBooksQueryService {
   findDetailsById(query: FindDetailsByIdQuery): Promise<BookDetails | null>;

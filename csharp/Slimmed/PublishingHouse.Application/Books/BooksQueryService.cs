@@ -1,6 +1,6 @@
-using PublishingHouse.Books.DTOs;
 using PublishingHouse.Books.Entities;
-using PublishingHouse.Books.Repositories;
+using PublishingHouse.Persistence.Books.DTOs;
+using PublishingHouse.Persistence.Books.Repositories;
 
 namespace PublishingHouse.Application.Books;
 

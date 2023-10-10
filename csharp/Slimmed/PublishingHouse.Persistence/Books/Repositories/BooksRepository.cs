@@ -2,7 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using PublishingHouse.Books;
 using PublishingHouse.Books.Entities;
 using PublishingHouse.Books.Factories;
-using PublishingHouse.Books.Repositories;
 using PublishingHouse.Core.Validation;
 using PublishingHouse.Persistence.Books.Entities;
 using PublishingHouse.Persistence.Books.Mappers;

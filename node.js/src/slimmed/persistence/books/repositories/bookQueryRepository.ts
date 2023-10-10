@@ -1,7 +1,10 @@
-import { BookDetails } from '../../../domain/books/dtos';
+import { BookDetails } from '../../../persistence/books/dtos';
 import { BookId } from '../../../domain/books/entities';
-import { IBooksQueryRepository } from '../../../domain/books/repositories';
 import { PublishingHouseOrm } from '../../publishingHouseOrm';
+
+export interface IBooksQueryRepository {
+  findDetailsById(bookId: BookId): Promise<BookDetails | null>;
+}
 
 export class BookQueryRepository implements IBooksQueryRepository {
   constructor(private orm: PublishingHouseOrm) {}

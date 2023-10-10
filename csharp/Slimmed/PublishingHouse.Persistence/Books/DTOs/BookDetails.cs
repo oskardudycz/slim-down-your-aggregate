@@ -1,4 +1,4 @@
-namespace PublishingHouse.Books.DTOs;
+namespace PublishingHouse.Persistence.Books.DTOs;
 
 using static BookDetails;
 
