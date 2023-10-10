@@ -1,5 +1,4 @@
 using PublishingHouse.Books.Entities;
-using PublishingHouse.Core;
 using PublishingHouse.Core.Events;
 using PublishingHouse.Core.ValueObjects;
 
@@ -7,73 +6,88 @@ namespace PublishingHouse.Books;
 
 public abstract record BookEvent: IDomainEvent
 {
-    public record DraftCreated(
-        BookId BookId,
-        Title Title,
-        Author Author,
-        Publisher Publisher,
-        PositiveInt Edition,
-        Genre? Genre
-    ): BookEvent;
+    public abstract record DraftEvent: BookEvent
+    {
+        public record DraftCreated(
+            BookId BookId,
+            Title Title,
+            Author Author,
+            Publisher Publisher,
+            PositiveInt Edition,
+            Genre? Genre
+        ): DraftEvent;
 
-    public record ChapterAdded(
-        BookId BookId,
-        Chapter Chapter
-    ): BookEvent;
+        public record ChapterAdded(
+            BookId BookId,
+            Chapter Chapter
+        ): DraftEvent;
+    }
 
-    public record FormatAdded(
-        BookId BookId,
-        Format Format
-    ): BookEvent;
+    public abstract record UnderEditingEvent: BookEvent
+    {
+        public record MovedToEditing(
+            BookId BookId,
+            Genre Genre
+        ): UnderEditingEvent;
 
-    public record FormatRemoved(
-        BookId BookId,
-        Format Format
-    ): BookEvent;
+        public record TranslationAdded(
+            BookId BookId,
+            Translation Translation
+        ): UnderEditingEvent;
 
-    public record TranslationAdded(
-        BookId BookId,
-        Translation Translation
-    ): BookEvent;
+        public record TranslationRemoved(
+            BookId BookId,
+            Translation Translation
+        ): UnderEditingEvent;
 
-    public record TranslationRemoved(
-        BookId BookId,
-        Translation Translation
-    ): BookEvent;
+        public record FormatAdded(
+            BookId BookId,
+            Format Format
+        ): UnderEditingEvent;
 
-    public record ReviewerAdded(
-        BookId BookId,
-        Reviewer Reviewer
-    ): BookEvent;
+        public record FormatRemoved(
+            BookId BookId,
+            Format Format
+        ): UnderEditingEvent;
 
-    public record MovedToEditing(
-        BookId BookId,
-        Genre Genre
-    ): BookEvent;
+        public record ReviewerAdded(
+            BookId BookId,
+            Reviewer Reviewer
+        ): UnderEditingEvent;
 
-    public record Approved(
-        BookId BookId,
-        CommitteeApproval CommitteeApproval
-    ): BookEvent;
+        public record Approved(
+            BookId BookId,
+            CommitteeApproval CommitteeApproval
+        ): UnderEditingEvent;
 
-    public record ISBNSet(
-        BookId BookId,
-        ISBN ISBN
-    ): BookEvent;
+        public record ISBNSet(
+            BookId BookId,
+            ISBN ISBN
+        ): UnderEditingEvent;
+    }
 
-    public record MovedToPrinting
-    (
-        BookId BookId
-    ): BookEvent;
+    public abstract record InPrintEvent: BookEvent
+    {
+        public record MovedToPrinting
+        (
+            BookId BookId
+        ): InPrintEvent;
+    }
 
-    public record Published(
-        BookId BookId
-    ): BookEvent;
+    public abstract record PublishedEvent: BookEvent
+    {
+        public record Published(
+            BookId BookId
+        ): PublishedEvent;
+    }
 
-    public record MovedToOutOfPrint
-    (
-        BookId BookId
-    ): BookEvent;
+    public abstract record OutOfPrintEvent: BookEvent
+    {
+        public record MovedToOutOfPrint
+        (
+            BookId BookId
+        ):OutOfPrintEvent;
+    }
 
     private BookEvent() { }
 }

@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using PublishingHouse.Core;
 using PublishingHouse.Core.Aggregates;
 using PublishingHouse.Core.Events;
 using PublishingHouse.Core.ValueObjects;

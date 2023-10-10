@@ -25,15 +25,20 @@ import {
   BookEvent,
   ChapterAdded,
   DraftCreated,
+  DraftEvent,
   FormatAdded,
   FormatRemoved,
   ISBNSet,
+  InPrintEvent,
   MovedToEditing,
   MovedToOutOfPrint,
   MovedToPrinting,
+  OutOfPrintEvent,
   Published,
+  PublishedEvent,
   ReviewerAdded,
   TranslationAdded,
+  UnderEditingEvent,
 } from './bookEvent';
 import { LanguageId } from './entities/language';
 import { Ratio, ratio } from '#core/typing/ratio';
@@ -44,46 +49,53 @@ export abstract class Book {
   }
   constructor(protected _id: BookId) {}
 
-  public static evolve(book: Book, event: BookEvent) {
-    const { type, data } = event;
-
-    switch (type) {
+  public static evolve(book: Book, event: BookEvent): Book {
+    switch (event.type) {
       case 'DraftCreated': {
         if (!(book instanceof Initial)) return book;
+        return Draft.evolve(new Draft(book.id, null, []), event);
+      }
+      case 'ChapterAdded': {
+        if (!(book instanceof Draft)) return book;
 
-        const { bookId, genre } = data;
-
-        return new Draft(bookId, genre, []);
+        return Draft.evolve(book, event);
       }
       case 'MovedToEditing': {
         if (!(book instanceof Draft)) return book;
 
-        const { bookId, genre } = data;
+        return UnderEditing.evolve(
+          new UnderEditing(book.id, null, false, false, [], [], []),
+          event,
+        );
+      }
+      case 'TranslationAdded':
+      case 'TranslationRemoved':
+      case 'FormatAdded':
+      case 'FormatRemoved':
+      case 'ReviewerAdded':
+      case 'Approved':
+      case 'ISBNSet': {
+        if (!(book instanceof UnderEditing)) return book;
 
-        return new UnderEditing(bookId, genre, false, false, [], [], []);
+        return UnderEditing.evolve(book, event);
       }
       case 'MovedToPrinting': {
         if (!(book instanceof UnderEditing)) return book;
 
-        const { bookId } = data;
-
-        // TODO: Add methods to set total items per format
-        return new InPrint(bookId);
+        return InPrint.evolve(new InPrint(book.id), event);
       }
       case 'Published': {
         if (!(book instanceof InPrint)) return book;
 
-        const { bookId } = data;
-
-        // TODO: Add methods to set sold copies
-        return new PublishedBook(bookId, positiveNumber(1), positiveNumber(1));
+        return PublishedBook.evolve(
+          new PublishedBook(book.id, 0 as PositiveNumber, 0 as PositiveNumber),
+          event,
+        );
       }
       case 'MovedToOutOfPrint': {
         if (!(book instanceof PublishedBook)) return book;
 
-        const { bookId } = data;
-
-        return new OutOfPrint(bookId);
+        return OutOfPrint.evolve(new OutOfPrint(book.id), event);
       }
 
       default: {
@@ -177,6 +189,26 @@ export class Draft extends Book {
         genre: this.genre,
       },
     };
+  }
+
+  public static evolve(book: Draft, event: DraftEvent): Draft {
+    const { type, data } = event;
+
+    switch (type) {
+      case 'DraftCreated': {
+        const { bookId, genre } = data;
+
+        return new Draft(bookId, genre, []);
+      }
+      case 'ChapterAdded': {
+        const { bookId, chapter } = data;
+
+        return new Draft(bookId, book.genre, [
+          ...book.chapterTitles,
+          chapter.title,
+        ]);
+      }
+    }
   }
 }
 
@@ -340,6 +372,131 @@ export class UnderEditing extends Book {
       },
     };
   }
+
+  public static evolve(
+    book: UnderEditing,
+    event: UnderEditingEvent,
+  ): UnderEditing {
+    const { type, data } = event;
+
+    switch (type) {
+      case 'MovedToEditing': {
+        const { bookId, genre } = data;
+
+        return new UnderEditing(bookId, genre, false, false, [], [], []);
+      }
+      case 'TranslationAdded': {
+        const {
+          bookId,
+          translation: {
+            language: { id: languageId },
+          },
+        } = data;
+
+        return new UnderEditing(
+          bookId,
+          book.genre,
+          book.isISBNSet,
+          book.isApproved,
+          book.reviewers,
+          [...book.translationLanguages, languageId],
+          book.formatTypes,
+        );
+      }
+      case 'TranslationRemoved': {
+        const {
+          bookId,
+          translation: {
+            language: { id: languageId },
+          },
+        } = data;
+
+        return new UnderEditing(
+          bookId,
+          book.genre,
+          book.isISBNSet,
+          book.isApproved,
+          book.reviewers,
+          book.translationLanguages.filter((t) => t != languageId),
+          book.formatTypes,
+        );
+      }
+      case 'FormatAdded': {
+        const {
+          bookId,
+          format: { formatType },
+        } = data;
+
+        return new UnderEditing(
+          bookId,
+          book.genre,
+          book.isISBNSet,
+          book.isApproved,
+          book.reviewers,
+          book.translationLanguages,
+          [...book.formatTypes, formatType],
+        );
+      }
+      case 'FormatRemoved': {
+        const {
+          bookId,
+          format: { formatType },
+        } = data;
+
+        return new UnderEditing(
+          bookId,
+          book.genre,
+          book.isISBNSet,
+          book.isApproved,
+          book.reviewers,
+          book.translationLanguages,
+          book.formatTypes.filter((t) => t != formatType),
+        );
+      }
+      case 'ReviewerAdded': {
+        const {
+          bookId,
+          reviewer: { id: reviewerId },
+        } = data;
+
+        return new UnderEditing(
+          bookId,
+          book.genre,
+          book.isISBNSet,
+          book.isApproved,
+          [...book.reviewers, reviewerId],
+          book.translationLanguages,
+          book.formatTypes,
+        );
+      }
+      case 'Approved': {
+        const { bookId } = data;
+
+        return new UnderEditing(
+          bookId,
+          book.genre,
+          book.isISBNSet,
+          true,
+          book.reviewers,
+          book.translationLanguages,
+          book.formatTypes,
+        );
+      }
+      case 'ISBNSet': {
+        const { bookId } = data;
+
+        return new UnderEditing(
+          bookId,
+          book.genre,
+          true,
+          book.isApproved,
+          book.reviewers,
+          book.translationLanguages,
+          book.formatTypes,
+        );
+      }
+    }
+  }
 }
 
 export class InPrint extends Book {
@@ -354,6 +511,18 @@ export class InPrint extends Book {
         bookId: this.id,
       },
     };
+  }
+
+  public static evolve(_: InPrint, event: InPrintEvent): InPrint {
+    const { type, data } = event;
+
+    switch (type) {
+      case 'MovedToPrinting': {
+        const { bookId } = data;
+
+        return new InPrint(bookId);
+      }
+    }
   }
 }
 
@@ -388,11 +557,40 @@ export class PublishedBook extends Book {
       },
     };
   }
+
+  public static evolve(
+    book: PublishedBook,
+    event: PublishedEvent,
+  ): PublishedBook {
+    const { type, data } = event;
+
+    switch (type) {
+      case 'Published': {
+        const { bookId } = data;
+
+        // TODO: Add methods to set sold copies
+        return new PublishedBook(bookId, positiveNumber(1), positiveNumber(1));
+      }
+    }
+  }
 }
 
 export class OutOfPrint extends Book {
   constructor(id: BookId) {
     super(id);
+  }
+
+  public static evolve(_: OutOfPrint, event: OutOfPrintEvent): OutOfPrint {
+    const { type, data } = event;
+
+    switch (type) {
+      case 'MovedToOutOfPrint': {
+        const { bookId } = data;
+
+        // TODO: Add methods to set sold copies
+        return new PublishedBook(bookId, positiveNumber(1), positiveNumber(1));
+      }
+    }
   }
 }
 

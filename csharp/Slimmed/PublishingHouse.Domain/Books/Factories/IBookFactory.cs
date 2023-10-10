@@ -1,6 +1,4 @@
 using PublishingHouse.Books.Entities;
-using PublishingHouse.Books.Services;
-using PublishingHouse.Core.ValueObjects;
 
 namespace PublishingHouse.Books.Factories;
 
