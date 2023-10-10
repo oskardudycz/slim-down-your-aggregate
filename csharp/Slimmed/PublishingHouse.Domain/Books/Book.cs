@@ -1,12 +1,15 @@
+using PublishingHouse.Books.Draft;
 using PublishingHouse.Books.Entities;
 using PublishingHouse.Books.Factories;
-using PublishingHouse.Books.Services;
+using PublishingHouse.Books.Initial;
+using PublishingHouse.Books.InPrint;
+using PublishingHouse.Books.OutOfPrint;
+using PublishingHouse.Books.Published;
+using PublishingHouse.Books.UnderEditing;
 using PublishingHouse.Core.ValueObjects;
 using static PublishingHouse.Books.BookEvent;
-using static PublishingHouse.Books.BookEvent.DraftEvent;
 using static PublishingHouse.Books.BookEvent.UnderEditingEvent;
 using static PublishingHouse.Books.BookEvent.InPrintEvent;
-using static PublishingHouse.Books.BookEvent.PublishedEvent;
 using static PublishingHouse.Books.BookEvent.OutOfPrintEvent;
 
 namespace PublishingHouse.Books;
@@ -17,402 +20,43 @@ public abstract class Book
 
     public BookId Id { get; private set; }
 
-    public class Initial: Book
-    {
-        public Initial(BookId bookId): base(bookId) { }
-
-        public DraftCreated CreateDraft(
-            Title title,
-            Author author,
-            Publisher publisher,
-            PositiveInt edition,
-            Genre? genre
-        ) =>
-            new DraftCreated(Id, title, author, publisher, edition, genre);
-    }
-
-    public class Draft: Book
-    {
-        private readonly Genre? genre;
-        private readonly List<ChapterTitle> chapterTitles;
-        private int ChaptersCount => chapterTitles.Count;
-
-        internal Draft(
-            BookId bookId,
-            Genre? genre,
-            List<ChapterTitle> chapterTitles
-        ): base(bookId)
-        {
-            this.genre = genre;
-            this.chapterTitles = chapterTitles;
-        }
-
-        public ChapterAdded AddChapter(ChapterTitle title, ChapterContent content)
-        {
-            if (!title.Value.StartsWith("Chapter " + (chapterTitles.Count + 1)))
-                throw new InvalidOperationException(
-                    $"Chapter should be added in sequence. The title of the next chapter should be 'Chapter {chapterTitles.Count + 1}'");
-
-            if (chapterTitles.Contains(title))
-                throw new InvalidOperationException($"Chapter with title {title.Value} already exists.");
-
-            var chapter = new Chapter(new ChapterNumber(chapterTitles.Count + 1), title, content);
-            chapterTitles.Add(title);
-
-            return new ChapterAdded(Id, chapter);
-        }
-
-        public MovedToEditing MoveToEditing()
-        {
-            if (ChaptersCount < 1)
-                throw new InvalidOperationException(
-                    "A book must have at least one chapter to move to the Editing state.");
-
-            if (genre == null)
-                throw new InvalidOperationException("Book can be moved to the editing only when genre is specified");
-
-            return new MovedToEditing(Id, genre);
-        }
-
-        public static Draft Evolve(Draft book, DraftEvent @event) =>
-            @event switch
-            {
-                DraftCreated draftCreated =>
-                    new Draft(
-                        draftCreated.BookId,
-                        draftCreated.Genre,
-                        new List<ChapterTitle>()
-                    ),
-
-                ChapterAdded chapterAdded =>
-                    new Draft(
-                        chapterAdded.BookId,
-                        book.genre,
-                        book.chapterTitles.Union(new[] { chapterAdded.Chapter.Title }).ToList()
-                    ),
-                _ => book
-            };
-    }
-
-    public class UnderEditing: Book
-    {
-        private readonly Genre? genre;
-        private bool isISBNSet;
-        private bool isApproved;
-        private readonly List<ReviewerId> reviewers;
-        private readonly List<LanguageId> translationLanguages;
-        private readonly List<FormatType> formatTypes;
-
-        internal UnderEditing(
-            BookId bookId,
-            Genre? genre,
-            bool isISBNSet,
-            bool isApproved,
-            List<ReviewerId> reviewers,
-            List<LanguageId> translationLanguages,
-            List<FormatType> formatTypes
-        ): base(bookId)
-        {
-            this.genre = genre;
-            this.isISBNSet = isISBNSet;
-            this.isApproved = isApproved;
-            this.reviewers = reviewers;
-            this.translationLanguages = translationLanguages;
-            this.formatTypes = formatTypes;
-        }
-
-        public TranslationAdded AddTranslation(Translation translation, PositiveInt maximumNumberOfTranslations)
-        {
-            var languageId = translation.Language.Id;
-
-            if (translationLanguages.Contains(languageId))
-                throw new InvalidOperationException($"Translation to {translation.Language.Name} already exists.");
-
-            if (translationLanguages.Count >= maximumNumberOfTranslations.Value)
-                throw new InvalidOperationException(
-                    $"Cannot add more translations. Maximum {maximumNumberOfTranslations.Value} translations are allowed.");
-
-            translationLanguages.Add(languageId);
-
-            return new TranslationAdded(Id, translation);
-        }
-
-        public FormatAdded AddFormat(Format format)
-        {
-            if (formatTypes.Contains(format.FormatType))
-                throw new InvalidOperationException($"Format {format.FormatType} already exists.");
-
-            formatTypes.Add(format.FormatType);
-
-            return new FormatAdded(Id, format);
-        }
-
-        public FormatRemoved RemoveFormat(Format format)
-        {
-            if (!formatTypes.Remove(format.FormatType))
-                throw new InvalidOperationException($"Format {format.FormatType} does not exist.");
-
-            return new FormatRemoved(Id, format);
-        }
-
-        public ReviewerAdded AddReviewer(Reviewer reviewer)
-        {
-            if (reviewers.Contains(reviewer.Id))
-                throw new InvalidOperationException(
-                    $"{reviewer.Name} is already a reviewer.");
-
-            reviewers.Add(reviewer.Id);
-
-            return new ReviewerAdded(Id, reviewer);
-        }
-
-        public Approved Approve(CommitteeApproval committeeApproval, PositiveInt minimumReviewersRequiredForApproval)
-        {
-            if (reviewers.Count < minimumReviewersRequiredForApproval.Value)
-                throw new InvalidOperationException(
-                    "A book cannot be approved unless it has been reviewed by at least three reviewers.");
-
-            isApproved = true;
-
-            return new Approved(Id, committeeApproval);
-        }
-
-        public ISBNSet SetISBN(ISBN isbn)
-        {
-            if (isISBNSet)
-                throw new InvalidOperationException(
-                    "Cannot change already set ISBN.");
-
-            isISBNSet = true;
-
-            return new ISBNSet(Id, isbn);
-        }
-
-        public MovedToPrinting MoveToPrinting(IPublishingHouse publishingHouse)
-        {
-            if (isApproved)
-                throw new InvalidOperationException("Cannot move to printing state until the book has been approved.");
-
-            if (genre == null)
-                throw new InvalidOperationException("Book can be moved to the printing only when genre is specified");
-
-            if (!publishingHouse.IsGenreLimitReached(genre))
-                throw new InvalidOperationException("Cannot move to printing until the genre limit is reached.");
-
-            return new MovedToPrinting(Id);
-        }
-
-        public static UnderEditing Evolve(UnderEditing book, UnderEditingEvent @event) =>
-            @event switch
-            {
-                MovedToEditing movedToEditing =>
-                    new UnderEditing(
-                        movedToEditing.BookId,
-                        movedToEditing.Genre,
-                        false,
-                        false,
-                        new List<ReviewerId>(),
-                        new List<LanguageId>(),
-                        new List<FormatType>()
-                    ),
-
-                TranslationAdded(_, var translation) =>
-                    new UnderEditing(
-                        book.Id,
-                        book.genre,
-                        book.isISBNSet,
-                        book.isApproved,
-                        book.reviewers,
-                        book.translationLanguages.Union(new[] { translation.Language.Id }).ToList(),
-                        book.formatTypes
-                    ),
-
-                TranslationRemoved(_, var translation) =>
-                    new UnderEditing(
-                        book.Id,
-                        book.genre,
-                        book.isISBNSet,
-                        book.isApproved,
-                        book.reviewers,
-                        book.translationLanguages.Where(t => t != translation.Language.Id).ToList(),
-                        book.formatTypes
-                    ),
-
-                FormatAdded(_, var format) =>
-                    new UnderEditing(
-                        book.Id,
-                        book.genre,
-                        book.isISBNSet,
-                        book.isApproved,
-                        book.reviewers,
-                        book.translationLanguages,
-                        book.formatTypes.Union(new[] { format.FormatType }).ToList()
-                    ),
-
-                FormatRemoved(_, var format) =>
-                    new UnderEditing(
-                        book.Id,
-                        book.genre,
-                        book.isISBNSet,
-                        book.isApproved,
-                        book.reviewers,
-                        book.translationLanguages,
-                        book.formatTypes.Where(t => t != format.FormatType).ToList()
-                    ),
-
-                ReviewerAdded(_, var reviewer) =>
-                    new UnderEditing(
-                        book.Id,
-                        book.genre,
-                        book.isISBNSet,
-                        book.isApproved,
-                        book.reviewers.Union(new[] { reviewer.Id }).ToList(),
-                        book.translationLanguages,
-                        book.formatTypes
-                    ),
-
-                Approved =>
-                    new UnderEditing(
-                        book.Id,
-                        book.genre,
-                        book.isISBNSet,
-                        true,
-                        book.reviewers,
-                        book.translationLanguages,
-                        book.formatTypes
-                    ),
-
-                ISBNSet =>
-                    new UnderEditing(
-                        book.Id,
-                        book.genre,
-                        true,
-                        book.isApproved,
-                        book.reviewers,
-                        book.translationLanguages,
-                        book.formatTypes
-                    ),
-
-                _ => book
-            };
-    }
-
-    public class InPrint: Book
-    {
-        internal InPrint(BookId bookId): base(bookId)
-        {
-        }
-
-        public Published MoveToPublished() =>
-            new Published(Id);
-
-        public static InPrint Evolve(InPrint book, InPrintEvent @event) =>
-            @event switch
-            {
-                MovedToPrinting movedToPrinting =>
-                    new InPrint(
-                        movedToPrinting.BookId
-                    ),
-
-                _ => book
-            };
-    }
-
-    public class PublishedBook: Book
-    {
-        private readonly PositiveInt totalCopies;
-        private readonly PositiveInt totalSoldCopies;
-
-        private Ratio UnsoldCopiesRatio =>
-            new((totalCopies.Value - totalSoldCopies.Value) / (decimal)totalCopies.Value);
-
-        public PublishedBook(
-            BookId bookId,
-            PositiveInt totalCopies,
-            PositiveInt totalSoldCopies
-        ): base(bookId)
-        {
-            this.totalCopies = totalCopies;
-            this.totalSoldCopies = totalSoldCopies;
-        }
-
-        public MovedToOutOfPrint MoveToOutOfPrint(Ratio maxAllowedUnsoldCopiesRatioToGoOutOfPrint)
-        {
-            if (UnsoldCopiesRatio.CompareTo(maxAllowedUnsoldCopiesRatioToGoOutOfPrint) > 0)
-                throw new InvalidOperationException(
-                    "Cannot move to Out of Print state if more than 10% of total copies are unsold.");
-
-            return new MovedToOutOfPrint(Id);
-        }
-
-        public static PublishedBook Evolve(PublishedBook book, PublishedEvent @event) =>
-            @event switch
-            {
-                Published published =>
-                    new PublishedBook(
-                        published.BookId,
-                        // TODO: Add methods to set sold copies
-                        new PositiveInt(1),
-                        new PositiveInt(1)
-                    ),
-
-                _ => book
-            };
-    }
-
-    public class OutOfPrint: Book
-    {
-        public OutOfPrint(BookId bookId): base(bookId)
-        {
-        }
-
-        public static OutOfPrint Evolve(OutOfPrint book, OutOfPrintEvent @event) =>
-            @event switch
-            {
-                MovedToOutOfPrint draftCreated =>
-                    new OutOfPrint(draftCreated.BookId),
-
-                _ => book
-            };
-    }
-
     public static Book Evolve(Book book, BookEvent @event) =>
         @event switch
         {
-            DraftEvent draftEvent => book is Initial
-                ? Draft.Evolve(new Draft(book.Id, null, new List<ChapterTitle>()), draftEvent)
+            DraftEvent draftEvent => book is InitialBook
+                ? BookDraft.Evolve(new BookDraft(book.Id, null, new List<ChapterTitle>()), draftEvent)
                 : book,
 
-            MovedToEditing movedToEditing => book is Draft
-                ? UnderEditing.Evolve(
-                    new UnderEditing(
+            MovedToEditing movedToEditing => book is BookDraft
+                ? BookUnderEditing.Evolve(
+                    new BookUnderEditing(
                         book.Id, null, false, false, new List<ReviewerId>(),
                         new List<LanguageId>(), new List<FormatType>()
                     ),
                     movedToEditing)
                 : book,
 
-            UnderEditingEvent underEditingEvent => book is UnderEditing underEditing
-                ? UnderEditing.Evolve(underEditing, underEditingEvent)
+            UnderEditingEvent underEditingEvent => book is BookUnderEditing underEditing
+                ? BookUnderEditing.Evolve(underEditing, underEditingEvent)
                 : book,
-            MovedToPrinting movedToPrinting => book is UnderEditing
+            MovedToPrinting movedToPrinting => book is BookUnderEditing
                 // TODO: Add methods to set total items per format
-                ? InPrint.Evolve(new InPrint(movedToPrinting.BookId), movedToPrinting)
+                ? BookInPrint.Evolve(new BookInPrint(movedToPrinting.BookId), movedToPrinting)
                 : book,
-            Published published => book is Draft
+            PublishedEvent.Published published => book is BookInPrint
                 // TODO: Add methods to set sold copies
                 ? PublishedBook.Evolve(
                     new PublishedBook(book.Id, new PositiveInt(1), new PositiveInt(1)),
                     published
                 )
                 : book,
-            MovedToOutOfPrint movedToOutOfPrint => book is Draft
-                ? OutOfPrint.Evolve(new OutOfPrint(movedToOutOfPrint.BookId), movedToOutOfPrint)
+            MovedToOutOfPrint movedToOutOfPrint => book is PublishedBook
+                ? BookOutOfPrint.Evolve(new BookOutOfPrint(movedToOutOfPrint.BookId), movedToOutOfPrint)
                 : book,
             _ => book
         };
 
-    private Book(BookId bookId) =>
+    protected Book(BookId bookId) =>
         Id = bookId;
 
     public class Factory: IBookFactory
@@ -433,9 +77,9 @@ public abstract class Book
             state switch
             {
                 State.Writing =>
-                    new Draft(bookId, genre, chapters.Select(ch => ch.Title).ToList()),
+                    new BookDraft(bookId, genre, chapters.Select(ch => ch.Title).ToList()),
                 State.Editing =>
-                    new UnderEditing(
+                    new BookUnderEditing(
                         bookId,
                         genre,
                         isbn != null,
@@ -445,7 +89,7 @@ public abstract class Book
                         formats.Select(f => f.FormatType).ToList()
                     ),
                 State.Printing =>
-                    new InPrint(bookId),
+                    new BookInPrint(bookId),
                 State.Published =>
                     new PublishedBook(
                         bookId,
@@ -453,7 +97,7 @@ public abstract class Book
                         new PositiveInt(formats.Sum(f => f.SoldCopies.Value))
                     ),
                 State.OutOfPrint =>
-                    new OutOfPrint(bookId),
+                    new BookOutOfPrint(bookId),
                 _ => throw new InvalidOperationException()
             };
     }
