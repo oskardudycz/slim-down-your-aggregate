@@ -18,7 +18,7 @@ public record BookInPrint(PositiveInt TotalCopies): Book
             _ => Default
         };
 
-    public static readonly BookInPrint Default = new(new PositiveInt(1));
+    public static readonly BookInPrint Default = new(PositiveInt.Empty);
 }
 
 public abstract record InPrintEvent: BookEvent
