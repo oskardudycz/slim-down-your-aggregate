@@ -5,22 +5,10 @@ namespace PublishingHouse.Books.Published;
 using static OutOfPrint.OutOfPrintEvent;
 using static PublishedEvent;
 
-public record PublishedBook: Book
+public record PublishedBook(NonNegativeNumber TotalCopies, NonNegativeNumber TotalSoldCopies): Book
 {
-    private readonly NonNegativeNumber totalCopies;
-    private readonly NonNegativeNumber totalSoldCopies;
-
-    private Ratio UnsoldCopiesRatio =>
-        new((totalCopies.Value - totalSoldCopies.Value) / (decimal)totalCopies.Value);
-
-    public PublishedBook(
-        NonNegativeNumber totalCopies,
-        NonNegativeNumber totalSoldCopies
-    )
-    {
-        this.totalCopies = totalCopies;
-        this.totalSoldCopies = totalSoldCopies;
-    }
+    public Ratio UnsoldCopiesRatio =>
+        new((TotalCopies.Value - TotalSoldCopies.Value) / (decimal)TotalCopies.Value);
 
     public static MovedToOutOfPrint MoveToOutOfPrint(PublishedBook state, Ratio maxAllowedUnsoldCopiesRatioToGoOutOfPrint)
     {
