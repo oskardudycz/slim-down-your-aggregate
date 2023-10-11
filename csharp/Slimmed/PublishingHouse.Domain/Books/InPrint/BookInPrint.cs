@@ -1,16 +1,11 @@
-using PublishingHouse.Books.Published;
 using PublishingHouse.Core.ValueObjects;
 
 namespace PublishingHouse.Books.InPrint;
 
 using static InPrintEvent;
-using static PublishedEvent;
 
 public record BookInPrint(PositiveInt TotalCopies): Book
 {
-    public static Published MoveToPublished(BookInPrint state) =>
-        new Published(state.TotalCopies);
-
     public static BookInPrint Evolve(BookInPrint book, InPrintEvent @event) =>
         @event switch
         {

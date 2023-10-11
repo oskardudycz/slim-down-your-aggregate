@@ -1,19 +1,25 @@
+import { DeepReadonly } from 'ts-essentials';
 import { DomainEvent, EmptyData } from '../../../infrastructure/events';
 
-export class OutOfPrint {
-  public static evolve(_: OutOfPrint, event: OutOfPrintEvent): OutOfPrint {
-    const { type } = event;
+export type OutOfPrint = DeepReadonly<{ status: 'OutOfPrint' }>;
 
-    switch (type) {
-      case 'MovedToOutOfPrint': {
-        return new OutOfPrint();
-      }
-    }
-  }
-
-  public static readonly initial = new OutOfPrint();
-}
+export const initial: OutOfPrint = { status: 'OutOfPrint' };
 
 export type MovedToOutOfPrint = DomainEvent<'MovedToOutOfPrint', EmptyData>;
 
 export type OutOfPrintEvent = MovedToOutOfPrint;
+
+export const evolve = (_: OutOfPrint, event: OutOfPrintEvent): OutOfPrint => {
+  const { type } = event;
+
+  switch (type) {
+    case 'MovedToOutOfPrint': {
+      return { status: 'OutOfPrint' };
+    }
+  }
+};
+
+export const isOutOfPrint = (obj: object): obj is OutOfPrint =>
+  'status' in obj &&
+  typeof obj.status === 'string' &&
+  obj.status === 'OutOfPrint';

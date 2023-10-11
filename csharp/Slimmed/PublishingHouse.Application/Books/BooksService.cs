@@ -27,7 +27,7 @@ public class BooksService: IBooksService
         await Handle<InitialBook>(
             bookId,
             book =>
-                BookDraft.CreateDraft(
+                DraftDecider.CreateDraft(
                     book,
                     title,
                     authorEntity,
@@ -41,42 +41,42 @@ public class BooksService: IBooksService
         Handle<BookDraft>(command.BookId, book =>
         {
             var (_, chapterTitle, chapterContent) = command;
-            return BookDraft.AddChapter(book, chapterTitle, chapterContent);
+            return DraftDecider.AddChapter(book, chapterTitle, chapterContent);
         }, ct);
 
     public Task MoveToEditing(MoveToEditing command, CancellationToken ct) =>
-        Handle<BookDraft>(command.BookId, BookDraft.MoveToEditing, ct);
+        Handle<BookDraft>(command.BookId, DraftDecider.MoveToEditing, ct);
 
     public Task AddTranslation(AddTranslation command, CancellationToken ct) =>
         Handle<BookUnderEditing>(command.BookId,
-            book => BookUnderEditing.AddTranslation(book, command.Translation, maximumNumberOfTranslations), ct);
+            book => UnderEditingDecider.AddTranslation(book, command.Translation, maximumNumberOfTranslations), ct);
 
     public Task AddFormat(AddFormat command, CancellationToken ct) =>
-        Handle<BookUnderEditing>(command.BookId, book => BookUnderEditing.AddFormat(book, command.Format), ct);
+        Handle<BookUnderEditing>(command.BookId, book => UnderEditingDecider.AddFormat(book, command.Format), ct);
 
     public Task RemoveFormat(RemoveFormat command, CancellationToken ct) =>
-        Handle<BookUnderEditing>(command.BookId, book => BookUnderEditing.RemoveFormat(book, command.Format), ct);
+        Handle<BookUnderEditing>(command.BookId, book => UnderEditingDecider.RemoveFormat(book, command.Format), ct);
 
     public Task AddReviewer(AddReviewer command, CancellationToken ct) =>
-        Handle<BookUnderEditing>(command.BookId, book => BookUnderEditing.AddReviewer(book, command.Reviewer), ct);
+        Handle<BookUnderEditing>(command.BookId, book => UnderEditingDecider.AddReviewer(book, command.Reviewer), ct);
 
     public Task Approve(Approve command, CancellationToken ct) =>
         Handle<BookUnderEditing>(command.BookId,
-            book => BookUnderEditing.Approve(book, command.CommitteeApproval, minimumReviewersRequiredForApproval), ct);
+            book => UnderEditingDecider.Approve(book, command.CommitteeApproval, minimumReviewersRequiredForApproval), ct);
 
     public Task SetISBN(SetISBN command, CancellationToken ct) =>
-        Handle<BookUnderEditing>(command.BookId, book => BookUnderEditing.SetISBN(book, command.ISBN), ct);
+        Handle<BookUnderEditing>(command.BookId, book => UnderEditingDecider.SetISBN(book, command.ISBN), ct);
 
     public Task MoveToPrinting(MoveToPrinting command, CancellationToken ct) =>
-        Handle<BookUnderEditing>(command.BookId, book => BookUnderEditing.MoveToPrinting(book, (null as IPublishingHouse)!),
+        Handle<BookUnderEditing>(command.BookId, book => UnderEditingDecider.MoveToPrinting(book, (null as IPublishingHouse)!),
             ct);
 
     public Task MoveToPublished(MoveToPublished command, CancellationToken ct) =>
-        Handle<BookInPrint>(command.BookId, BookInPrint.MoveToPublished, ct);
+        Handle<BookInPrint>(command.BookId, InPrintDecider.MoveToPublished, ct);
 
     public Task MoveToOutOfPrint(MoveToOutOfPrint command, CancellationToken ct) =>
         Handle<PublishedBook>(command.BookId,
-            book => PublishedBook.MoveToOutOfPrint(book, maxAllowedUnsoldCopiesRatioToGoOutOfPrint), ct);
+            book => PublishedDecider.MoveToOutOfPrint(book, maxAllowedUnsoldCopiesRatioToGoOutOfPrint), ct);
 
     private Task Handle<T>(BookId id, Func<T, BookEvent> handle, CancellationToken ct) where T : Book =>
         repository.GetAndUpdate(id, (entity) =>
