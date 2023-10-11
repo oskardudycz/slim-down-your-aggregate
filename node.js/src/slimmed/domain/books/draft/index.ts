@@ -13,11 +13,35 @@ import {
 } from '../entities';
 import { MovedToEditing } from '../underEditing';
 
+export class Initial {
+  public static readonly initial = new Initial();
+}
+
 export class Draft {
   constructor(
     private readonly genre: Genre | null,
     private readonly chapterTitles: ChapterTitle[] = [],
   ) {}
+
+  static createDraft(
+    _initial: Initial,
+    title: Title,
+    author: Author,
+    publisher: Publisher,
+    edition: PositiveNumber,
+    genre: Genre | null,
+  ): DraftCreated {
+    return {
+      type: 'DraftCreated',
+      data: {
+        title,
+        author,
+        publisher,
+        edition,
+        genre,
+      },
+    };
+  }
 
   static addChapter(
     book: Draft,
@@ -88,7 +112,7 @@ export class Draft {
     }
   }
 
-  public static readonly default = new Draft(null, []);
+  public static readonly initial = new Draft(null, []);
 }
 
 export type DraftCreated = DomainEvent<

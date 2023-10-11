@@ -15,4 +15,6 @@ public record NonNegativeNumber: IComparable<NonNegativeNumber>
         if (ReferenceEquals(null, other)) return 1;
         return Value.CompareTo(other.Value);
     }
+
+    public static readonly NonNegativeNumber Empty = new(int.MaxValue);
 }

@@ -15,10 +15,10 @@ public record BookInPrint(PositiveInt TotalCopies): Book
         @event switch
         {
             MovedToPrinting movedToPrinting => new BookInPrint(movedToPrinting.TotalCopies),
-            _ => Default
+            _ => Initial
         };
 
-    public static readonly BookInPrint Default = new(PositiveInt.Empty);
+    public static readonly BookInPrint Initial = new(PositiveInt.Empty);
 }
 
 public abstract record InPrintEvent: BookEvent

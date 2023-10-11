@@ -6,9 +6,24 @@ namespace PublishingHouse.Books.Draft;
 using static DraftEvent;
 using static UnderEditing.UnderEditingEvent;
 
+public record InitialBook: Book
+{
+    public static InitialBook Initial = new();
+}
+
 public record BookDraft(Genre? Genre, IReadOnlyList<ChapterTitle> ChapterTitles): Book
 {
     public int ChaptersCount => ChapterTitles.Count;
+
+    public static DraftCreated CreateDraft(
+        InitialBook state,
+        Title title,
+        Author author,
+        Publisher publisher,
+        PositiveInt edition,
+        Genre? genre
+    ) =>
+        new DraftCreated(title, author, publisher, edition, genre);
 
     public static ChapterAdded AddChapter(BookDraft state, ChapterTitle title, ChapterContent content)
     {
