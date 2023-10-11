@@ -2,8 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using PublishingHouse.Books;
 using PublishingHouse.Books.Draft;
 using PublishingHouse.Books.Entities;
-using PublishingHouse.Books.Factories;
 using PublishingHouse.Books.InPrint;
+using PublishingHouse.Books.Published;
 using PublishingHouse.Books.OutOfPrint;
 using PublishingHouse.Books.UnderEditing;
 using PublishingHouse.Core.Events;
@@ -12,7 +12,6 @@ using PublishingHouse.Persistence.Books.Entities;
 using PublishingHouse.Persistence.Books.ValueObjects;
 using PublishingHouse.Persistence.Core.Repositories;
 using PublishingHouse.Persistence.Reviewers;
-using static PublishingHouse.Books.BookEvent.PublishedEvent;
 
 namespace PublishingHouse.Persistence.Books.Repositories;
 
@@ -21,13 +20,12 @@ using static DraftEvent;
 public class BooksRepository:
     EntityFrameworkRepository<BookEntity, BookId, BookEvent, PublishingHouseDbContext>, IBooksRepository
 {
-    private readonly IBookFactory bookFactory;
-
-    public BooksRepository(PublishingHouseDbContext dbContext, IBookFactory bookFactory): base(
+    public BooksRepository(PublishingHouseDbContext dbContext): base(
         dbContext,
         id => e => e.Id == id.Value
-    ) =>
-        this.bookFactory = bookFactory;
+    )
+    {
+    }
 
     protected override IQueryable<BookEntity> Includes(DbSet<BookEntity> query) =>
         query.Include(e => e.Author)
@@ -146,7 +144,7 @@ public class BooksRepository:
                     .CurrentState = BookEntity.State.Printing;
                 break;
             }
-            case Published _:
+            case PublishedEvent.Published _:
             {
                 current.AssertNotNull()
                     .CurrentState = BookEntity.State.Published;
@@ -171,7 +169,7 @@ public class BooksRepository:
         var @event = eventEnvelope.Event;
         var id = eventEnvelope.Metadata.RecordId.Value;
 
-        if (@event is Published published && current != null)
+        if (@event is PublishedEvent.Published && current != null)
         {
             return new EventEnvelope<BookExternalEvent.Published>(
                 new BookExternalEvent.Published(

@@ -8,8 +8,10 @@ public record BookOutOfPrint: Book
         @event switch
         {
             MovedToOutOfPrint => new BookOutOfPrint(),
-            _ => book
+            _ => Default
         };
+
+    public static readonly BookOutOfPrint Default = new();
 }
 
 public abstract record OutOfPrintEvent: BookEvent

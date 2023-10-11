@@ -1,4 +1,4 @@
-import { PositiveNumber, positiveNumber } from '#core/typing';
+import { positiveNumber } from '#core/typing';
 import {
   Author,
   AuthorId,
@@ -44,10 +44,7 @@ export const evolve = (book: Book, event: BookEvent): Book => {
     case 'MovedToEditing': {
       if (!(book instanceof Draft)) return book;
 
-      return UnderEditing.evolve(
-        new UnderEditing(null, false, false, [], [], []),
-        event,
-      );
+      return UnderEditing.evolve(UnderEditing.default, event);
     }
     case 'TranslationAdded':
     case 'TranslationRemoved':
@@ -63,20 +60,17 @@ export const evolve = (book: Book, event: BookEvent): Book => {
     case 'MovedToPrinting': {
       if (!(book instanceof UnderEditing)) return book;
 
-      return InPrint.evolve(new InPrint(), event);
+      return InPrint.evolve(InPrint.default, event);
     }
     case 'Published': {
       if (!(book instanceof InPrint)) return book;
 
-      return PublishedBook.evolve(
-        new PublishedBook(0 as PositiveNumber, 0 as PositiveNumber),
-        event,
-      );
+      return PublishedBook.evolve(PublishedBook.default, event);
     }
     case 'MovedToOutOfPrint': {
       if (!(book instanceof PublishedBook)) return book;
 
-      return OutOfPrint.evolve(new OutOfPrint(), event);
+      return OutOfPrint.evolve(OutOfPrint.default, event);
     }
 
     default: {
@@ -137,11 +131,17 @@ export class BookFactory implements IBookFactory {
           !!committeeApproval,
           reviewers.map((r) => r.id),
           translations.map((r) => r.language.id),
-          formats.map((f) => f.formatType),
+          formats.map((f) => {
+            return { formatType: f.formatType, totalCopies: f.totalCopies };
+          }),
         );
       }
       case State.Printing: {
-        return new InPrint();
+        const totalCopies = formats.reduce(
+          (acc, format) => acc + format.totalCopies,
+          0,
+        );
+        return new InPrint(positiveNumber(totalCopies));
       }
       case State.Published: {
         const totalCopies = formats.reduce(

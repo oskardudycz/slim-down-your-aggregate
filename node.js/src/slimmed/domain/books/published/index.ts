@@ -1,7 +1,7 @@
 import { InvalidStateError } from '#core/errors';
 import { PositiveNumber, positiveNumber } from '#core/typing';
 import { Ratio, ratio } from '#core/typing/ratio';
-import { DomainEvent, EmptyData } from '../../../infrastructure/events';
+import { DomainEvent } from '../../../infrastructure/events';
 import { MovedToOutOfPrint } from '../outOfPrint';
 
 export class PublishedBook {
@@ -33,17 +33,25 @@ export class PublishedBook {
     book: PublishedBook,
     event: PublishedEvent,
   ): PublishedBook {
-    const { type } = event;
+    const { type, data } = event;
 
     switch (type) {
       case 'Published': {
         // TODO: Add methods to set sold copies
-        return new PublishedBook(positiveNumber(1), positiveNumber(1));
+        return new PublishedBook(data.totalCopies, positiveNumber(1));
       }
     }
   }
+
+  public static readonly default = new PublishedBook(
+    positiveNumber(1),
+    positiveNumber(1),
+  );
 }
 
-export type Published = DomainEvent<'Published', EmptyData>;
+export type Published = DomainEvent<
+  'Published',
+  { totalCopies: PositiveNumber }
+>;
 
 export type PublishedEvent = Published;

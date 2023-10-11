@@ -2,21 +2,20 @@ using PublishingHouse.Core.ValueObjects;
 
 namespace PublishingHouse.Books.Published;
 
-using static BookEvent;
-using static BookEvent.PublishedEvent;
 using static OutOfPrint.OutOfPrintEvent;
+using static PublishedEvent;
 
 public record PublishedBook: Book
 {
-    private readonly PositiveInt totalCopies;
-    private readonly PositiveInt totalSoldCopies;
+    private readonly NonNegativeNumber totalCopies;
+    private readonly NonNegativeNumber totalSoldCopies;
 
     private Ratio UnsoldCopiesRatio =>
         new((totalCopies.Value - totalSoldCopies.Value) / (decimal)totalCopies.Value);
 
     public PublishedBook(
-        PositiveInt totalCopies,
-        PositiveInt totalSoldCopies
+        NonNegativeNumber totalCopies,
+        NonNegativeNumber totalSoldCopies
     )
     {
         this.totalCopies = totalCopies;
@@ -32,16 +31,27 @@ public record PublishedBook: Book
         return new MovedToOutOfPrint();
     }
 
-    public static PublishedBook Evolve(PublishedBook book, PublishedEvent @event) =>
+    public static PublishedBook Evolve(PublishedBook state, PublishedEvent @event) =>
         @event switch
         {
             Published =>
                 new PublishedBook(
                     // TODO: Add methods to set sold copies
-                    new PositiveInt(1),
-                    new PositiveInt(1)
+                    new NonNegativeNumber(0),
+                    new NonNegativeNumber(0)
                 ),
-
-            _ => book
+            _ => Default,
         };
+
+    public static readonly PublishedBook Default =
+        new PublishedBook(
+            // TODO: Add methods to set sold copies
+            new NonNegativeNumber(0),
+            new NonNegativeNumber(0)
+        );
+}
+
+public abstract record PublishedEvent: BookEvent
+{
+    public record Published(PositiveInt TotalCopies): PublishedEvent;
 }

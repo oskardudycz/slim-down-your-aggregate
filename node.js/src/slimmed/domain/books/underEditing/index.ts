@@ -1,5 +1,5 @@
 import { InvalidStateError } from '#core/errors';
-import { PositiveNumber } from '#core/typing';
+import { PositiveNumber, positiveNumber } from '#core/typing';
 import { DomainEvent } from '../../../infrastructure/events';
 import {
   Genre,
@@ -22,7 +22,10 @@ export class UnderEditing {
     private readonly isApproved: boolean,
     private readonly reviewers: ReviewerId[],
     private readonly translationLanguages: LanguageId[],
-    private readonly formatTypes: FormatType[],
+    private readonly formats: {
+      formatType: FormatType;
+      totalCopies: PositiveNumber;
+    }[],
   ) {}
 
   addTranslation(
@@ -53,7 +56,7 @@ export class UnderEditing {
   addFormat(format: Format): FormatAdded {
     const { formatType } = format;
 
-    if (this.formatTypes.includes(formatType)) {
+    if (this.formats.some((f) => f.formatType == formatType)) {
       throw InvalidStateError(`Format ${format.formatType} already exists.`);
     }
 
@@ -68,7 +71,7 @@ export class UnderEditing {
   removeFormat(format: Format): FormatRemoved {
     const { formatType } = format;
 
-    if (!this.formatTypes.includes(formatType)) {
+    if (!this.formats.some((f) => f.formatType == formatType)) {
       throw InvalidStateError(`Format ${format.formatType} does not exist.`);
     }
 
@@ -147,9 +150,16 @@ export class UnderEditing {
       );
     }
 
+    const totalCopies = this.formats.reduce(
+      (acc, format) => acc + format.totalCopies,
+      0,
+    );
+
     return {
       type: 'MovedToPrinting',
-      data: {},
+      data: {
+        totalCopies: positiveNumber(totalCopies),
+      },
     };
   }
 
@@ -178,7 +188,7 @@ export class UnderEditing {
           book.isApproved,
           book.reviewers,
           [...book.translationLanguages, languageId],
-          book.formatTypes,
+          book.formats,
         );
       }
       case 'TranslationRemoved': {
@@ -194,12 +204,12 @@ export class UnderEditing {
           book.isApproved,
           book.reviewers,
           book.translationLanguages.filter((t) => t != languageId),
-          book.formatTypes,
+          book.formats,
         );
       }
       case 'FormatAdded': {
         const {
-          format: { formatType },
+          format: { formatType, totalCopies },
         } = data;
 
         return new UnderEditing(
@@ -208,7 +218,7 @@ export class UnderEditing {
           book.isApproved,
           book.reviewers,
           book.translationLanguages,
-          [...book.formatTypes, formatType],
+          [...book.formats, { formatType, totalCopies }],
         );
       }
       case 'FormatRemoved': {
@@ -222,7 +232,7 @@ export class UnderEditing {
           book.isApproved,
           book.reviewers,
           book.translationLanguages,
-          book.formatTypes.filter((t) => t != formatType),
+          book.formats.filter((f) => f.formatType != formatType),
         );
       }
       case 'ReviewerAdded': {
@@ -236,7 +246,7 @@ export class UnderEditing {
           book.isApproved,
           [...book.reviewers, reviewerId],
           book.translationLanguages,
-          book.formatTypes,
+          book.formats,
         );
       }
       case 'Approved': {
@@ -246,7 +256,7 @@ export class UnderEditing {
           true,
           book.reviewers,
           book.translationLanguages,
-          book.formatTypes,
+          book.formats,
         );
       }
       case 'ISBNSet': {
@@ -256,11 +266,20 @@ export class UnderEditing {
           book.isApproved,
           book.reviewers,
           book.translationLanguages,
-          book.formatTypes,
+          book.formats,
         );
       }
     }
   }
+
+  public static readonly default = new UnderEditing(
+    null,
+    false,
+    false,
+    [],
+    [],
+    [],
+  );
 }
 
 export type FormatAdded = DomainEvent<
