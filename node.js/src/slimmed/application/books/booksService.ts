@@ -23,10 +23,24 @@ import { BookId } from '../../domain/books/entities';
 import { BookEvent } from '../../domain/books/book';
 import { IBookFactory } from '../../domain/books/factories';
 import { bookMapper } from '../../persistence/mappers/bookMapper';
-import { Draft, Initial } from '../../domain/books/draft';
-import { InPrint } from '../../domain/books/inPrint';
-import { PublishedBook } from '../../domain/books/published';
-import { UnderEditing } from '../../domain/books/underEditing';
+import { initial, isDraft, isInitial } from '../../domain/books/draft';
+import { isInPrint, moveToPublished } from '../../domain/books/inPrint';
+import { isPublished, moveToOutOfPrint } from '../../domain/books/published';
+import {
+  addFormat,
+  addReviewer,
+  addTranslation,
+  approve,
+  isUnderEditing,
+  moveToPrinting,
+  removeFormat,
+  setISBN,
+} from '../../domain/books/underEditing';
+import {
+  addChapter,
+  createDraft,
+  moveToEditing,
+} from 'src/slimmed/domain/books/draft/decider';
 
 export interface IBooksService {
   createDraft(command: CreateDraft): Promise<void>;
@@ -51,10 +65,9 @@ export class BooksService implements IBooksService {
     const publisherEntity = await this.publisherProvider.getById(publisherId);
 
     return this.handle(bookId, (book) => {
-      if (!(book instanceof Initial))
-        throw InvalidOperationError('Invalid State');
+      if (!isInitial(book)) throw InvalidOperationError('Invalid State');
 
-      return Draft.createDraft(
+      return createDraft(
         book,
         title,
         authorEntity,
@@ -67,31 +80,28 @@ export class BooksService implements IBooksService {
 
   public addChapter = async (command: AddChapter): Promise<void> => {
     return this.handle(command.data.bookId, (book) => {
-      if (!(book instanceof Draft))
-        throw InvalidOperationError('Invalid State');
+      if (!isDraft(book)) throw InvalidOperationError('Invalid State');
 
       const { chapterTitle, chapterContent } = command.data;
 
-      return Draft.addChapter(book, chapterTitle, chapterContent);
+      return addChapter(book, chapterTitle, chapterContent);
     });
   };
 
   public moveToEditing = async (command: MoveToEditing): Promise<void> =>
     this.handle(command.data.bookId, (book) => {
-      if (!(book instanceof Draft))
-        throw InvalidOperationError('Invalid State');
+      if (!isDraft(book)) throw InvalidOperationError('Invalid State');
 
-      return Draft.moveToEditing(book);
+      return moveToEditing(book);
     });
 
   public addTranslation = async (command: AddTranslation): Promise<void> =>
     this.handle(command.data.bookId, (book) => {
-      if (!(book instanceof UnderEditing))
-        throw InvalidOperationError('Invalid State');
+      if (!isUnderEditing(book)) throw InvalidOperationError('Invalid State');
 
       const { translation } = command.data;
 
-      return UnderEditing.addTranslation(
+      return addTranslation(
         book,
         translation,
         this.maximumNumberOfTranslations,
@@ -100,42 +110,38 @@ export class BooksService implements IBooksService {
 
   public addFormat = async (command: AddFormat): Promise<void> =>
     this.handle(command.data.bookId, (book) => {
-      if (!(book instanceof UnderEditing))
-        throw InvalidOperationError('Invalid State');
+      if (!isUnderEditing(book)) throw InvalidOperationError('Invalid State');
 
       const { format } = command.data;
 
-      return UnderEditing.addFormat(book, format);
+      return addFormat(book, format);
     });
 
   public removeFormat = async (command: RemoveFormat): Promise<void> =>
     this.handle(command.data.bookId, (book) => {
-      if (!(book instanceof UnderEditing))
-        throw InvalidOperationError('Invalid State');
+      if (!isUnderEditing(book)) throw InvalidOperationError('Invalid State');
 
       const { format } = command.data;
 
-      return UnderEditing.removeFormat(book, format);
+      return removeFormat(book, format);
     });
 
   public addReviewer = async (command: AddReviewer): Promise<void> =>
     this.handle(command.data.bookId, (book) => {
-      if (!(book instanceof UnderEditing))
-        throw InvalidOperationError('Invalid State');
+      if (!isUnderEditing(book)) throw InvalidOperationError('Invalid State');
 
       const { reviewer } = command.data;
 
-      return UnderEditing.addReviewer(book, reviewer);
+      return addReviewer(book, reviewer);
     });
 
   public approve = async (command: Approve): Promise<void> =>
     this.handle(command.data.bookId, (book) => {
-      if (!(book instanceof UnderEditing))
-        throw InvalidOperationError('Invalid State');
+      if (!isUnderEditing(book)) throw InvalidOperationError('Invalid State');
 
       const { committeeApproval } = command.data;
 
-      return UnderEditing.approve(
+      return approve(
         book,
         committeeApproval,
         this.minimumReviewersRequiredForApproval,
@@ -144,38 +150,34 @@ export class BooksService implements IBooksService {
 
   public setISBN = async (command: SetISBN): Promise<void> =>
     this.handle(command.data.bookId, (book) => {
-      if (!(book instanceof UnderEditing))
-        throw InvalidOperationError('Invalid State');
+      if (!isUnderEditing(book)) throw InvalidOperationError('Invalid State');
 
       const { isbn } = command.data;
 
-      return UnderEditing.setISBN(book, isbn);
+      return setISBN(book, isbn);
     });
 
   public moveToPrinting = async (command: MoveToPrinting): Promise<void> =>
     this.handle(command.data.bookId, (book) => {
-      if (!(book instanceof UnderEditing))
-        throw InvalidOperationError('Invalid State');
+      if (!isUnderEditing(book)) throw InvalidOperationError('Invalid State');
 
-      return UnderEditing.moveToPrinting(book, {
+      return moveToPrinting(book, {
         isGenreLimitReached: () => true,
       });
     });
 
   public moveToPublished = async (command: MoveToPublished): Promise<void> =>
     this.handle(command.data.bookId, (book) => {
-      if (!(book instanceof InPrint))
-        throw InvalidOperationError('Invalid State');
+      if (!isInPrint(book)) throw InvalidOperationError('Invalid State');
 
-      return InPrint.moveToPublished(book);
+      return moveToPublished(book);
     });
 
   public moveToOutOfPrint = async (command: MoveToOutOfPrint): Promise<void> =>
     this.handle(command.data.bookId, (book) => {
-      if (!(book instanceof PublishedBook))
-        throw InvalidOperationError('Invalid State');
+      if (!isPublished(book)) throw InvalidOperationError('Invalid State');
 
-      return PublishedBook.moveToOutOfPrint(
+      return moveToOutOfPrint(
         book,
         this.maxAllowedUnsoldCopiesRatioToGoOutOfPrint,
       );
@@ -196,7 +198,7 @@ export class BooksService implements IBooksService {
     });
   };
 
-  private getDefault = (): Book => Initial.initial;
+  private getDefault = (): Book => initial;
 
   constructor(
     private readonly repository: IBooksRepository,

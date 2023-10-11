@@ -1,29 +1,18 @@
 import { DEFAULT_POSITIVE_NUMBER, PositiveNumber } from '#core/typing';
+import { DeepReadonly } from 'ts-essentials';
 import { DomainEvent } from '../../../infrastructure/events';
-import { Published } from '../published';
 
-export class InPrint {
-  constructor(private totalCopies: PositiveNumber) {}
+export * from './decider';
 
-  static moveToPublished(state: InPrint): Published {
-    return {
-      type: 'Published',
-      data: { totalCopies: state.totalCopies },
-    };
-  }
+export type InPrint = DeepReadonly<{
+  status: 'InPrint';
+  totalCopies: PositiveNumber;
+}>;
 
-  public static evolve(_: InPrint, event: InPrintEvent): InPrint {
-    const { type, data } = event;
-
-    switch (type) {
-      case 'MovedToPrinting': {
-        return new InPrint(data.totalCopies);
-      }
-    }
-  }
-
-  public static readonly initial = new InPrint(DEFAULT_POSITIVE_NUMBER);
-}
+export const initial: InPrint = {
+  status: 'InPrint',
+  totalCopies: DEFAULT_POSITIVE_NUMBER,
+};
 
 export type MovedToPrinting = DomainEvent<
   'MovedToPrinting',
@@ -31,3 +20,19 @@ export type MovedToPrinting = DomainEvent<
 >;
 
 export type InPrintEvent = MovedToPrinting;
+
+export const evolve = (_: InPrint, event: InPrintEvent): InPrint => {
+  const { type, data } = event;
+
+  switch (type) {
+    case 'MovedToPrinting': {
+      return {
+        status: 'InPrint',
+        totalCopies: data.totalCopies,
+      };
+    }
+  }
+};
+
+export const isInPrint = (obj: object): obj is InPrint =>
+  'status' in obj && typeof obj.status === 'string' && obj.status === 'InPrint';

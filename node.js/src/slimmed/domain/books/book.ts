@@ -14,11 +14,42 @@ import {
 import { BookId } from './entities/bookId';
 import { IBookFactory } from './factories/bookFactory';
 import { InvalidOperationError } from '#core/errors';
-import { Initial, Draft, DraftEvent } from './draft';
-import { InPrint, InPrintEvent } from './inPrint';
-import { OutOfPrint, OutOfPrintEvent } from './outOfPrint';
-import { PublishedBook, PublishedEvent } from './published';
-import { UnderEditing, UnderEditingEvent } from './underEditing';
+import {
+  Initial,
+  Draft,
+  DraftEvent,
+  isInitial,
+  initialDraft,
+  isDraft,
+  evolve as evolveDraft,
+} from './draft';
+import {
+  UnderEditing,
+  UnderEditingEvent,
+  evolve as evolveUnderEditing,
+  initial as initialUnderEditing,
+  isUnderEditing,
+} from './underEditing';
+import {
+  InPrint,
+  InPrintEvent,
+  evolve as evolveInPrint,
+  initial as initialInPrint,
+  isInPrint,
+} from './inPrint';
+import {
+  PublishedBook,
+  PublishedEvent,
+  evolve as evolvePublished,
+  initial as initialPublished,
+  isPublished,
+} from './published';
+import {
+  OutOfPrint,
+  OutOfPrintEvent,
+  evolve as evolveOutOfPrint,
+  initial as initialOutOfPrint,
+} from './outOfPrint';
 import { DomainEvent } from 'src/original/infrastructure/events';
 
 export type Book =
@@ -32,18 +63,18 @@ export type Book =
 export const evolve = (book: Book, event: BookEvent): Book => {
   switch (event.type) {
     case 'DraftCreated': {
-      if (!(book instanceof Initial)) return book;
-      return Draft.evolve(new Draft(null, []), event);
+      if (!isInitial(book) || !isDraft(book)) return book;
+      return evolveDraft(initialDraft, event);
     }
     case 'ChapterAdded': {
-      if (!(book instanceof Draft)) return book;
+      if (!isDraft(book)) return book;
 
-      return Draft.evolve(book, event);
+      return evolve(book, event);
     }
     case 'MovedToEditing': {
-      if (!(book instanceof Draft)) return book;
+      if (!isDraft(book)) return book;
 
-      return UnderEditing.evolve(UnderEditing.initial, event);
+      return evolveUnderEditing(initialUnderEditing, event);
     }
     case 'TranslationAdded':
     case 'TranslationRemoved':
@@ -52,24 +83,24 @@ export const evolve = (book: Book, event: BookEvent): Book => {
     case 'ReviewerAdded':
     case 'Approved':
     case 'ISBNSet': {
-      if (!(book instanceof UnderEditing)) return book;
+      if (!isUnderEditing(book)) return book;
 
-      return UnderEditing.evolve(book, event);
+      return evolveUnderEditing(book, event);
     }
     case 'MovedToPrinting': {
-      if (!(book instanceof UnderEditing)) return book;
+      if (!isUnderEditing(book)) return book;
 
-      return InPrint.evolve(InPrint.initial, event);
+      return evolveInPrint(initialInPrint, event);
     }
     case 'Published': {
-      if (!(book instanceof InPrint)) return book;
+      if (!isInPrint(book)) return book;
 
-      return PublishedBook.evolve(PublishedBook.initial, event);
+      return evolvePublished(initialPublished, event);
     }
     case 'MovedToOutOfPrint': {
-      if (!(book instanceof PublishedBook)) return book;
+      if (!isPublished(book)) return book;
 
-      return OutOfPrint.evolve(OutOfPrint.initial, event);
+      return evolveOutOfPrint(initialOutOfPrint, event);
     }
 
     default: {
@@ -116,31 +147,33 @@ export class BookFactory implements IBookFactory {
   ): Book {
     switch (state) {
       case State.Writing:
-        return new Draft(
+        return {
+          status: 'Draft',
           genre,
-          chapters.map((ch) => ch.title),
-        );
+          chapterTitles: chapters.map((ch) => ch.title),
+        };
       case State.Editing: {
         if (genre == null)
           throw InvalidOperationError('Genre should be provided!');
 
-        return new UnderEditing(
+        return {
+          status: 'UnderEditing',
           genre,
-          !!isbn,
-          !!committeeApproval,
-          reviewers.map((r) => r.id),
-          translations.map((r) => r.language.id),
-          formats.map((f) => {
+          isISBNSet: !!isbn,
+          isApproved: !!committeeApproval,
+          reviewers: reviewers.map((r) => r.id),
+          translationLanguages: translations.map((r) => r.language.id),
+          formats: formats.map((f) => {
             return { formatType: f.formatType, totalCopies: f.totalCopies };
           }),
-        );
+        };
       }
       case State.Printing: {
         const totalCopies = formats.reduce(
           (acc, format) => acc + format.totalCopies,
           0,
         );
-        return new InPrint(positiveNumber(totalCopies));
+        return { status: 'InPrint', totalCopies: positiveNumber(totalCopies) };
       }
       case State.Published: {
         const totalCopies = formats.reduce(
@@ -152,13 +185,14 @@ export class BookFactory implements IBookFactory {
           0,
         );
 
-        return new PublishedBook(
-          positiveNumber(totalCopies),
-          positiveNumber(totalSoldCopies),
-        );
+        return {
+          status: 'Published',
+          totalCopies: positiveNumber(totalCopies),
+          totalSoldCopies: positiveNumber(totalSoldCopies),
+        };
       }
       case State.OutOfPrint:
-        return new OutOfPrint();
+        return { status: 'OutOfPrint' };
     }
   }
 }
