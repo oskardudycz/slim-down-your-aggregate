@@ -55,7 +55,8 @@ export class BooksService implements IBooksService {
       if (!(book instanceof Initial))
         throw InvalidOperationError('Invalid State');
 
-      return book.createDraft(
+      return Initial.createDraft(
+        book,
         title,
         authorEntity,
         publisherEntity,
@@ -72,7 +73,7 @@ export class BooksService implements IBooksService {
 
       const { chapterTitle, chapterContent } = command.data;
 
-      return book.addChapter(chapterTitle, chapterContent);
+      return Draft.addChapter(book, chapterTitle, chapterContent);
     });
   };
 
@@ -81,7 +82,7 @@ export class BooksService implements IBooksService {
       if (!(book instanceof Draft))
         throw InvalidOperationError('Invalid State');
 
-      return book.moveToEditing();
+      return Draft.moveToEditing(book);
     });
 
   public addTranslation = async (command: AddTranslation): Promise<void> =>
@@ -91,7 +92,11 @@ export class BooksService implements IBooksService {
 
       const { translation } = command.data;
 
-      return book.addTranslation(translation, this.maximumNumberOfTranslations);
+      return UnderEditing.addTranslation(
+        book,
+        translation,
+        this.maximumNumberOfTranslations,
+      );
     });
 
   public addFormat = async (command: AddFormat): Promise<void> =>
@@ -101,7 +106,7 @@ export class BooksService implements IBooksService {
 
       const { format } = command.data;
 
-      return book.addFormat(format);
+      return UnderEditing.addFormat(book, format);
     });
 
   public removeFormat = async (command: RemoveFormat): Promise<void> =>
@@ -111,7 +116,7 @@ export class BooksService implements IBooksService {
 
       const { format } = command.data;
 
-      return book.removeFormat(format);
+      return UnderEditing.removeFormat(book, format);
     });
 
   public addReviewer = async (command: AddReviewer): Promise<void> =>
@@ -121,7 +126,7 @@ export class BooksService implements IBooksService {
 
       const { reviewer } = command.data;
 
-      return book.addReviewer(reviewer);
+      return UnderEditing.addReviewer(book, reviewer);
     });
 
   public approve = async (command: Approve): Promise<void> =>
@@ -131,7 +136,8 @@ export class BooksService implements IBooksService {
 
       const { committeeApproval } = command.data;
 
-      return book.approve(
+      return UnderEditing.approve(
+        book,
         committeeApproval,
         this.minimumReviewersRequiredForApproval,
       );
@@ -144,7 +150,7 @@ export class BooksService implements IBooksService {
 
       const { isbn } = command.data;
 
-      return book.setISBN(isbn);
+      return UnderEditing.setISBN(book, isbn);
     });
 
   public moveToPrinting = async (command: MoveToPrinting): Promise<void> =>
@@ -152,7 +158,9 @@ export class BooksService implements IBooksService {
       if (!(book instanceof UnderEditing))
         throw InvalidOperationError('Invalid State');
 
-      return book.moveToPrinting({ isGenreLimitReached: () => true });
+      return UnderEditing.moveToPrinting(book, {
+        isGenreLimitReached: () => true,
+      });
     });
 
   public moveToPublished = async (command: MoveToPublished): Promise<void> =>
@@ -160,7 +168,7 @@ export class BooksService implements IBooksService {
       if (!(book instanceof InPrint))
         throw InvalidOperationError('Invalid State');
 
-      return book.moveToPublished();
+      return InPrint.moveToPublished(book);
     });
 
   public moveToOutOfPrint = async (command: MoveToOutOfPrint): Promise<void> =>
@@ -168,7 +176,8 @@ export class BooksService implements IBooksService {
       if (!(book instanceof PublishedBook))
         throw InvalidOperationError('Invalid State');
 
-      return book.moveToOutOfPrint(
+      return PublishedBook.moveToOutOfPrint(
+        book,
         this.maxAllowedUnsoldCopiesRatioToGoOutOfPrint,
       );
     });

@@ -14,10 +14,11 @@ export class PublishedBook {
     return ratio((this.totalCopies - this.totalSoldCopies) / this.totalCopies);
   }
 
-  moveToOutOfPrint(
+  static moveToOutOfPrint(
+    state: PublishedBook,
     maxAllowedUnsoldCopiesRatioToGoOutOfPrint: Ratio,
   ): MovedToOutOfPrint {
-    if (this.unsoldCopiesRatio > maxAllowedUnsoldCopiesRatioToGoOutOfPrint) {
+    if (state.unsoldCopiesRatio > maxAllowedUnsoldCopiesRatioToGoOutOfPrint) {
       throw InvalidStateError(
         'Cannot move to Out of Print state if more than 10% of total copies are unsold.',
       );

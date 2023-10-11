@@ -22,9 +22,9 @@ public record PublishedBook: Book
         this.totalSoldCopies = totalSoldCopies;
     }
 
-    public MovedToOutOfPrint MoveToOutOfPrint(Ratio maxAllowedUnsoldCopiesRatioToGoOutOfPrint)
+    public static MovedToOutOfPrint MoveToOutOfPrint(PublishedBook state, Ratio maxAllowedUnsoldCopiesRatioToGoOutOfPrint)
     {
-        if (UnsoldCopiesRatio.CompareTo(maxAllowedUnsoldCopiesRatioToGoOutOfPrint) > 0)
+        if (state.UnsoldCopiesRatio.CompareTo(maxAllowedUnsoldCopiesRatioToGoOutOfPrint) > 0)
             throw new InvalidOperationException(
                 "Cannot move to Out of Print state if more than 10% of total copies are unsold.");
 

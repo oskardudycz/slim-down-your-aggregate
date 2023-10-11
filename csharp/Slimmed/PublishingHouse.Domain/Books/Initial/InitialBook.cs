@@ -8,7 +8,8 @@ using static DraftEvent;
 
 public record InitialBook: Book
 {
-    public DraftCreated CreateDraft(
+    public static DraftCreated CreateDraft(
+        InitialBook state,
         Title title,
         Author author,
         Publisher publisher,
@@ -16,4 +17,6 @@ public record InitialBook: Book
         Genre? genre
     ) =>
         new DraftCreated(title, author, publisher, edition, genre);
+
+    public static InitialBook Default = new();
 }

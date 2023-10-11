@@ -28,18 +28,19 @@ export class UnderEditing {
     }[],
   ) {}
 
-  addTranslation(
+  static addTranslation(
+    state: UnderEditing,
     translation: Translation,
     maximumNumberOfTranslations: PositiveNumber,
   ): TranslationAdded {
     const { language } = translation;
 
-    if (this.translationLanguages.includes(language.id))
+    if (state.translationLanguages.includes(language.id))
       throw InvalidStateError(
         `Translation to ${language.name} already exists.`,
       );
 
-    if (this.translationLanguages.length > maximumNumberOfTranslations) {
+    if (state.translationLanguages.length > maximumNumberOfTranslations) {
       throw InvalidStateError(
         `Cannot add more translations. Maximum ${maximumNumberOfTranslations} translations are allowed.`,
       );
@@ -53,10 +54,10 @@ export class UnderEditing {
     };
   }
 
-  addFormat(format: Format): FormatAdded {
+  static addFormat(state: UnderEditing, format: Format): FormatAdded {
     const { formatType } = format;
 
-    if (this.formats.some((f) => f.formatType == formatType)) {
+    if (state.formats.some((f) => f.formatType == formatType)) {
       throw InvalidStateError(`Format ${format.formatType} already exists.`);
     }
 
@@ -68,10 +69,10 @@ export class UnderEditing {
     };
   }
 
-  removeFormat(format: Format): FormatRemoved {
+  static removeFormat(state: UnderEditing, format: Format): FormatRemoved {
     const { formatType } = format;
 
-    if (!this.formats.some((f) => f.formatType == formatType)) {
+    if (!state.formats.some((f) => f.formatType == formatType)) {
       throw InvalidStateError(`Format ${format.formatType} does not exist.`);
     }
 
@@ -83,10 +84,10 @@ export class UnderEditing {
     };
   }
 
-  addReviewer(reviewer: Reviewer): ReviewerAdded {
+  static addReviewer(state: UnderEditing, reviewer: Reviewer): ReviewerAdded {
     const { id: reviewerId } = reviewer;
 
-    if (this.reviewers.includes(reviewerId)) {
+    if (state.reviewers.includes(reviewerId)) {
       const reviewerName: string = reviewer.name;
       throw InvalidStateError(`${reviewerName} is already a reviewer.`);
     }
@@ -99,11 +100,12 @@ export class UnderEditing {
     };
   }
 
-  approve(
+  static approve(
+    state: UnderEditing,
     committeeApproval: CommitteeApproval,
     minimumReviewersRequiredForApproval: PositiveNumber,
   ): Approved {
-    if (this.reviewers.length < minimumReviewersRequiredForApproval) {
+    if (state.reviewers.length < minimumReviewersRequiredForApproval) {
       throw InvalidStateError(
         'A book cannot be approved unless it has been reviewed by at least three reviewers.',
       );
@@ -117,8 +119,8 @@ export class UnderEditing {
     };
   }
 
-  setISBN(isbn: ISBN): ISBNSet {
-    if (this.isISBNSet) {
+  static setISBN(state: UnderEditing, isbn: ISBN): ISBNSet {
+    if (state.isISBNSet) {
       throw InvalidStateError('Cannot change already set ISBN.');
     }
 
@@ -130,27 +132,30 @@ export class UnderEditing {
     };
   }
 
-  moveToPrinting(publishingHouse: IPublishingHouse): MovedToPrinting {
-    if (this.isApproved === null) {
+  static moveToPrinting(
+    state: UnderEditing,
+    publishingHouse: IPublishingHouse,
+  ): MovedToPrinting {
+    if (state.isApproved === null) {
       throw InvalidStateError(
         'Cannot move to printing state until the book has been approved.',
       );
     }
 
-    if (this.genre === null) {
+    if (state.genre === null) {
       throw InvalidStateError(
         'Book can be moved to the printing only when genre is specified',
       );
     }
 
     // Check for genre limit
-    if (!publishingHouse.isGenreLimitReached(this.genre)) {
+    if (!publishingHouse.isGenreLimitReached(state.genre)) {
       throw InvalidStateError(
         'Cannot move to printing until the genre limit is reached.',
       );
     }
 
-    const totalCopies = this.formats.reduce(
+    const totalCopies = state.formats.reduce(
       (acc, format) => acc + format.totalCopies,
       0,
     );
@@ -164,7 +169,7 @@ export class UnderEditing {
   }
 
   public static evolve(
-    book: UnderEditing,
+    state: UnderEditing,
     event: UnderEditingEvent,
   ): UnderEditing {
     const { type, data } = event;
@@ -183,12 +188,12 @@ export class UnderEditing {
         } = data;
 
         return new UnderEditing(
-          book.genre,
-          book.isISBNSet,
-          book.isApproved,
-          book.reviewers,
-          [...book.translationLanguages, languageId],
-          book.formats,
+          state.genre,
+          state.isISBNSet,
+          state.isApproved,
+          state.reviewers,
+          [...state.translationLanguages, languageId],
+          state.formats,
         );
       }
       case 'TranslationRemoved': {
@@ -199,12 +204,12 @@ export class UnderEditing {
         } = data;
 
         return new UnderEditing(
-          book.genre,
-          book.isISBNSet,
-          book.isApproved,
-          book.reviewers,
-          book.translationLanguages.filter((t) => t != languageId),
-          book.formats,
+          state.genre,
+          state.isISBNSet,
+          state.isApproved,
+          state.reviewers,
+          state.translationLanguages.filter((t) => t != languageId),
+          state.formats,
         );
       }
       case 'FormatAdded': {
@@ -213,12 +218,12 @@ export class UnderEditing {
         } = data;
 
         return new UnderEditing(
-          book.genre,
-          book.isISBNSet,
-          book.isApproved,
-          book.reviewers,
-          book.translationLanguages,
-          [...book.formats, { formatType, totalCopies }],
+          state.genre,
+          state.isISBNSet,
+          state.isApproved,
+          state.reviewers,
+          state.translationLanguages,
+          [...state.formats, { formatType, totalCopies }],
         );
       }
       case 'FormatRemoved': {
@@ -227,12 +232,12 @@ export class UnderEditing {
         } = data;
 
         return new UnderEditing(
-          book.genre,
-          book.isISBNSet,
-          book.isApproved,
-          book.reviewers,
-          book.translationLanguages,
-          book.formats.filter((f) => f.formatType != formatType),
+          state.genre,
+          state.isISBNSet,
+          state.isApproved,
+          state.reviewers,
+          state.translationLanguages,
+          state.formats.filter((f) => f.formatType != formatType),
         );
       }
       case 'ReviewerAdded': {
@@ -241,32 +246,32 @@ export class UnderEditing {
         } = data;
 
         return new UnderEditing(
-          book.genre,
-          book.isISBNSet,
-          book.isApproved,
-          [...book.reviewers, reviewerId],
-          book.translationLanguages,
-          book.formats,
+          state.genre,
+          state.isISBNSet,
+          state.isApproved,
+          [...state.reviewers, reviewerId],
+          state.translationLanguages,
+          state.formats,
         );
       }
       case 'Approved': {
         return new UnderEditing(
-          book.genre,
-          book.isISBNSet,
+          state.genre,
+          state.isISBNSet,
           true,
-          book.reviewers,
-          book.translationLanguages,
-          book.formats,
+          state.reviewers,
+          state.translationLanguages,
+          state.formats,
         );
       }
       case 'ISBNSet': {
         return new UnderEditing(
-          book.genre,
+          state.genre,
           true,
-          book.isApproved,
-          book.reviewers,
-          book.translationLanguages,
-          book.formats,
+          state.isApproved,
+          state.reviewers,
+          state.translationLanguages,
+          state.formats,
         );
       }
     }

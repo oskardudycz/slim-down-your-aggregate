@@ -8,8 +8,8 @@ using static PublishedEvent;
 
 public record BookInPrint(PositiveInt TotalCopies): Book
 {
-    public Published MoveToPublished() =>
-        new Published(TotalCopies);
+    public static Published MoveToPublished(BookInPrint state) =>
+        new Published(state.TotalCopies);
 
     public static BookInPrint Evolve(BookInPrint book, InPrintEvent @event) =>
         @event switch

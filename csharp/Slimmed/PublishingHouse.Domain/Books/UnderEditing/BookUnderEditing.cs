@@ -13,17 +13,17 @@ public record BookUnderEditing: Book
     private readonly Genre? genre;
     private readonly bool isISBNSet;
     private readonly bool isApproved;
-    private readonly List<ReviewerId> reviewers;
-    private readonly List<LanguageId> translationLanguages;
-    private readonly List<(FormatType FormatType, PositiveInt TotalCopies)> formats;
+    private readonly IReadOnlyList<ReviewerId> reviewers;
+    private readonly IReadOnlyList<LanguageId> translationLanguages;
+    private readonly IReadOnlyList<(FormatType FormatType, PositiveInt TotalCopies)> formats;
 
     internal BookUnderEditing(
         Genre? genre,
         bool isISBNSet,
         bool isApproved,
-        List<ReviewerId> reviewers,
-        List<LanguageId> translationLanguages,
-        List<(FormatType FormatType, PositiveInt TotalCopies)> formats
+        IReadOnlyList<ReviewerId> reviewers,
+        IReadOnlyList<LanguageId> translationLanguages,
+        IReadOnlyList<(FormatType FormatType, PositiveInt TotalCopies)> formats
     )
     {
         this.genre = genre;
@@ -34,75 +34,83 @@ public record BookUnderEditing: Book
         this.formats = formats;
     }
 
-    public TranslationAdded AddTranslation(Translation translation, PositiveInt maximumNumberOfTranslations)
+    public static TranslationAdded AddTranslation(
+        BookUnderEditing state,
+        Translation translation,
+        PositiveInt maximumNumberOfTranslations
+    )
     {
         var languageId = translation.Language.Id;
 
-        if (translationLanguages.Contains(languageId))
+        if (state.translationLanguages.Contains(languageId))
             throw new InvalidOperationException($"Translation to {translation.Language.Name} already exists.");
 
-        if (translationLanguages.Count >= maximumNumberOfTranslations.Value)
+        if (state.translationLanguages.Count >= maximumNumberOfTranslations.Value)
             throw new InvalidOperationException(
                 $"Cannot add more translations. Maximum {maximumNumberOfTranslations.Value} translations are allowed.");
 
         return new TranslationAdded(translation);
     }
 
-    public FormatAdded AddFormat(Format format)
+    public static FormatAdded AddFormat(BookUnderEditing state, Format format)
     {
-        if (formats.Any(f => f.FormatType == format.FormatType))
+        if (state.formats.Any(f => f.FormatType == format.FormatType))
             throw new InvalidOperationException($"Format {format.FormatType} already exists.");
 
         return new FormatAdded(format);
     }
 
-    public FormatRemoved RemoveFormat(Format format)
+    public static FormatRemoved RemoveFormat(BookUnderEditing state, Format format)
     {
-        if (formats.All(f => f.FormatType != format.FormatType))
+        if (state.formats.All(f => f.FormatType != format.FormatType))
             throw new InvalidOperationException($"Format {format.FormatType} does not exist.");
 
         return new FormatRemoved(format);
     }
 
-    public ReviewerAdded AddReviewer(Reviewer reviewer)
+    public static ReviewerAdded AddReviewer(BookUnderEditing state, Reviewer reviewer)
     {
-        if (reviewers.Contains(reviewer.Id))
+        if (state.reviewers.Contains(reviewer.Id))
             throw new InvalidOperationException(
                 $"{reviewer.Name} is already a reviewer.");
 
         return new ReviewerAdded(reviewer);
     }
 
-    public Approved Approve(CommitteeApproval committeeApproval, PositiveInt minimumReviewersRequiredForApproval)
+    public static Approved Approve(
+        BookUnderEditing state,
+        CommitteeApproval committeeApproval,
+        PositiveInt minimumReviewersRequiredForApproval
+        )
     {
-        if (reviewers.Count < minimumReviewersRequiredForApproval.Value)
+        if (state.reviewers.Count < minimumReviewersRequiredForApproval.Value)
             throw new InvalidOperationException(
                 "A book cannot be approved unless it has been reviewed by at least three reviewers.");
 
         return new Approved(committeeApproval);
     }
 
-    public ISBNSet SetISBN(ISBN isbn)
+    public static ISBNSet SetISBN(BookUnderEditing state, ISBN isbn)
     {
-        if (isISBNSet)
+        if (state.isISBNSet)
             throw new InvalidOperationException(
                 "Cannot change already set ISBN.");
 
         return new ISBNSet(isbn);
     }
 
-    public MovedToPrinting MoveToPrinting(IPublishingHouse publishingHouse)
+    public static MovedToPrinting MoveToPrinting(BookUnderEditing state, IPublishingHouse publishingHouse)
     {
-        if (isApproved)
+        if (state.isApproved)
             throw new InvalidOperationException("Cannot move to printing state until the book has been approved.");
 
-        if (genre == null)
+        if (state.genre == null)
             throw new InvalidOperationException("Book can be moved to the printing only when genre is specified");
 
-        if (!publishingHouse.IsGenreLimitReached(genre))
+        if (!publishingHouse.IsGenreLimitReached(state.genre))
             throw new InvalidOperationException("Cannot move to printing until the genre limit is reached.");
 
-        return new MovedToPrinting(new PositiveInt(formats.Sum(f=> f.TotalCopies.Value)));
+        return new MovedToPrinting(new PositiveInt(state.formats.Sum(f => f.TotalCopies.Value)));
     }
 
     public static BookUnderEditing Evolve(BookUnderEditing book, UnderEditingEvent @event) =>

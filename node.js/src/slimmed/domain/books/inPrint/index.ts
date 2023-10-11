@@ -5,10 +5,10 @@ import { Published } from '../published';
 export class InPrint {
   constructor(private totalCopies: PositiveNumber) {}
 
-  moveToPublished(): Published {
+  static moveToPublished(state: InPrint): Published {
     return {
       type: 'Published',
-      data: { totalCopies: this.totalCopies },
+      data: { totalCopies: state.totalCopies },
     };
   }
 
