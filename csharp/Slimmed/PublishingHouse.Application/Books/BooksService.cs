@@ -5,6 +5,7 @@ using PublishingHouse.Books.Entities;
 using PublishingHouse.Books.Factories;
 using PublishingHouse.Books.Initial;
 using PublishingHouse.Books.InPrint;
+using PublishingHouse.Books.OutOfPrint;
 using PublishingHouse.Books.Published;
 using PublishingHouse.Books.Publishers;
 using PublishingHouse.Books.Services;
@@ -28,7 +29,8 @@ public class BooksService: IBooksService
         await Handle<InitialBook>(
             bookId,
             book =>
-                book.CreateDraft(
+                InitialBook.CreateDraft(
+                    book,
                     title,
                     authorEntity,
                     publisherEntity,
@@ -41,41 +43,42 @@ public class BooksService: IBooksService
         Handle<BookDraft>(command.BookId, book =>
         {
             var (_, chapterTitle, chapterContent) = command;
-            return book.AddChapter(chapterTitle, chapterContent);
+            return BookDraft.AddChapter(book, chapterTitle, chapterContent);
         }, ct);
 
     public Task MoveToEditing(MoveToEditing command, CancellationToken ct) =>
-        Handle<BookDraft>(command.BookId, book => book.MoveToEditing(), ct);
+        Handle<BookDraft>(command.BookId, BookDraft.MoveToEditing, ct);
 
     public Task AddTranslation(AddTranslation command, CancellationToken ct) =>
         Handle<BookUnderEditing>(command.BookId,
-            book => book.AddTranslation(command.Translation, maximumNumberOfTranslations), ct);
+            book => BookUnderEditing.AddTranslation(book, command.Translation, maximumNumberOfTranslations), ct);
 
     public Task AddFormat(AddFormat command, CancellationToken ct) =>
-        Handle<BookUnderEditing>(command.BookId, book => book.AddFormat(command.Format), ct);
+        Handle<BookUnderEditing>(command.BookId, book => BookUnderEditing.AddFormat(book, command.Format), ct);
 
     public Task RemoveFormat(RemoveFormat command, CancellationToken ct) =>
-        Handle<BookUnderEditing>(command.BookId, book => book.RemoveFormat(command.Format), ct);
+        Handle<BookUnderEditing>(command.BookId, book => BookUnderEditing.RemoveFormat(book, command.Format), ct);
 
     public Task AddReviewer(AddReviewer command, CancellationToken ct) =>
-        Handle<BookUnderEditing>(command.BookId, book => book.AddReviewer(command.Reviewer), ct);
+        Handle<BookUnderEditing>(command.BookId, book => BookUnderEditing.AddReviewer(book, command.Reviewer), ct);
 
     public Task Approve(Approve command, CancellationToken ct) =>
         Handle<BookUnderEditing>(command.BookId,
-            book => book.Approve(command.CommitteeApproval, minimumReviewersRequiredForApproval), ct);
+            book => BookUnderEditing.Approve(book, command.CommitteeApproval, minimumReviewersRequiredForApproval), ct);
 
     public Task SetISBN(SetISBN command, CancellationToken ct) =>
-        Handle<BookUnderEditing>(command.BookId, book => book.SetISBN(command.ISBN), ct);
+        Handle<BookUnderEditing>(command.BookId, book => BookUnderEditing.SetISBN(book, command.ISBN), ct);
 
     public Task MoveToPrinting(MoveToPrinting command, CancellationToken ct) =>
-        Handle<BookUnderEditing>(command.BookId, book => book.MoveToPrinting((null as IPublishingHouse)!), ct);
+        Handle<BookUnderEditing>(command.BookId, book => BookUnderEditing.MoveToPrinting(book, (null as IPublishingHouse)!),
+            ct);
 
     public Task MoveToPublished(MoveToPublished command, CancellationToken ct) =>
-        Handle<BookInPrint>(command.BookId, book => book.MoveToPublished(), ct);
+        Handle<BookInPrint>(command.BookId, BookInPrint.MoveToPublished, ct);
 
     public Task MoveToOutOfPrint(MoveToOutOfPrint command, CancellationToken ct) =>
         Handle<PublishedBook>(command.BookId,
-            book => book.MoveToOutOfPrint(maxAllowedUnsoldCopiesRatioToGoOutOfPrint), ct);
+            book => PublishedBook.MoveToOutOfPrint(book, maxAllowedUnsoldCopiesRatioToGoOutOfPrint), ct);
 
     private Task Handle<T>(BookId id, Func<T, BookEvent> handle, CancellationToken ct) where T : Book =>
         repository.GetAndUpdate(id, (entity) =>
@@ -89,7 +92,7 @@ public class BooksService: IBooksService
             return new[] { @event };
         }, ct);
 
-    private Book GetDefault() => new InitialBook();
+    private Book GetDefault() => InitialBook.Default;
 
     public BooksService(
         IBooksRepository repository,

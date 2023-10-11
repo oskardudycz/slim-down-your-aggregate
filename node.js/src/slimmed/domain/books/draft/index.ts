@@ -19,21 +19,25 @@ export class Draft {
     private readonly chapterTitles: ChapterTitle[] = [],
   ) {}
 
-  addChapter(title: ChapterTitle, content: ChapterContent): ChapterAdded {
-    if (this.chapterTitles.includes(title)) {
+  static addChapter(
+    book: Draft,
+    title: ChapterTitle,
+    content: ChapterContent,
+  ): ChapterAdded {
+    if (book.chapterTitles.includes(title)) {
       throw InvalidStateError(`Chapter with title ${title} already exists.`);
     }
 
-    if (!title.startsWith(`Chapter ${this.chapterTitles.length + 1}`)) {
+    if (!title.startsWith(`Chapter ${book.chapterTitles.length + 1}`)) {
       throw InvalidStateError(
         `Chapter should be added in sequence. The title of the next chapter should be 'Chapter ${
-          this.chapterTitles.length + 1
+          book.chapterTitles.length + 1
         }'`,
       );
     }
 
     const chapter = new Chapter(
-      chapterNumber(this.chapterTitles.length + 1),
+      chapterNumber(book.chapterTitles.length + 1),
       title,
       content,
     );
@@ -46,14 +50,14 @@ export class Draft {
     };
   }
 
-  moveToEditing(): MovedToEditing {
-    if (this.chapterTitles.length < 1) {
+  static moveToEditing(book: Draft): MovedToEditing {
+    if (book.chapterTitles.length < 1) {
       throw InvalidStateError(
         'A book must have at least one chapter to move to the Editing state.',
       );
     }
 
-    if (!this.genre) {
+    if (!book.genre) {
       throw InvalidStateError(
         'Book can be moved to editing only when genre is specified',
       );
@@ -62,7 +66,7 @@ export class Draft {
     return {
       type: 'MovedToEditing',
       data: {
-        genre: this.genre,
+        genre: book.genre,
       },
     };
   }

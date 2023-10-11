@@ -3,7 +3,8 @@ import { DraftCreated } from '../draft';
 import { Title, Author, Publisher, Genre } from '../entities';
 
 export class Initial {
-  createDraft(
+  static createDraft(
+    _initial: Initial,
     title: Title,
     author: Author,
     publisher: Publisher,
