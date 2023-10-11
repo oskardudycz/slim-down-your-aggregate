@@ -61,6 +61,9 @@ public record BookDraft: Book
                 ),
             _ => book
         };
+
+    public static readonly BookDraft Default =
+        new(null, new List<ChapterTitle>());
 }
 
 public abstract record DraftEvent: BookEvent

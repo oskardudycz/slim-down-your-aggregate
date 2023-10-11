@@ -2,18 +2,7 @@ using PublishingHouse.Books.Entities;
 
 namespace PublishingHouse.Books;
 
-public abstract record BookEvent
-{
-
-
-
-
-
-    public abstract record PublishedEvent: BookEvent
-    {
-        public record Published: PublishedEvent;
-    }
-}
+public abstract record BookEvent;
 
 public abstract record BookExternalEvent
 {

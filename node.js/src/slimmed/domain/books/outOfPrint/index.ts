@@ -10,6 +10,8 @@ export class OutOfPrint {
       }
     }
   }
+
+  public static readonly default = new OutOfPrint();
 }
 
 export type MovedToOutOfPrint = DomainEvent<'MovedToOutOfPrint', EmptyData>;

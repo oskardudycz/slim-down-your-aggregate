@@ -7,7 +7,6 @@ using PublishingHouse.Books.OutOfPrint;
 using PublishingHouse.Books.Published;
 using PublishingHouse.Books.UnderEditing;
 using PublishingHouse.Core.ValueObjects;
-using static PublishingHouse.Books.BookEvent;
 using static PublishingHouse.Books.UnderEditing.UnderEditingEvent;
 using static PublishingHouse.Books.InPrint.InPrintEvent;
 using static PublishingHouse.Books.OutOfPrint.OutOfPrintEvent;
@@ -22,35 +21,29 @@ public abstract record Book
         @event switch
         {
             DraftEvent draftEvent => book is InitialBook
-                ? BookDraft.Evolve(new BookDraft(null, new List<ChapterTitle>()), draftEvent)
+                ? BookDraft.Evolve(BookDraft.Default, draftEvent)
                 : book,
 
             MovedToEditing movedToEditing => book is BookDraft
-                ? BookUnderEditing.Evolve(
-                    new BookUnderEditing(
-                        null, false, false, new List<ReviewerId>(),
-                        new List<LanguageId>(), new List<FormatType>()
-                    ),
-                    movedToEditing)
+                ? BookUnderEditing.Evolve(BookUnderEditing.Default, movedToEditing)
                 : book,
 
             UnderEditingEvent underEditingEvent => book is BookUnderEditing underEditing
-                ? Evolve(underEditing, underEditingEvent)
+                ? BookUnderEditing.Evolve(underEditing, underEditingEvent)
                 : book,
+
             MovedToPrinting movedToPrinting => book is BookUnderEditing
-                // TODO: Add methods to set total items per format
-                ? BookInPrint.Evolve(new BookInPrint(), movedToPrinting)
+                ? BookInPrint.Evolve(BookInPrint.Default, movedToPrinting)
                 : book,
+
             PublishedEvent.Published published => book is BookInPrint
-                // TODO: Add methods to set sold copies
-                ? PublishedBook.Evolve(
-                    new PublishedBook(new PositiveInt(1), new PositiveInt(1)),
-                    published
-                )
+                ? PublishedBook.Evolve(PublishedBook.Default, published)
                 : book,
+
             MovedToOutOfPrint movedToOutOfPrint => book is PublishedBook
-                ? BookOutOfPrint.Evolve(new BookOutOfPrint(), movedToOutOfPrint)
+                ? BookOutOfPrint.Evolve(BookOutOfPrint.Default, movedToOutOfPrint)
                 : book,
+
             _ => book
         };
 
@@ -79,14 +72,14 @@ public abstract record Book
                         committeeApproval != null,
                         reviewers.Select(r => r.Id).ToList(),
                         translations.Select(t => t.Language.Id).ToList(),
-                        formats.Select(f => f.FormatType).ToList()
+                        formats.Select(f => (f.FormatType, f.TotalCopies)).ToList()
                     ),
                 State.Printing =>
-                    new BookInPrint(),
+                    new BookInPrint(new PositiveInt(formats.Sum(f => f.TotalCopies.Value))),
                 State.Published =>
                     new PublishedBook(
-                        new PositiveInt(formats.Sum(f => f.TotalCopies.Value)),
-                        new PositiveInt(formats.Sum(f => f.SoldCopies.Value))
+                        new NonNegativeNumber(formats.Sum(f => f.TotalCopies.Value)),
+                        new NonNegativeNumber(formats.Sum(f => f.SoldCopies.Value))
                     ),
                 State.OutOfPrint =>
                     new BookOutOfPrint(),

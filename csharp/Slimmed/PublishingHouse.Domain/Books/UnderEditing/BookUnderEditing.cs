@@ -15,7 +15,7 @@ public record BookUnderEditing: Book
     private readonly bool isApproved;
     private readonly List<ReviewerId> reviewers;
     private readonly List<LanguageId> translationLanguages;
-    private readonly List<FormatType> formatTypes;
+    private readonly List<(FormatType FormatType, PositiveInt TotalCopies)> formats;
 
     internal BookUnderEditing(
         Genre? genre,
@@ -23,7 +23,7 @@ public record BookUnderEditing: Book
         bool isApproved,
         List<ReviewerId> reviewers,
         List<LanguageId> translationLanguages,
-        List<FormatType> formatTypes
+        List<(FormatType FormatType, PositiveInt TotalCopies)> formats
     )
     {
         this.genre = genre;
@@ -31,7 +31,7 @@ public record BookUnderEditing: Book
         this.isApproved = isApproved;
         this.reviewers = reviewers;
         this.translationLanguages = translationLanguages;
-        this.formatTypes = formatTypes;
+        this.formats = formats;
     }
 
     public TranslationAdded AddTranslation(Translation translation, PositiveInt maximumNumberOfTranslations)
@@ -50,7 +50,7 @@ public record BookUnderEditing: Book
 
     public FormatAdded AddFormat(Format format)
     {
-        if (formatTypes.Contains(format.FormatType))
+        if (formats.Any(f => f.FormatType == format.FormatType))
             throw new InvalidOperationException($"Format {format.FormatType} already exists.");
 
         return new FormatAdded(format);
@@ -58,7 +58,7 @@ public record BookUnderEditing: Book
 
     public FormatRemoved RemoveFormat(Format format)
     {
-        if (!formatTypes.Remove(format.FormatType))
+        if (formats.All(f => f.FormatType != format.FormatType))
             throw new InvalidOperationException($"Format {format.FormatType} does not exist.");
 
         return new FormatRemoved(format);
@@ -102,7 +102,7 @@ public record BookUnderEditing: Book
         if (!publishingHouse.IsGenreLimitReached(genre))
             throw new InvalidOperationException("Cannot move to printing until the genre limit is reached.");
 
-        return new MovedToPrinting();
+        return new MovedToPrinting(new PositiveInt(formats.Sum(f=> f.TotalCopies.Value)));
     }
 
     public static BookUnderEditing Evolve(BookUnderEditing book, UnderEditingEvent @event) =>
@@ -115,7 +115,7 @@ public record BookUnderEditing: Book
                     false,
                     new List<ReviewerId>(),
                     new List<LanguageId>(),
-                    new List<FormatType>()
+                    new List<(FormatType FormatType, PositiveInt TotalCopies)>()
                 ),
 
             TranslationAdded(var translation) =>
@@ -125,49 +125,44 @@ public record BookUnderEditing: Book
                     book.isApproved,
                     book.reviewers,
                     book.translationLanguages.Union(new[] { translation.Language.Id }).ToList(),
-                    book.formatTypes
+                    book.formats
                 ),
-
-            TranslationRemoved(var translation) =>
+            TranslationRemoved (var translation) =>
                 new BookUnderEditing(
                     book.genre,
                     book.isISBNSet,
                     book.isApproved,
                     book.reviewers,
                     book.translationLanguages.Where(t => t != translation.Language.Id).ToList(),
-                    book.formatTypes
+                    book.formats
                 ),
-
-            FormatAdded(var format) =>
+            FormatAdded (var format) =>
                 new BookUnderEditing(
                     book.genre,
                     book.isISBNSet,
                     book.isApproved,
                     book.reviewers,
                     book.translationLanguages,
-                    book.formatTypes.Union(new[] { format.FormatType }).ToList()
+                    book.formats.Union(new[] { (format.FormatType, format.TotalCopies) }).ToList()
                 ),
-
-            FormatRemoved(var format) =>
+            FormatRemoved (var format) =>
                 new BookUnderEditing(
                     book.genre,
                     book.isISBNSet,
                     book.isApproved,
                     book.reviewers,
                     book.translationLanguages,
-                    book.formatTypes.Where(t => t != format.FormatType).ToList()
+                    book.formats.Where(t => t.FormatType != format.FormatType).ToList()
                 ),
-
-            ReviewerAdded(var reviewer) =>
+            ReviewerAdded (var reviewer) =>
                 new BookUnderEditing(
                     book.genre,
                     book.isISBNSet,
                     book.isApproved,
                     book.reviewers.Union(new[] { reviewer.Id }).ToList(),
                     book.translationLanguages,
-                    book.formatTypes
+                    book.formats
                 ),
-
             Approved =>
                 new BookUnderEditing(
                     book.genre,
@@ -175,9 +170,8 @@ public record BookUnderEditing: Book
                     true,
                     book.reviewers,
                     book.translationLanguages,
-                    book.formatTypes
+                    book.formats
                 ),
-
             ISBNSet =>
                 new BookUnderEditing(
                     book.genre,
@@ -185,11 +179,20 @@ public record BookUnderEditing: Book
                     book.isApproved,
                     book.reviewers,
                     book.translationLanguages,
-                    book.formatTypes
+                    book.formats
                 ),
-
-            _ => book
+            _ => Default
         };
+
+    public static readonly BookUnderEditing Default =
+        new BookUnderEditing(
+            null,
+            false,
+            false,
+            new List<ReviewerId>(),
+            new List<LanguageId>(),
+            new List<(FormatType FormatType, PositiveInt TotalCopies)>()
+        );
 }
 
 public abstract record UnderEditingEvent: BookEvent

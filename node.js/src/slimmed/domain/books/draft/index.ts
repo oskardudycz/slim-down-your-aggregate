@@ -83,6 +83,8 @@ export class Draft {
       }
     }
   }
+
+  public static readonly default = new Draft(null, []);
 }
 
 export type DraftCreated = DomainEvent<
