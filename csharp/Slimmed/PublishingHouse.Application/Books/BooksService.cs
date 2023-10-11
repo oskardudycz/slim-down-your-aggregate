@@ -3,9 +3,7 @@ using PublishingHouse.Books.Authors;
 using PublishingHouse.Books.Draft;
 using PublishingHouse.Books.Entities;
 using PublishingHouse.Books.Factories;
-using PublishingHouse.Books.Initial;
 using PublishingHouse.Books.InPrint;
-using PublishingHouse.Books.OutOfPrint;
 using PublishingHouse.Books.Published;
 using PublishingHouse.Books.Publishers;
 using PublishingHouse.Books.Services;
@@ -29,7 +27,7 @@ public class BooksService: IBooksService
         await Handle<InitialBook>(
             bookId,
             book =>
-                InitialBook.CreateDraft(
+                BookDraft.CreateDraft(
                     book,
                     title,
                     authorEntity,
@@ -92,7 +90,7 @@ public class BooksService: IBooksService
             return new[] { @event };
         }, ct);
 
-    private Book GetDefault() => InitialBook.Default;
+    private Book GetDefault() => InitialBook.Initial;
 
     public BooksService(
         IBooksRepository repository,

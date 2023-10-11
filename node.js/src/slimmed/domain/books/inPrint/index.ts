@@ -1,4 +1,4 @@
-import { PositiveNumber } from '#core/typing';
+import { DEFAULT_POSITIVE_NUMBER, PositiveNumber } from '#core/typing';
 import { DomainEvent } from '../../../infrastructure/events';
 import { Published } from '../published';
 
@@ -22,7 +22,7 @@ export class InPrint {
     }
   }
 
-  public static readonly default = new InPrint(0 as PositiveNumber);
+  public static readonly initial = new InPrint(DEFAULT_POSITIVE_NUMBER);
 }
 
 export type MovedToPrinting = DomainEvent<

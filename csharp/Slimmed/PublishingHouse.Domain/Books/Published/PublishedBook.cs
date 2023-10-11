@@ -5,7 +5,7 @@ namespace PublishingHouse.Books.Published;
 using static OutOfPrint.OutOfPrintEvent;
 using static PublishedEvent;
 
-public record PublishedBook(NonNegativeNumber TotalCopies, NonNegativeNumber TotalSoldCopies): Book
+public record PublishedBook(PositiveInt TotalCopies, NonNegativeNumber TotalSoldCopies): Book
 {
     public Ratio UnsoldCopiesRatio =>
         new((TotalCopies.Value - TotalSoldCopies.Value) / (decimal)TotalCopies.Value);
@@ -22,20 +22,20 @@ public record PublishedBook(NonNegativeNumber TotalCopies, NonNegativeNumber Tot
     public static PublishedBook Evolve(PublishedBook state, PublishedEvent @event) =>
         @event switch
         {
-            Published =>
+            Published published =>
                 new PublishedBook(
+                    published.TotalCopies,
                     // TODO: Add methods to set sold copies
-                    new NonNegativeNumber(0),
                     new NonNegativeNumber(0)
                 ),
-            _ => Default,
+            _ => Initial,
         };
 
-    public static readonly PublishedBook Default =
+    public static readonly PublishedBook Initial =
         new PublishedBook(
             // TODO: Add methods to set sold copies
-            new NonNegativeNumber(0),
-            new NonNegativeNumber(0)
+            PositiveInt.Empty,
+            NonNegativeNumber.Empty
         );
 }
 

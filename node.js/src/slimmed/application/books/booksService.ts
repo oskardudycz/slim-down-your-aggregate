@@ -23,9 +23,8 @@ import { BookId } from '../../domain/books/entities';
 import { BookEvent } from '../../domain/books/book';
 import { IBookFactory } from '../../domain/books/factories';
 import { bookMapper } from '../../persistence/mappers/bookMapper';
-import { Draft } from '../../domain/books/draft';
+import { Draft, Initial } from '../../domain/books/draft';
 import { InPrint } from '../../domain/books/inPrint';
-import { Initial } from '../../domain/books/initial';
 import { PublishedBook } from '../../domain/books/published';
 import { UnderEditing } from '../../domain/books/underEditing';
 
@@ -55,7 +54,7 @@ export class BooksService implements IBooksService {
       if (!(book instanceof Initial))
         throw InvalidOperationError('Invalid State');
 
-      return Initial.createDraft(
+      return Draft.createDraft(
         book,
         title,
         authorEntity,
@@ -197,7 +196,7 @@ export class BooksService implements IBooksService {
     });
   };
 
-  private getDefault = (): Book => new Initial();
+  private getDefault = (): Book => Initial.initial;
 
   constructor(
     private readonly repository: IBooksRepository,

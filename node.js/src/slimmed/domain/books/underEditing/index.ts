@@ -277,7 +277,7 @@ export class UnderEditing {
     }
   }
 
-  public static readonly default = new UnderEditing(
+  public static readonly initial = new UnderEditing(
     null,
     false,
     false,

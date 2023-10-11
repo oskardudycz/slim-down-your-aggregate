@@ -1,5 +1,9 @@
 import { InvalidStateError } from '#core/errors';
-import { PositiveNumber, positiveNumber } from '#core/typing';
+import {
+  DEFAULT_POSITIVE_NUMBER,
+  PositiveNumber,
+  positiveNumber,
+} from '#core/typing';
 import { Ratio, ratio } from '#core/typing/ratio';
 import { DomainEvent } from '../../../infrastructure/events';
 import { MovedToOutOfPrint } from '../outOfPrint';
@@ -44,9 +48,9 @@ export class PublishedBook {
     }
   }
 
-  public static readonly default = new PublishedBook(
-    positiveNumber(1),
-    positiveNumber(1),
+  public static readonly initial = new PublishedBook(
+    DEFAULT_POSITIVE_NUMBER,
+    DEFAULT_POSITIVE_NUMBER,
   );
 }
 

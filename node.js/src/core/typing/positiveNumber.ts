@@ -17,3 +17,5 @@ export const parsePositiveNumber = <T extends string = string>(
 ): PositiveNumber<T> => {
   return assertPositiveNumber(arg) as PositiveNumber<T>;
 };
+
+export const DEFAULT_POSITIVE_NUMBER = positiveNumber(Number.MAX_VALUE);

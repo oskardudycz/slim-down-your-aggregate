@@ -1,7 +1,6 @@
 using PublishingHouse.Books.Draft;
 using PublishingHouse.Books.Entities;
 using PublishingHouse.Books.Factories;
-using PublishingHouse.Books.Initial;
 using PublishingHouse.Books.InPrint;
 using PublishingHouse.Books.OutOfPrint;
 using PublishingHouse.Books.Published;
@@ -25,7 +24,7 @@ public abstract record Book
                 : book,
 
             MovedToEditing movedToEditing => book is BookDraft
-                ? BookUnderEditing.Evolve(BookUnderEditing.Default, movedToEditing)
+                ? BookUnderEditing.Evolve(BookUnderEditing.Initial, movedToEditing)
                 : book,
 
             UnderEditingEvent underEditingEvent => book is BookUnderEditing underEditing
@@ -33,15 +32,15 @@ public abstract record Book
                 : book,
 
             MovedToPrinting movedToPrinting => book is BookUnderEditing
-                ? BookInPrint.Evolve(BookInPrint.Default, movedToPrinting)
+                ? BookInPrint.Evolve(BookInPrint.Initial, movedToPrinting)
                 : book,
 
             PublishedEvent.Published published => book is BookInPrint
-                ? PublishedBook.Evolve(PublishedBook.Default, published)
+                ? PublishedBook.Evolve(PublishedBook.Initial, published)
                 : book,
 
             MovedToOutOfPrint movedToOutOfPrint => book is PublishedBook
-                ? BookOutOfPrint.Evolve(BookOutOfPrint.Default, movedToOutOfPrint)
+                ? BookOutOfPrint.Evolve(BookOutOfPrint.Initial, movedToOutOfPrint)
                 : book,
 
             _ => book
@@ -78,7 +77,7 @@ public abstract record Book
                     new BookInPrint(new PositiveInt(formats.Sum(f => f.TotalCopies.Value))),
                 State.Published =>
                     new PublishedBook(
-                        new NonNegativeNumber(formats.Sum(f => f.TotalCopies.Value)),
+                        new PositiveInt(formats.Sum(f => f.TotalCopies.Value)),
                         new NonNegativeNumber(formats.Sum(f => f.SoldCopies.Value))
                     ),
                 State.OutOfPrint =>

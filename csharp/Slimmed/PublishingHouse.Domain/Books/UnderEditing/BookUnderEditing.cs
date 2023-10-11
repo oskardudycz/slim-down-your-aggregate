@@ -173,10 +173,10 @@ public record BookUnderEditing
                     book.TranslationLanguages,
                     book.Formats
                 ),
-            _ => Default
+            _ => Initial
         };
 
-    public static readonly BookUnderEditing Default =
+    public static readonly BookUnderEditing Initial =
         new BookUnderEditing(
             null,
             false,

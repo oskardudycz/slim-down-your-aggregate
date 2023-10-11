@@ -14,9 +14,8 @@ import {
 import { BookId } from './entities/bookId';
 import { IBookFactory } from './factories/bookFactory';
 import { InvalidOperationError } from '#core/errors';
-import { Draft, DraftEvent } from './draft';
+import { Initial, Draft, DraftEvent } from './draft';
 import { InPrint, InPrintEvent } from './inPrint';
-import { Initial } from './initial';
 import { OutOfPrint, OutOfPrintEvent } from './outOfPrint';
 import { PublishedBook, PublishedEvent } from './published';
 import { UnderEditing, UnderEditingEvent } from './underEditing';
@@ -44,7 +43,7 @@ export const evolve = (book: Book, event: BookEvent): Book => {
     case 'MovedToEditing': {
       if (!(book instanceof Draft)) return book;
 
-      return UnderEditing.evolve(UnderEditing.default, event);
+      return UnderEditing.evolve(UnderEditing.initial, event);
     }
     case 'TranslationAdded':
     case 'TranslationRemoved':
@@ -60,17 +59,17 @@ export const evolve = (book: Book, event: BookEvent): Book => {
     case 'MovedToPrinting': {
       if (!(book instanceof UnderEditing)) return book;
 
-      return InPrint.evolve(InPrint.default, event);
+      return InPrint.evolve(InPrint.initial, event);
     }
     case 'Published': {
       if (!(book instanceof InPrint)) return book;
 
-      return PublishedBook.evolve(PublishedBook.default, event);
+      return PublishedBook.evolve(PublishedBook.initial, event);
     }
     case 'MovedToOutOfPrint': {
       if (!(book instanceof PublishedBook)) return book;
 
-      return OutOfPrint.evolve(OutOfPrint.default, event);
+      return OutOfPrint.evolve(OutOfPrint.initial, event);
     }
 
     default: {
