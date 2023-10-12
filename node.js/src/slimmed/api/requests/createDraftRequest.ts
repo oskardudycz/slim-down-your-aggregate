@@ -6,7 +6,7 @@ import {
 import { Request } from 'express';
 import { BookId } from '../../domain/books/entities';
 import { DeepReadonly } from 'ts-essentials';
-import { CreateDraft } from '../../application/books/bookCommand';
+import { CreateDraft } from '../../domain/books/draft';
 
 export type CreateDraftRequest = DeepReadonly<
   Request<

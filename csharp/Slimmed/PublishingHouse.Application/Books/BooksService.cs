@@ -14,7 +14,10 @@ using PublishingHouse.Persistence.Books.Repositories;
 
 namespace PublishingHouse.Application.Books;
 
-using static BookCommand;
+using static DraftCommand;
+using static UnderEditingCommand;
+using static InPrintCommand;
+using static PublishedCommand;
 
 public class BooksService: IBooksService
 {

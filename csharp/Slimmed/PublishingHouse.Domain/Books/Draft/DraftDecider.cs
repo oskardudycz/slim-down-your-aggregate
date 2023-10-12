@@ -1,10 +1,34 @@
+using PublishingHouse.Books.Authors;
 using PublishingHouse.Books.Entities;
 using PublishingHouse.Books.UnderEditing;
 using PublishingHouse.Core.ValueObjects;
 
 namespace PublishingHouse.Books.Draft;
+
 using static DraftEvent;
 using static UnderEditingEvent;
+
+public abstract record DraftCommand: BookCommand
+{
+    public record CreateDraft(
+        BookId BookId,
+        Title Title,
+        AuthorIdOrData Author,
+        PublisherId PublisherId,
+        PositiveInt Edition,
+        Genre? Genre
+    ): DraftCommand;
+
+    public record AddChapter(
+        BookId BookId,
+        ChapterTitle Title,
+        ChapterContent Content
+    ): DraftCommand;
+
+    public record MoveToEditing(BookId BookId): DraftCommand;
+
+    private DraftCommand(){}
+}
 
 public static class DraftDecider
 {

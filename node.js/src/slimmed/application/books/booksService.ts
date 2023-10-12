@@ -3,20 +3,6 @@ import { IAuthorProvider } from '../../domain/books/authors';
 import { IPublisherProvider } from '../../domain/books/publishers/publisherProvider';
 import { Book } from '../../domain/books/book';
 import { InvalidOperationError } from '#core/errors';
-import {
-  AddChapter,
-  AddFormat,
-  AddTranslation,
-  Approve,
-  CreateDraft,
-  MoveToEditing,
-  MoveToOutOfPrint,
-  MoveToPrinting,
-  MoveToPublished,
-  RemoveFormat,
-  AddReviewer,
-  SetISBN,
-} from './bookCommand';
 import { PositiveNumber } from '#core/typing';
 import { Ratio } from '#core/typing/ratio';
 import { BookId } from '../../domain/books/entities';
@@ -24,9 +10,24 @@ import { BookEvent } from '../../domain/books/book';
 import { IBookFactory } from '../../domain/books/factories';
 import { bookMapper } from '../../persistence/mappers/bookMapper';
 import { initial, isDraft, isInitial } from '../../domain/books/draft';
-import { isInPrint, moveToPublished } from '../../domain/books/inPrint';
-import { isPublished, moveToOutOfPrint } from '../../domain/books/published';
 import {
+  MoveToPublished,
+  isInPrint,
+  moveToPublished,
+} from '../../domain/books/inPrint';
+import {
+  MoveToOutOfPrint,
+  isPublished,
+  moveToOutOfPrint,
+} from '../../domain/books/published';
+import {
+  AddFormat,
+  AddReviewer,
+  AddTranslation,
+  Approve,
+  MoveToPrinting,
+  RemoveFormat,
+  SetISBN,
   addFormat,
   addReviewer,
   addTranslation,
@@ -37,10 +38,13 @@ import {
   setISBN,
 } from '../../domain/books/underEditing';
 import {
+  AddChapter,
+  CreateDraft,
+  MoveToEditing,
   addChapter,
   createDraft,
   moveToEditing,
-} from 'src/slimmed/domain/books/draft/decider';
+} from 'src/slimmed/domain/books/draft';
 
 export interface IBooksService {
   createDraft(command: CreateDraft): Promise<void>;

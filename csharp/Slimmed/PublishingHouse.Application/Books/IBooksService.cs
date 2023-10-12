@@ -1,6 +1,15 @@
+using PublishingHouse.Books.Draft;
+using PublishingHouse.Books.InPrint;
+using PublishingHouse.Books.Published;
+using PublishingHouse.Books.UnderEditing;
+
 namespace PublishingHouse.Application.Books;
 
-using static BookCommand;
+
+using static DraftCommand;
+using static UnderEditingCommand;
+using static InPrintCommand;
+using static PublishedCommand;
 
 public interface IBooksService
 {

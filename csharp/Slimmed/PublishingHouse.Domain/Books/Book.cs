@@ -86,3 +86,20 @@ public abstract record Book
             };
     }
 }
+
+public abstract record BookCommand;
+
+public abstract record BookEvent;
+
+public abstract record BookExternalEvent
+{
+    public record Published(
+        BookId BookId,
+        ISBN ISBN,
+        Title Title,
+        AuthorId AuthorId
+    ): BookExternalEvent;
+
+    private BookExternalEvent() { }
+}
+

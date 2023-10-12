@@ -1,14 +1,16 @@
 using Microsoft.AspNetCore.Mvc;
 using PublishingHouse.Api.Requests;
 using PublishingHouse.Application.Books;
+using PublishingHouse.Books;
 using PublishingHouse.Books.Authors;
+using PublishingHouse.Books.Draft;
 using PublishingHouse.Books.Entities;
 using PublishingHouse.Core.Validation;
 using PublishingHouse.Core.ValueObjects;
 
 namespace PublishingHouse.Api.Controllers;
 
-using static BookCommand;
+using static DraftCommand;
 
 [Route("api/[controller]")]
 public class BooksController: Controller

@@ -1,8 +1,8 @@
 import { parseNonEmptyString } from '#core/typing';
 import { Request } from 'express';
-import { AddChapter } from '../../application/books/bookCommand';
 import { chapterContent } from '../../domain/books/entities';
 import { DeepReadonly } from 'ts-essentials';
+import { AddChapter } from '../../domain/books/draft';
 
 export type AddChapterRequest = DeepReadonly<
   Request<
