@@ -10,6 +10,8 @@ import {
   Title,
 } from '../entities';
 
+export * from './decider';
+
 export type Initial = DeepReadonly<{ status: 'Initial' }>;
 
 export const initial: Initial = { status: 'Initial' };

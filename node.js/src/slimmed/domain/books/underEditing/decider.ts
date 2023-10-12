@@ -1,5 +1,6 @@
 import { InvalidStateError } from '#core/errors';
 import { PositiveNumber, positiveNumber } from '#core/typing';
+import { Command } from '../../../infrastructure/commands';
 import {
   UnderEditing,
   TranslationAdded,
@@ -15,9 +16,74 @@ import {
   CommitteeApproval,
   ISBN,
   Format,
+  BookId,
 } from '../entities';
 import { MovedToPrinting } from '../inPrint';
 import { IPublishingHouse } from '../services';
+
+export type AddTranslation = Command<
+  'AddTranslationCommand',
+  {
+    bookId: BookId;
+    translation: Translation;
+  }
+>;
+
+export type AddFormat = Command<
+  'AddFormatCommand',
+  {
+    bookId: BookId;
+    format: Format;
+  }
+>;
+
+export type RemoveFormat = Command<
+  'RemoveFormatCommand',
+  {
+    bookId: BookId;
+    format: Format;
+  }
+>;
+
+export type AddReviewer = Command<
+  'AddReviewerCommand',
+  {
+    bookId: BookId;
+    reviewer: Reviewer;
+  }
+>;
+
+export type Approve = Command<
+  'ApproveCommand',
+  {
+    bookId: BookId;
+    committeeApproval: CommitteeApproval;
+  }
+>;
+
+export type SetISBN = Command<
+  'SetISBNCommand',
+  {
+    bookId: BookId;
+    isbn: ISBN;
+  }
+>;
+
+export type MoveToPrinting = Command<
+  'MoveToPrintingCommand',
+  {
+    bookId: BookId;
+  }
+>;
+
+export type UnderEdititngCommand =
+  | AddTranslation
+  | AddFormat
+  | RemoveFormat
+  | AddReviewer
+  | Approve
+  | SetISBN
+  | MoveToPrinting;
 
 export const addTranslation = (
   state: UnderEditing,

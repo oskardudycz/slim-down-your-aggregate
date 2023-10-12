@@ -18,6 +18,7 @@ import {
   Initial,
   Draft,
   DraftEvent,
+  DraftCommand,
   isInitial,
   initialDraft,
   isDraft,
@@ -26,12 +27,14 @@ import {
 import {
   UnderEditing,
   UnderEditingEvent,
+  UnderEdititngCommand,
   evolve as evolveUnderEditing,
   initial as initialUnderEditing,
   isUnderEditing,
 } from './underEditing';
 import {
   InPrint,
+  InPrintCommand,
   InPrintEvent,
   evolve as evolveInPrint,
   initial as initialInPrint,
@@ -39,6 +42,7 @@ import {
 } from './inPrint';
 import {
   PublishedBook,
+  PublishedCommand,
   PublishedEvent,
   evolve as evolvePublished,
   initial as initialPublished,
@@ -50,7 +54,7 @@ import {
   evolve as evolveOutOfPrint,
   initial as initialOutOfPrint,
 } from './outOfPrint';
-import { DomainEvent } from 'src/original/infrastructure/events';
+import { DomainEvent } from '../../infrastructure/events';
 
 export type Book =
   | Initial
@@ -59,6 +63,35 @@ export type Book =
   | PublishedBook
   | InPrint
   | OutOfPrint;
+
+export type BookCommand =
+  | DraftCommand
+  | UnderEdititngCommand
+  | InPrintCommand
+  | PublishedCommand;
+
+export type BookEvent =
+  | DraftEvent
+  | UnderEditingEvent
+  | InPrintEvent
+  | PublishedEvent
+  | OutOfPrintEvent;
+
+export type PublishedExternal = DomainEvent<
+  'Published',
+  {
+    bookId: BookId;
+    isbn: ISBN;
+    title: Title;
+    authorId: AuthorId;
+  }
+>;
+
+export type BookExternalEvent =
+  | DraftEvent
+  | UnderEditingEvent
+  | PublishedExternal
+  | OutOfPrintEvent;
 
 export const evolve = (book: Book, event: BookEvent): Book => {
   switch (event.type) {
@@ -108,29 +141,6 @@ export const evolve = (book: Book, event: BookEvent): Book => {
     }
   }
 };
-
-export type BookEvent =
-  | DraftEvent
-  | UnderEditingEvent
-  | InPrintEvent
-  | PublishedEvent
-  | OutOfPrintEvent;
-
-export type PublishedExternal = DomainEvent<
-  'Published',
-  {
-    bookId: BookId;
-    isbn: ISBN;
-    title: Title;
-    authorId: AuthorId;
-  }
->;
-
-export type BookExternalEvent =
-  | DraftEvent
-  | UnderEditingEvent
-  | PublishedExternal
-  | OutOfPrintEvent;
 
 export class BookFactory implements IBookFactory {
   create(

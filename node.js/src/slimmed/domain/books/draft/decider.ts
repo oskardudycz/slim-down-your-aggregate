@@ -1,5 +1,6 @@
 import { InvalidStateError } from '#core/errors';
 import { PositiveNumber } from '#core/typing';
+import { Command } from '../../../infrastructure/commands';
 import { ChapterAdded, Draft, DraftCreated, Initial } from '.';
 import {
   Title,
@@ -10,8 +11,41 @@ import {
   chapterNumber,
   ChapterTitle,
   ChapterContent,
+  BookId,
+  PublisherId,
 } from '../entities';
 import { MovedToEditing } from '../underEditing';
+import { AuthorIdOrData } from '../authors';
+
+export type CreateDraft = Command<
+  'CreateDraftCommand',
+  {
+    bookId: BookId;
+    title: Title;
+    author: AuthorIdOrData;
+    publisherId: PublisherId;
+    edition: PositiveNumber;
+    genre: Genre | null;
+  }
+>;
+
+export type AddChapter = Command<
+  'AddChapterCommand',
+  {
+    bookId: BookId;
+    chapterTitle: ChapterTitle;
+    chapterContent: ChapterContent;
+  }
+>;
+
+export type MoveToEditing = Command<
+  'MoveToEditingCommand',
+  {
+    bookId: BookId;
+  }
+>;
+
+export type DraftCommand = CreateDraft | AddChapter | MoveToEditing;
 
 export const createDraft = (
   _initial: Initial,

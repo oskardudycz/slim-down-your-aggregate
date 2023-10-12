@@ -1,5 +1,16 @@
+import { Command } from '../../../infrastructure/commands';
 import { InPrint } from '.';
+import { BookId } from '../entities';
 import { Published } from '../published';
+
+export type MoveToPublished = Command<
+  'MoveToPublishedCommand',
+  {
+    bookId: BookId;
+  }
+>;
+
+export type InPrintCommand = MoveToPublished;
 
 export const moveToPublished = (state: InPrint): Published => {
   return {

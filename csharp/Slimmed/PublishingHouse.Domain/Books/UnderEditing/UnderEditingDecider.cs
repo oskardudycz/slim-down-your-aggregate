@@ -8,6 +8,23 @@ namespace PublishingHouse.Books.UnderEditing;
 using static UnderEditingEvent;
 using static InPrintEvent;
 
+public abstract record UnderEditingCommand: BookCommand
+{
+    public record AddTranslation(BookId BookId, Translation Translation): UnderEditingCommand;
+
+    public record AddFormat(BookId BookId, Format Format): UnderEditingCommand;
+
+    public record RemoveFormat(BookId BookId, Format Format): UnderEditingCommand;
+
+    public record AddReviewer(BookId BookId, Reviewer Reviewer): UnderEditingCommand;
+
+    public record Approve(BookId BookId, CommitteeApproval CommitteeApproval): UnderEditingCommand;
+
+    public record SetISBN(BookId BookId, ISBN ISBN): UnderEditingCommand;
+
+    public record MoveToPrinting(BookId BookId): UnderEditingCommand;
+}
+
 public static class UnderEditingDecider
 {
     public static TranslationAdded AddTranslation(

@@ -1,9 +1,15 @@
+using PublishingHouse.Books.Entities;
 using PublishingHouse.Core.ValueObjects;
 
 namespace PublishingHouse.Books.Published;
 
 using static OutOfPrint.OutOfPrintEvent;
 using static PublishedEvent;
+
+public abstract record PublishedCommand: BookCommand
+{
+    public record MoveToOutOfPrint(BookId BookId): BookCommand;
+}
 
 public static class PublishedDecider
 {
