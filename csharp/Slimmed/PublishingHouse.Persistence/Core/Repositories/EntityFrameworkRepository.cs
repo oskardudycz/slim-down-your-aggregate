@@ -1,68 +1,56 @@
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
-using PublishingHouse.Core;
-using PublishingHouse.Core.Aggregates;
+using PublishingHouse.Core.Events;
 using PublishingHouse.Core.ValueObjects;
 using PublishingHouse.Persistence.Core.Outbox;
 
 namespace PublishingHouse.Persistence.Core.Repositories;
 
-public abstract class EntityFrameworkRepository<TAggregate, TKey, TEntity, TDbContext>
-    where TAggregate: Aggregate<TKey>
-    where TKey: NonEmptyGuid
-    where TDbContext: DbContext
+public abstract class EntityFrameworkRepository<TEntity, TKey, TEvent, TDbContext>
     where TEntity : class
+    where TKey : NonEmptyGuid
+    where TEvent : class
+    where TDbContext : DbContext
 {
     protected readonly TDbContext DbContext;
+    private readonly Func<TKey, Expression<Func<TEntity, bool>>> getId;
 
-    protected EntityFrameworkRepository(TDbContext dbContext) =>
-        this.DbContext = dbContext;
+    protected EntityFrameworkRepository(TDbContext dbContext, Func<TKey, Expression<Func<TEntity, bool>>> getId)
+    {
+        DbContext = dbContext;
+        this.getId = getId;
+    }
 
-    public async Task<TAggregate?> FindById(TKey bookId, CancellationToken ct)
+    public async Task GetAndUpdate(TKey id, Func<TEntity?, TEvent[]> handle, CancellationToken ct)
     {
         var entity = await Includes(DbContext.Set<TEntity>())
-            .AsNoTracking()
-            .SingleOrDefaultAsync(ct);
+            .SingleOrDefaultAsync(getId(id), ct);
 
-        return entity != null ? MapToAggregate(entity): default;
-    }
+        var events = handle(entity);
 
-    public async Task Add(TAggregate aggregate, CancellationToken ct)
-    {
-        DbContext.Set<TEntity>().Add(MapToEntity(aggregate));
-        ScheduleOutbox(aggregate.DomainEvents);
-
-        await DbContext.SaveChangesAsync(ct);
-        aggregate.ClearEvents();
-    }
-
-    public async Task Update(TAggregate aggregate, CancellationToken ct)
-    {
-        var entity = await DbContext.Set<TEntity>().FindAsync(
-            new object?[] { aggregate.Id.Value },
-            cancellationToken: ct
-        ) ?? throw new InvalidOperationException();
-
-        UpdateEntity(entity, aggregate);
-        ScheduleOutbox(aggregate.DomainEvents);
+        ProcessEvents(
+            DbContext,
+            entity,
+            events.Select(e => new EventEnvelope<TEvent>(e, new EventMetadata(id))).ToList()
+        );
 
         await DbContext.SaveChangesAsync(ct);
-        aggregate.ClearEvents();
     }
 
-    private void ScheduleOutbox(IEnumerable<IDomainEvent> events)
+    private void ProcessEvents(TDbContext dbContext, TEntity? entity, IReadOnlyList<EventEnvelope<TEvent>> events)
     {
-        var messages = events
-            .Select(OutboxMessageEntity.From);
-
-        DbContext.Set<OutboxMessageEntity>().AddRange(messages);
+        var outbox = dbContext.Set<OutboxMessageEntity>();
+        foreach (var eventEnvelope in events)
+        {
+            Evolve(dbContext, entity, eventEnvelope);
+            outbox.Add(OutboxMessageEntity.From(Enrich(eventEnvelope, entity)));
+        }
     }
 
     protected virtual IQueryable<TEntity> Includes(DbSet<TEntity> query) =>
         query;
 
-    protected abstract TAggregate MapToAggregate(TEntity entity);
+    protected abstract void Evolve(TDbContext dbContext, TEntity? current, EventEnvelope<TEvent> eventEnvelope);
 
-    protected abstract TEntity MapToEntity(TAggregate aggregate);
-
-    protected abstract void UpdateEntity(TEntity entity, TAggregate aggregate);
+    protected virtual IEventEnvelope Enrich(EventEnvelope<TEvent> eventEnvelope, TEntity? _) => eventEnvelope;
 }

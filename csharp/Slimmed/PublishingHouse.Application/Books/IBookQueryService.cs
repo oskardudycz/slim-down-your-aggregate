@@ -1,5 +1,5 @@
-using PublishingHouse.Books.DTOs;
 using PublishingHouse.Books.Entities;
+using PublishingHouse.Persistence.Books.DTOs;
 
 namespace PublishingHouse.Application.Books;
 

@@ -1,16 +1,15 @@
 import { NonEmptyString } from '#core/typing';
-import { Aggregate } from '../../../infrastructure/aggregates';
 import { Database, EntitiesCollection } from '../../orm';
-import { DomainEvent } from '../../../infrastructure/events';
+import { DomainEvent, EventEnvelope } from '../../../infrastructure/events';
 import {
   OutboxMessageEntity,
   outboxMessage,
 } from '../outbox/outboxMessageEntity';
 
 export abstract class OrmRepository<
-  TAggregate extends Aggregate<TKey>,
-  TKey extends NonEmptyString,
   TEntity,
+  TKey extends NonEmptyString,
+  TEvent extends DomainEvent,
   TOrm extends Database,
 > {
   protected constructor(
@@ -18,47 +17,50 @@ export abstract class OrmRepository<
     protected readonly entities: EntitiesCollection<TEntity>,
   ) {}
 
-  async findById(key: TKey): Promise<TAggregate | null> {
+  public async getAndUpdate(
+    key: TKey,
+    handle: (entity: TEntity | null) => TEvent[],
+  ) {
     const entity = await this.entities.findById(key);
 
-    return entity != null ? this.mapToAggregate(entity) : null;
-  }
+    const events = handle(entity);
 
-  public async add(aggregate: TAggregate): Promise<void> {
-    this.entities.add(aggregate.id, this.mapToEntity(aggregate));
-
-    this.scheduleOutbox(aggregate.domainEvents);
-
-    await this.orm.saveChanges();
-    aggregate.clearEvents();
-  }
-
-  public async update(aggregate: TAggregate): Promise<void> {
-    const id: string = aggregate.id;
-
-    const entity = await this.entities.findById(id);
-
-    if (!entity) throw new Error(`Entity with id ${id} was not found`);
-
-    this.entities.update(id, this.mapToEntity(aggregate));
-
-    this.scheduleOutbox(aggregate.domainEvents);
+    this.processEvents(
+      this.orm,
+      entity,
+      events.map((e) => {
+        return { event: e, metadata: { recordId: key } };
+      }),
+    );
 
     await this.orm.saveChanges();
-    aggregate.clearEvents();
   }
 
-  private scheduleOutbox(events: DomainEvent[]): void {
-    const outboxTable = this.orm.table<OutboxMessageEntity>('outbox');
+  private processEvents(
+    orm: TOrm,
+    current: TEntity | null,
+    events: EventEnvelope<TEvent>[],
+  ): void {
+    const outboxTable = orm.table<OutboxMessageEntity>('outbox');
 
-    const messages = events.map(outboxMessage);
+    for (const eventEnvelope of events) {
+      this.evolve(orm, current, eventEnvelope);
 
-    for (const message of messages) {
+      const message = outboxMessage(this.enrich(eventEnvelope, current));
       outboxTable.add(message.position.toString(), message);
     }
   }
 
-  protected abstract mapToAggregate(entity: TEntity): TAggregate;
+  protected abstract evolve(
+    orm: TOrm,
+    current: TEntity | null,
+    event: EventEnvelope<TEvent>,
+  ): void;
 
-  protected abstract mapToEntity(aggregate: TAggregate): TEntity;
+  protected enrich(
+    event: EventEnvelope<TEvent>,
+    _current: TEntity | null,
+  ): EventEnvelope {
+    return event;
+  }
 }

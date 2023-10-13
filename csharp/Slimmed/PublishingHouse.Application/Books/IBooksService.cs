@@ -1,20 +1,59 @@
-using PublishingHouse.Application.Books.Commands;
+using PublishingHouse.Books.Authors;
+using PublishingHouse.Books.Draft;
+using PublishingHouse.Books.Entities;
+using PublishingHouse.Books.InPrint;
+using PublishingHouse.Books.Published;
+using PublishingHouse.Books.UnderEditing;
+using PublishingHouse.Core.ValueObjects;
 
 namespace PublishingHouse.Application.Books;
 
+using static DraftCommand;
+using static UnderEditingCommand;
+using static InPrintCommand;
+using static PublishedCommand;
+using static BookApplicationCommand;
+
 public interface IBooksService
 {
-    Task CreateDraft(CreateDraftCommand command, CancellationToken ct);
-    Task AddChapter(AddChapterCommand command, CancellationToken ct);
-    Task MoveToEditing(MoveToEditingCommand command, CancellationToken ct);
+    Task CreateDraft(CreateDraftAndSetupAuthorAndPublisher command, CancellationToken ct);
+    Task AddChapter(AddChapter command, CancellationToken ct);
+    Task MoveToEditing(MoveToEditing command, CancellationToken ct);
 
-    Task AddTranslation(AddTranslationCommand command, CancellationToken ct);
-    Task AddFormat(AddFormatCommand command, CancellationToken ct);
-    Task RemoveFormat(RemoveFormatCommand command, CancellationToken ct);
-    Task AddReviewer(AddReviewerCommand command, CancellationToken ct);
-    Task Approve(ApproveCommand command, CancellationToken ct);
-    Task SetISBN(SetISBNCommand command, CancellationToken ct);
-    Task MoveToPublished(MoveToPublishedCommand command, CancellationToken ct);
-    Task MoveToPrinting(MoveToPrintingCommand command, CancellationToken ct);
-    Task MoveToOutOfPrint(MoveToOutOfPrintCommand command, CancellationToken ct);
+    Task AddTranslation(BookApplicationCommand.AddTranslation command, CancellationToken ct);
+    Task AddFormat(AddFormat command, CancellationToken ct);
+    Task RemoveFormat(RemoveFormat command, CancellationToken ct);
+    Task AddReviewer(AddReviewer command, CancellationToken ct);
+    Task Approve(BookApplicationCommand.Approve command, CancellationToken ct);
+    Task SetISBN(SetISBN command, CancellationToken ct);
+    Task MoveToPublished(MoveToPublished command, CancellationToken ct);
+    Task MoveToPrinting(MoveToPrinting command, CancellationToken ct);
+    Task MoveToOutOfPrint(BookApplicationCommand.MoveToOutOfPrint command, CancellationToken ct);
+}
+
+public abstract record BookApplicationCommand
+{
+    public record CreateDraftAndSetupAuthorAndPublisher(
+        BookId BookId,
+        Title Title,
+        AuthorIdOrData Author,
+        PublisherId PublisherId,
+        PositiveInt Edition,
+        Genre? Genre
+    ): BookApplicationCommand;
+
+    public record Approve(
+        BookId BookId,
+        CommitteeApproval CommitteeApproval
+    ): BookApplicationCommand;
+
+    public record AddTranslation(
+        BookId BookId,
+        Translation Translation
+    ): BookApplicationCommand;
+
+    public record MoveToOutOfPrint(
+        BookId BookId,
+        Ratio MaxAllowedUnsoldCopiesRatioToGoOutOfPrint
+    ): BookApplicationCommand;
 }

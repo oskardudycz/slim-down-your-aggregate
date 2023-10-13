@@ -1,1 +1,6 @@
-export type ChapterEntity = { number: number; title: string; content: string };
+export type ChapterEntity = {
+  number: number;
+  bookId: string;
+  title: string;
+  content: string;
+};

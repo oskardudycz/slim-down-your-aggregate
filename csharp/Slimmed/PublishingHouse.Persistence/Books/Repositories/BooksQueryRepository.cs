@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
-using PublishingHouse.Books.DTOs;
 using PublishingHouse.Books.Entities;
-using PublishingHouse.Books.Repositories;
+using PublishingHouse.Persistence.Books.DTOs;
 using PublishingHouse.Persistence.Books.Mappers;
 
 namespace PublishingHouse.Persistence.Books.Repositories;

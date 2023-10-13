@@ -15,7 +15,6 @@ public static class ValidationExtensions
         return (T)value;
     }
 
-
     public static T AssertNotNull<T>([NotNull] this T? value, [CallerArgumentExpression("value")] string? paramName = null)
         where T : class
     {
@@ -52,12 +51,22 @@ public static class ValidationExtensions
         return value;
     }
 
-
-
     public static T AssertPositive<T>(this T value, [CallerArgumentExpression("value")] string? paramName = null)
         where T : INumber<T>
     {
         if (value.CompareTo(0) <= 0)
+            throw new ArgumentOutOfRangeException(paramName);
+
+        return value;
+    }
+
+    public static T AssertBetween<T>(this T value, T min, T max, [CallerArgumentExpression("value")] string? paramName = null)
+        where T : INumber<T>
+    {
+        if (value.CompareTo(min) < 0)
+            throw new ArgumentOutOfRangeException(paramName);
+
+        if (value.CompareTo(max) > 0)
             throw new ArgumentOutOfRangeException(paramName);
 
         return value;

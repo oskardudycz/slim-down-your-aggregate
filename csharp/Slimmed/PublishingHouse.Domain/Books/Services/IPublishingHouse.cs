@@ -7,3 +7,8 @@ public interface IPublishingHouse
     bool IsGenreLimitReached(Genre genre);
 }
 
+
+public class DummyPublishingHouse: IPublishingHouse
+{
+    public bool IsGenreLimitReached(Genre genre) => false;
+}

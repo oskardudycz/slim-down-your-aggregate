@@ -84,6 +84,10 @@ namespace PublishingHouse.Persistence.Migrations
                     b.Property<int?>("TotalPages")
                         .HasColumnType("integer");
 
+                    b.Property<int>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("AuthorId");
@@ -91,21 +95,6 @@ namespace PublishingHouse.Persistence.Migrations
                     b.HasIndex("PublisherId");
 
                     b.ToTable("Books", (string)null);
-                });
-
-            modelBuilder.Entity("PublishingHouse.Persistence.Languages.LanguageEntity", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Languages", (string)null);
                 });
 
             modelBuilder.Entity("PublishingHouse.Persistence.Core.Outbox.OutboxMessageEntity", b =>
@@ -134,6 +123,21 @@ namespace PublishingHouse.Persistence.Migrations
                     b.HasKey("Position");
 
                     b.ToTable("Outbox", (string)null);
+                });
+
+            modelBuilder.Entity("PublishingHouse.Persistence.Languages.LanguageEntity", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Languages", (string)null);
                 });
 
             modelBuilder.Entity("PublishingHouse.Persistence.Publishers.PublisherEntity", b =>

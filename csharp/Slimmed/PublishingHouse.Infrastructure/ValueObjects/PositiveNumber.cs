@@ -15,4 +15,6 @@ public record PositiveInt: IComparable<PositiveInt>
         if (ReferenceEquals(null, other)) return 1;
         return Value.CompareTo(other.Value);
     }
+
+    public static readonly PositiveInt Empty = new(int.MaxValue);
 }

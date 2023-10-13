@@ -1,4 +1,4 @@
-using PublishingHouse.Books.DTOs;
+using PublishingHouse.Persistence.Books.DTOs;
 
 namespace PublishingHouse.Persistence.Books.Mappers;
 

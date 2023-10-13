@@ -1,6 +1,5 @@
 using PublishingHouse.Books.Authors;
 using PublishingHouse.Books.Entities;
-using PublishingHouse.Core.Validation;
 using PublishingHouse.Persistence.Books.Mappers;
 
 namespace PublishingHouse.Persistence.Authors;

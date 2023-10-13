@@ -13,8 +13,12 @@ public class BookEntity
     public required Guid Id { get; set; }
     public required State CurrentState { get; set; }
     public required string Title { get; set; }
-    public required AuthorEntity Author { get; set; }
-    public required PublisherEntity Publisher { get; set; }
+
+    public Guid AuthorId { get; set; }
+    public AuthorEntity Author { get; set; } = default!;
+
+    public Guid PublisherId { get; set; }
+    public PublisherEntity Publisher { get; set; } = default!;
     public required int Edition { get; set; }
     public string? Genre { get; set; }
     public string? ISBN { get; set; }
@@ -28,4 +32,6 @@ public class BookEntity
     public required List<ChapterEntity> Chapters { get; set; } = new();
     public required List<TranslationVO> Translations { get; set; } = new();
     public required List<FormatEntity> Formats { get; set; } = new();
+
+    public int Version { get; set; }
 }

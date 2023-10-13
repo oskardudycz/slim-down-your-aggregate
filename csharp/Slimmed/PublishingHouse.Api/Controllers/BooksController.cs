@@ -1,13 +1,16 @@
 using Microsoft.AspNetCore.Mvc;
 using PublishingHouse.Api.Requests;
 using PublishingHouse.Application.Books;
-using PublishingHouse.Application.Books.Commands;
+using PublishingHouse.Books;
 using PublishingHouse.Books.Authors;
+using PublishingHouse.Books.Draft;
 using PublishingHouse.Books.Entities;
 using PublishingHouse.Core.Validation;
 using PublishingHouse.Core.ValueObjects;
 
 namespace PublishingHouse.Api.Controllers;
+
+using static DraftCommand;
 
 [Route("api/[controller]")]
 public class BooksController: Controller
@@ -31,7 +34,7 @@ public class BooksController: Controller
         author.AssertNotNull();
 
         await booksService.CreateDraft(
-            new CreateDraftCommand(
+            new BookApplicationCommand.CreateDraftAndSetupAuthorAndPublisher(
                 new BookId(bookId),
                 new Title(title.AssertNotEmpty()),
                 new AuthorIdOrData(
@@ -55,7 +58,7 @@ public class BooksController: Controller
         var (title, content) = request;
 
         await booksService.AddChapter(
-            new AddChapterCommand(
+            new AddChapter(
                 new BookId(id),
                 new ChapterTitle(title.AssertNotEmpty()),
                 content != null ? new ChapterContent(content): ChapterContent.Empty
@@ -70,7 +73,7 @@ public class BooksController: Controller
     public async Task<IActionResult> MoveToEditing([FromRoute] Guid id, CancellationToken ct)
     {
         await booksService.MoveToEditing(
-            new MoveToEditingCommand(new BookId(id)),
+            new MoveToEditing(new BookId(id)),
             ct
         );
 

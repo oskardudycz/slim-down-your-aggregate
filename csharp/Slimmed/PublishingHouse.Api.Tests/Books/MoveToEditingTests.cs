@@ -1,6 +1,6 @@
 namespace PublishingHouse.Api.Tests.Books;
 
-public class MoveToEditingTests
+public class MoveToEditingTests: IClassFixture<ApiSpecification>
 {
     [Fact]
     public Task MoveToEditing_ForExistingBook() =>
@@ -14,5 +14,8 @@ public class MoveToEditingTests
             )
             .Then(NO_CONTENT);
 
-    private readonly ApiSpecification API = ApiSpecification.WithSchema(nameof(MoveToEditingTests));
+    private readonly ApiSpecification API;
+
+    public MoveToEditingTests(ApiSpecification api) =>
+        API = api;
 }
