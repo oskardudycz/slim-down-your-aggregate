@@ -12,18 +12,16 @@ import {
   ChapterTitle,
   ChapterContent,
   BookId,
-  PublisherId,
 } from '../entities';
 import { MovedToEditing } from '../underEditing';
-import { AuthorIdOrData } from '../authors';
 
 export type CreateDraft = Command<
   'CreateDraftCommand',
   {
     bookId: BookId;
     title: Title;
-    author: AuthorIdOrData;
-    publisherId: PublisherId;
+    author: Author;
+    publisher: Publisher;
     edition: PositiveNumber;
     genre: Genre | null;
   }

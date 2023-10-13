@@ -1,11 +1,11 @@
 import { IBooksRepository } from '../../persistence/books/repositories';
-import { IAuthorProvider } from '../../domain/books/authors';
+import { AuthorIdOrData, IAuthorProvider } from '../../domain/books/authors';
 import { IPublisherProvider } from '../../domain/books/publishers/publisherProvider';
 import { Book } from '../../domain/books/book';
 import { InvalidOperationError } from '#core/errors';
 import { PositiveNumber } from '#core/typing';
 import { Ratio } from '#core/typing/ratio';
-import { BookId } from '../../domain/books/entities';
+import { BookId, Genre, PublisherId, Title } from '../../domain/books/entities';
 import { BookEvent } from '../../domain/books/book';
 import { IBookFactory } from '../../domain/books/factories';
 import { bookMapper } from '../../persistence/mappers/bookMapper';
@@ -39,15 +39,15 @@ import {
 } from '../../domain/books/underEditing';
 import {
   AddChapter,
-  CreateDraft,
   MoveToEditing,
   addChapter,
   createDraft,
   moveToEditing,
 } from 'src/slimmed/domain/books/draft';
+import { Command } from '../../infrastructure/commands';
 
 export interface IBooksService {
-  createDraft(command: CreateDraft): Promise<void>;
+  createDraft(command: CreateDraftAndSetupAuthorAndPublisher): Promise<void>;
   addChapter(command: AddChapter): Promise<void>;
   moveToEditing(command: MoveToEditing): Promise<void>;
   addTranslation(command: AddTranslation): Promise<void>;
@@ -61,8 +61,22 @@ export interface IBooksService {
   moveToOutOfPrint(command: MoveToOutOfPrint): Promise<void>;
 }
 
+export type CreateDraftAndSetupAuthorAndPublisher = Command<
+  'CreateDraftCommand',
+  {
+    bookId: BookId;
+    title: Title;
+    author: AuthorIdOrData;
+    publisherId: PublisherId;
+    edition: PositiveNumber;
+    genre: Genre | null;
+  }
+>;
+
 export class BooksService implements IBooksService {
-  public createDraft = async (command: CreateDraft): Promise<void> => {
+  public createDraft = async (
+    command: CreateDraftAndSetupAuthorAndPublisher,
+  ): Promise<void> => {
     const { bookId, title, author, publisherId, edition, genre } = command.data;
 
     const authorEntity = await this.authorProvider.getOrCreate(author);

@@ -1,7 +1,10 @@
+using PublishingHouse.Books.Authors;
 using PublishingHouse.Books.Draft;
+using PublishingHouse.Books.Entities;
 using PublishingHouse.Books.InPrint;
 using PublishingHouse.Books.Published;
 using PublishingHouse.Books.UnderEditing;
+using PublishingHouse.Core.ValueObjects;
 
 namespace PublishingHouse.Application.Books;
 
@@ -13,7 +16,7 @@ using static PublishedCommand;
 
 public interface IBooksService
 {
-    Task CreateDraft(CreateDraft command, CancellationToken ct);
+    Task CreateDraft(CreateDraftAndSetupAuthorAndPublisher command, CancellationToken ct);
     Task AddChapter(AddChapter command, CancellationToken ct);
     Task MoveToEditing(MoveToEditing command, CancellationToken ct);
 
@@ -27,3 +30,12 @@ public interface IBooksService
     Task MoveToPrinting(MoveToPrinting command, CancellationToken ct);
     Task MoveToOutOfPrint(MoveToOutOfPrint command, CancellationToken ct);
 }
+
+public record CreateDraftAndSetupAuthorAndPublisher(
+    BookId BookId,
+    Title Title,
+    AuthorIdOrData Author,
+    PublisherId PublisherId,
+    PositiveInt Edition,
+    Genre? Genre
+);

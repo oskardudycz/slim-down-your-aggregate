@@ -6,7 +6,7 @@ import {
 import { Request } from 'express';
 import { BookId } from '../../domain/books/entities';
 import { DeepReadonly } from 'ts-essentials';
-import { CreateDraft } from '../../domain/books/draft';
+import { CreateDraftAndSetupAuthorAndPublisher } from '../../application/books/booksService';
 
 export type CreateDraftRequest = DeepReadonly<
   Request<
@@ -30,7 +30,7 @@ export type CreateDraftRequest = DeepReadonly<
 export const toCreateDraftCommand = (
   bookId: BookId,
   request: CreateDraftRequest,
-): CreateDraft => {
+): CreateDraftAndSetupAuthorAndPublisher => {
   const { title, publisherId, author, edition, genre } = {
     author: { authorId: undefined },
     ...request.body,

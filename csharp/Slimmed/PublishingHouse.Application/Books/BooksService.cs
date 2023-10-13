@@ -21,7 +21,7 @@ using static PublishedCommand;
 
 public class BooksService: IBooksService
 {
-    public async Task CreateDraft(CreateDraft command, CancellationToken ct)
+    public async Task CreateDraft(CreateDraftAndSetupAuthorAndPublisher command, CancellationToken ct)
     {
         var (bookId, title, author, publisherId, edition, genre) = command;
         var authorEntity = await authorProvider.GetOrCreate(author, ct);
