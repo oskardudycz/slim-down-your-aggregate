@@ -38,6 +38,9 @@ export const configureBooks = () => {
       new BookFactory(),
       new AuthorProvider(orm),
       new PublisherProvider(orm),
+      {
+        isGenreLimitReached: () => true,
+      },
       positiveNumber(minimumReviewersRequiredForApproval),
       positiveNumber(maximumNumberOfTranslations),
       ratio(maxAllowedUnsoldCopiesRatioToGoOutOfPrint),

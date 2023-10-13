@@ -12,7 +12,10 @@ export type MoveToPublished = Command<
 
 export type InPrintCommand = MoveToPublished;
 
-export const moveToPublished = (state: InPrint): Published => {
+export const moveToPublished = (
+  command: MoveToPublished,
+  state: InPrint,
+): Published => {
   return {
     type: 'Published',
     data: { totalCopies: state.totalCopies },

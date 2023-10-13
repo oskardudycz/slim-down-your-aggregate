@@ -34,7 +34,7 @@ public class BooksController: Controller
         author.AssertNotNull();
 
         await booksService.CreateDraft(
-            new CreateDraftAndSetupAuthorAndPublisher(
+            new BookApplicationCommand.CreateDraftAndSetupAuthorAndPublisher(
                 new BookId(bookId),
                 new Title(title.AssertNotEmpty()),
                 new AuthorIdOrData(

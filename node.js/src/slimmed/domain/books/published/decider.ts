@@ -9,19 +9,18 @@ export type MoveToOutOfPrint = Command<
   'MoveToOutOfPrintCommand',
   {
     bookId: BookId;
+    maxAllowedUnsoldCopiesRatioToGoOutOfPrint: Ratio;
   }
 >;
 
 export type PublishedCommand = MoveToOutOfPrint;
 
-const unsoldCopiesRatio = (state: PublishedBook): Ratio => {
-  return ratio((state.totalCopies - state.totalSoldCopies) / state.totalCopies);
-};
-
 export const moveToOutOfPrint = (
+  command: MoveToOutOfPrint,
   state: PublishedBook,
-  maxAllowedUnsoldCopiesRatioToGoOutOfPrint: Ratio,
 ): MovedToOutOfPrint => {
+  const { maxAllowedUnsoldCopiesRatioToGoOutOfPrint } = command.data;
+
   if (unsoldCopiesRatio(state) > maxAllowedUnsoldCopiesRatioToGoOutOfPrint) {
     throw InvalidStateError(
       'Cannot move to Out of Print state if more than 10% of total copies are unsold.',
@@ -32,4 +31,7 @@ export const moveToOutOfPrint = (
     type: 'MovedToOutOfPrint',
     data: {},
   };
+};
+const unsoldCopiesRatio = (state: PublishedBook): Ratio => {
+  return ratio((state.totalCopies - state.totalSoldCopies) / state.totalCopies);
 };

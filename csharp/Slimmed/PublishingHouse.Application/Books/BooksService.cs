@@ -21,7 +21,8 @@ using static PublishedCommand;
 
 public class BooksService: IBooksService
 {
-    public async Task CreateDraft(CreateDraftAndSetupAuthorAndPublisher command, CancellationToken ct)
+    public async Task CreateDraft(BookApplicationCommand.CreateDraftAndSetupAuthorAndPublisher command,
+        CancellationToken ct)
     {
         var (bookId, title, author, publisherId, edition, genre) = command;
         var authorEntity = await authorProvider.GetOrCreate(author, ct);
@@ -31,55 +32,74 @@ public class BooksService: IBooksService
             bookId,
             book =>
                 DraftDecider.CreateDraft(
-                    book,
-                    title,
-                    authorEntity,
-                    publisherEntity,
-                    edition,
-                    genre
+                    new CreateDraft(bookId, title, authorEntity, publisherEntity, edition, genre),
+                    book
                 ), ct);
     }
 
     public Task AddChapter(AddChapter command, CancellationToken ct) =>
-        Handle<BookDraft>(command.BookId, book =>
-        {
-            var (_, chapterTitle, chapterContent) = command;
-            return DraftDecider.AddChapter(book, chapterTitle, chapterContent);
-        }, ct);
+        Handle<BookDraft>(command.BookId, book => DraftDecider.AddChapter(command, book), ct);
 
     public Task MoveToEditing(MoveToEditing command, CancellationToken ct) =>
-        Handle<BookDraft>(command.BookId, DraftDecider.MoveToEditing, ct);
+        Handle<BookDraft>(command.BookId, book => DraftDecider.MoveToEditing(command, book), ct);
 
-    public Task AddTranslation(AddTranslation command, CancellationToken ct) =>
-        Handle<BookUnderEditing>(command.BookId,
-            book => UnderEditingDecider.AddTranslation(book, command.Translation, maximumNumberOfTranslations), ct);
+    public Task AddTranslation(BookApplicationCommand.AddTranslation applicationCommand, CancellationToken ct)
+    {
+        var command = new AddTranslation(
+            applicationCommand.BookId,
+            applicationCommand.Translation,
+            maximumNumberOfTranslations
+        );
+
+        return Handle<BookUnderEditing>(applicationCommand.BookId,
+            book => UnderEditingDecider.AddTranslation(command, book), ct);
+    }
 
     public Task AddFormat(AddFormat command, CancellationToken ct) =>
-        Handle<BookUnderEditing>(command.BookId, book => UnderEditingDecider.AddFormat(book, command.Format), ct);
+        Handle<BookUnderEditing>(command.BookId, book => UnderEditingDecider.AddFormat(command, book), ct);
 
     public Task RemoveFormat(RemoveFormat command, CancellationToken ct) =>
-        Handle<BookUnderEditing>(command.BookId, book => UnderEditingDecider.RemoveFormat(book, command.Format), ct);
+        Handle<BookUnderEditing>(command.BookId, book => UnderEditingDecider.RemoveFormat(command, book), ct);
 
     public Task AddReviewer(AddReviewer command, CancellationToken ct) =>
-        Handle<BookUnderEditing>(command.BookId, book => UnderEditingDecider.AddReviewer(book, command.Reviewer), ct);
+        Handle<BookUnderEditing>(command.BookId, book => UnderEditingDecider.AddReviewer(command, book), ct);
 
-    public Task Approve(Approve command, CancellationToken ct) =>
-        Handle<BookUnderEditing>(command.BookId,
-            book => UnderEditingDecider.Approve(book, command.CommitteeApproval, minimumReviewersRequiredForApproval), ct);
+    public Task Approve(BookApplicationCommand.Approve applicationCommand, CancellationToken ct)
+    {
+        var command = new Approve(
+            applicationCommand.BookId,
+            applicationCommand.CommitteeApproval,
+            minimumReviewersRequiredForApproval
+        );
+        return Handle<BookUnderEditing>(command.BookId,
+            book => UnderEditingDecider.Approve(command, book),
+            ct);
+    }
 
     public Task SetISBN(SetISBN command, CancellationToken ct) =>
-        Handle<BookUnderEditing>(command.BookId, book => UnderEditingDecider.SetISBN(book, command.ISBN), ct);
+        Handle<BookUnderEditing>(command.BookId, book => UnderEditingDecider.SetISBN(command, book), ct);
 
     public Task MoveToPrinting(MoveToPrinting command, CancellationToken ct) =>
-        Handle<BookUnderEditing>(command.BookId, book => UnderEditingDecider.MoveToPrinting(book, (null as IPublishingHouse)!),
+        Handle<BookUnderEditing>(command.BookId,
+            book =>
+            {
+                if (book.Genre != null && !publishingHouse.IsGenreLimitReached(book.Genre))
+                    throw new InvalidOperationException("Cannot move to printing until the genre limit is reached.");
+
+                return UnderEditingDecider.MoveToPrinting(new MoveToPrinting(command.BookId), book);
+            },
             ct);
 
     public Task MoveToPublished(MoveToPublished command, CancellationToken ct) =>
-        Handle<BookInPrint>(command.BookId, InPrintDecider.MoveToPublished, ct);
+        Handle<BookInPrint>(command.BookId, book => InPrintDecider.MoveToPublished(command, book), ct);
 
-    public Task MoveToOutOfPrint(MoveToOutOfPrint command, CancellationToken ct) =>
-        Handle<PublishedBook>(command.BookId,
-            book => PublishedDecider.MoveToOutOfPrint(book, maxAllowedUnsoldCopiesRatioToGoOutOfPrint), ct);
+    public Task MoveToOutOfPrint(BookApplicationCommand.MoveToOutOfPrint applicationCommand, CancellationToken ct)
+    {
+        var command = new MoveToOutOfPrint(applicationCommand.BookId, maxAllowedUnsoldCopiesRatioToGoOutOfPrint);
+
+        return Handle<PublishedBook>(command.BookId,
+            book => PublishedDecider.MoveToOutOfPrint(command, book), ct);
+    }
 
     private Task Handle<T>(BookId id, Func<T, BookEvent> handle, CancellationToken ct) where T : Book =>
         repository.GetAndUpdate(id, (entity) =>
@@ -100,6 +120,7 @@ public class BooksService: IBooksService
         IBookFactory bookFactory,
         IAuthorProvider authorProvider,
         IPublisherProvider publisherProvider,
+        IPublishingHouse publishingHouse,
         PositiveInt minimumReviewersRequiredForApproval,
         PositiveInt maximumNumberOfTranslations,
         Ratio maxAllowedUnsoldCopiesRatioToGoOutOfPrint
@@ -109,6 +130,7 @@ public class BooksService: IBooksService
         this.bookFactory = bookFactory;
         this.authorProvider = authorProvider;
         this.publisherProvider = publisherProvider;
+        this.publishingHouse = publishingHouse;
         this.minimumReviewersRequiredForApproval = minimumReviewersRequiredForApproval;
         this.maximumNumberOfTranslations = maximumNumberOfTranslations;
         this.maxAllowedUnsoldCopiesRatioToGoOutOfPrint = maxAllowedUnsoldCopiesRatioToGoOutOfPrint;
@@ -118,6 +140,7 @@ public class BooksService: IBooksService
     private readonly IBookFactory bookFactory;
     private readonly IAuthorProvider authorProvider;
     private readonly IPublisherProvider publisherProvider;
+    private readonly IPublishingHouse publishingHouse;
     private readonly PositiveInt minimumReviewersRequiredForApproval;
     private readonly PositiveInt maximumNumberOfTranslations;
     private readonly Ratio maxAllowedUnsoldCopiesRatioToGoOutOfPrint;
