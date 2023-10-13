@@ -19,18 +19,18 @@ import {
   BookId,
 } from '../entities';
 import { MovedToPrinting } from '../inPrint';
-import { IPublishingHouse } from '../services';
 
 export type AddTranslation = Command<
-  'AddTranslationCommand',
+  'AddTranslation',
   {
     bookId: BookId;
     translation: Translation;
+    maximumNumberOfTranslations: PositiveNumber;
   }
 >;
 
 export type AddFormat = Command<
-  'AddFormatCommand',
+  'AddFormat',
   {
     bookId: BookId;
     format: Format;
@@ -38,7 +38,7 @@ export type AddFormat = Command<
 >;
 
 export type RemoveFormat = Command<
-  'RemoveFormatCommand',
+  'RemoveFormat',
   {
     bookId: BookId;
     format: Format;
@@ -46,7 +46,7 @@ export type RemoveFormat = Command<
 >;
 
 export type AddReviewer = Command<
-  'AddReviewerCommand',
+  'AddReviewer',
   {
     bookId: BookId;
     reviewer: Reviewer;
@@ -54,15 +54,16 @@ export type AddReviewer = Command<
 >;
 
 export type Approve = Command<
-  'ApproveCommand',
+  'Approve',
   {
     bookId: BookId;
     committeeApproval: CommitteeApproval;
+    minimumReviewersRequiredForApproval: PositiveNumber;
   }
 >;
 
 export type SetISBN = Command<
-  'SetISBNCommand',
+  'SetISBN',
   {
     bookId: BookId;
     isbn: ISBN;
@@ -70,7 +71,7 @@ export type SetISBN = Command<
 >;
 
 export type MoveToPrinting = Command<
-  'MoveToPrintingCommand',
+  'MoveToPrinting',
   {
     bookId: BookId;
   }
@@ -86,20 +87,23 @@ export type UnderEdititngCommand =
   | MoveToPrinting;
 
 export const addTranslation = (
+  command: AddTranslation,
   state: UnderEditing,
-  translation: Translation,
-  maximumNumberOfTranslations: PositiveNumber,
 ): TranslationAdded => {
-  const { language } = translation;
-
-  if (state.translationLanguages.includes(language.id))
-    throw InvalidStateError(`Translation to ${language.name} already exists.`);
+  const {
+    translation,
+    maximumNumberOfTranslations,
+    translation: { language },
+  } = command.data;
 
   if (state.translationLanguages.length > maximumNumberOfTranslations) {
     throw InvalidStateError(
       `Cannot add more translations. Maximum ${maximumNumberOfTranslations} translations are allowed.`,
     );
   }
+
+  if (state.translationLanguages.includes(language.id))
+    throw InvalidStateError(`Translation to ${language.name} already exists.`);
 
   return {
     type: 'TranslationAdded',
@@ -109,8 +113,14 @@ export const addTranslation = (
   };
 };
 
-export const addFormat = (state: UnderEditing, format: Format): FormatAdded => {
-  const { formatType } = format;
+export const addFormat = (
+  command: AddFormat,
+  state: UnderEditing,
+): FormatAdded => {
+  const {
+    format,
+    format: { formatType },
+  } = command.data;
 
   if (state.formats.some((f) => f.formatType == formatType)) {
     throw InvalidStateError(`Format ${format.formatType} already exists.`);
@@ -125,10 +135,13 @@ export const addFormat = (state: UnderEditing, format: Format): FormatAdded => {
 };
 
 export const removeFormat = (
+  command: RemoveFormat,
   state: UnderEditing,
-  format: Format,
 ): FormatRemoved => {
-  const { formatType } = format;
+  const {
+    format,
+    format: { formatType },
+  } = command.data;
 
   if (!state.formats.some((f) => f.formatType == formatType)) {
     throw InvalidStateError(`Format ${format.formatType} does not exist.`);
@@ -143,13 +156,15 @@ export const removeFormat = (
 };
 
 export const addReviewer = (
+  command: AddReviewer,
   state: UnderEditing,
-  reviewer: Reviewer,
 ): ReviewerAdded => {
-  const { id: reviewerId } = reviewer;
+  const {
+    reviewer,
+    reviewer: { id: reviewerId, name: reviewerName },
+  } = command.data;
 
   if (state.reviewers.includes(reviewerId)) {
-    const reviewerName: string = reviewer.name;
     throw InvalidStateError(`${reviewerName} is already a reviewer.`);
   }
 
@@ -161,11 +176,10 @@ export const addReviewer = (
   };
 };
 
-export const approve = (
-  state: UnderEditing,
-  committeeApproval: CommitteeApproval,
-  minimumReviewersRequiredForApproval: PositiveNumber,
-): Approved => {
+export const approve = (command: Approve, state: UnderEditing): Approved => {
+  const { committeeApproval, minimumReviewersRequiredForApproval } =
+    command.data;
+
   if (state.reviewers.length < minimumReviewersRequiredForApproval) {
     throw InvalidStateError(
       'A book cannot be approved unless it has been reviewed by at least three reviewers.',
@@ -180,7 +194,9 @@ export const approve = (
   };
 };
 
-export const setISBN = (state: UnderEditing, isbn: ISBN): ISBNSet => {
+export const setISBN = (command: SetISBN, state: UnderEditing): ISBNSet => {
+  const { isbn } = command.data;
+
   if (state.isISBNSet) {
     throw InvalidStateError('Cannot change already set ISBN.');
   }
@@ -194,8 +210,8 @@ export const setISBN = (state: UnderEditing, isbn: ISBN): ISBNSet => {
 };
 
 export const moveToPrinting = (
+  command: MoveToPrinting,
   state: UnderEditing,
-  publishingHouse: IPublishingHouse,
 ): MovedToPrinting => {
   if (state.isApproved === null) {
     throw InvalidStateError(
@@ -206,13 +222,6 @@ export const moveToPrinting = (
   if (state.genre === null) {
     throw InvalidStateError(
       'Book can be moved to the printing only when genre is specified',
-    );
-  }
-
-  // Check for genre limit
-  if (!publishingHouse.isGenreLimitReached(state.genre)) {
-    throw InvalidStateError(
-      'Cannot move to printing until the genre limit is reached.',
     );
   }
 

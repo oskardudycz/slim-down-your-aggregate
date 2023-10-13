@@ -2,10 +2,17 @@ import { IBooksRepository } from '../../persistence/books/repositories';
 import { AuthorIdOrData, IAuthorProvider } from '../../domain/books/authors';
 import { IPublisherProvider } from '../../domain/books/publishers/publisherProvider';
 import { Book } from '../../domain/books/book';
-import { InvalidOperationError } from '#core/errors';
+import { InvalidOperationError, InvalidStateError } from '#core/errors';
 import { PositiveNumber } from '#core/typing';
 import { Ratio } from '#core/typing/ratio';
-import { BookId, Genre, PublisherId, Title } from '../../domain/books/entities';
+import {
+  BookId,
+  CommitteeApproval,
+  Genre,
+  PublisherId,
+  Title,
+  Translation,
+} from '../../domain/books/entities';
 import { BookEvent } from '../../domain/books/book';
 import { IBookFactory } from '../../domain/books/factories';
 import { bookMapper } from '../../persistence/mappers/bookMapper';
@@ -16,15 +23,15 @@ import {
   moveToPublished,
 } from '../../domain/books/inPrint';
 import {
-  MoveToOutOfPrint,
+  MoveToOutOfPrint as MoveToOutOfPrintWithAdditionalData,
   isPublished,
   moveToOutOfPrint,
 } from '../../domain/books/published';
 import {
   AddFormat,
   AddReviewer,
-  AddTranslation,
-  Approve,
+  AddTranslation as AddTranslationWithAdditonalData,
+  Approve as ApproveWithAdditionalData,
   MoveToPrinting,
   RemoveFormat,
   SetISBN,
@@ -45,6 +52,7 @@ import {
   moveToEditing,
 } from 'src/slimmed/domain/books/draft';
 import { Command } from '../../infrastructure/commands';
+import { IPublishingHouse } from 'src/original/domain/books/services';
 
 export interface IBooksService {
   createDraft(command: CreateDraftAndSetupAuthorAndPublisher): Promise<void>;
@@ -72,6 +80,34 @@ export type CreateDraftAndSetupAuthorAndPublisher = Command<
     genre: Genre | null;
   }
 >;
+
+export type AddTranslation = Command<
+  'AddTranslationCommand',
+  {
+    bookId: BookId;
+    translation: Translation;
+  }
+>;
+export type Approve = Command<
+  'ApproveCommand',
+  {
+    bookId: BookId;
+    committeeApproval: CommitteeApproval;
+  }
+>;
+
+export type MoveToOutOfPrint = Command<
+  'MoveToOutOfPrintCommand',
+  {
+    bookId: BookId;
+    maxAllowedUnsoldCopiesRatioToGoOutOfPrint: Ratio;
+  }
+>;
+
+export type BookApplicationCommand =
+  | CreateDraftAndSetupAuthorAndPublisher
+  | AddTranslation
+  | Approve;
 
 export class BooksService implements IBooksService {
   public createDraft = async (
@@ -113,93 +149,107 @@ export class BooksService implements IBooksService {
       return moveToEditing(book);
     });
 
-  public addTranslation = async (command: AddTranslation): Promise<void> =>
-    this.handle(command.data.bookId, (book) => {
+  public addTranslation = async (
+    applicationCommand: AddTranslation,
+  ): Promise<void> => {
+    const command: AddTranslationWithAdditonalData = {
+      type: 'AddTranslation',
+      data: {
+        ...applicationCommand.data,
+        maximumNumberOfTranslations: this.maximumNumberOfTranslations,
+      },
+    };
+
+    return this.handle(command.data.bookId, (book) => {
       if (!isUnderEditing(book)) throw InvalidOperationError('Invalid State');
 
-      const { translation } = command.data;
-
-      return addTranslation(
-        book,
-        translation,
-        this.maximumNumberOfTranslations,
-      );
+      return addTranslation(command, book);
     });
+  };
 
   public addFormat = async (command: AddFormat): Promise<void> =>
     this.handle(command.data.bookId, (book) => {
       if (!isUnderEditing(book)) throw InvalidOperationError('Invalid State');
 
-      const { format } = command.data;
-
-      return addFormat(book, format);
+      return addFormat(command, book);
     });
 
   public removeFormat = async (command: RemoveFormat): Promise<void> =>
     this.handle(command.data.bookId, (book) => {
       if (!isUnderEditing(book)) throw InvalidOperationError('Invalid State');
 
-      const { format } = command.data;
-
-      return removeFormat(book, format);
+      return removeFormat(command, book);
     });
 
   public addReviewer = async (command: AddReviewer): Promise<void> =>
     this.handle(command.data.bookId, (book) => {
       if (!isUnderEditing(book)) throw InvalidOperationError('Invalid State');
 
-      const { reviewer } = command.data;
-
-      return addReviewer(book, reviewer);
+      return addReviewer(command, book);
     });
 
-  public approve = async (command: Approve): Promise<void> =>
-    this.handle(command.data.bookId, (book) => {
+  public approve = async (applicationCommand: Approve): Promise<void> => {
+    const command: ApproveWithAdditionalData = {
+      type: 'Approve',
+      data: {
+        ...applicationCommand.data,
+        minimumReviewersRequiredForApproval:
+          this.minimumReviewersRequiredForApproval,
+      },
+    };
+
+    return this.handle(command.data.bookId, (book) => {
       if (!isUnderEditing(book)) throw InvalidOperationError('Invalid State');
 
-      const { committeeApproval } = command.data;
-
-      return approve(
-        book,
-        committeeApproval,
-        this.minimumReviewersRequiredForApproval,
-      );
+      return approve(command, book);
     });
+  };
 
   public setISBN = async (command: SetISBN): Promise<void> =>
     this.handle(command.data.bookId, (book) => {
       if (!isUnderEditing(book)) throw InvalidOperationError('Invalid State');
 
-      const { isbn } = command.data;
-
-      return setISBN(book, isbn);
+      return setISBN(command, book);
     });
 
   public moveToPrinting = async (command: MoveToPrinting): Promise<void> =>
     this.handle(command.data.bookId, (book) => {
       if (!isUnderEditing(book)) throw InvalidOperationError('Invalid State');
 
-      return moveToPrinting(book, {
-        isGenreLimitReached: () => true,
-      });
+      if (book.genre && !this.publishingHouse.isGenreLimitReached(book.genre)) {
+        throw InvalidStateError(
+          'Cannot move to printing until the genre limit is reached.',
+        );
+      }
+
+      return moveToPrinting(command, book);
     });
 
   public moveToPublished = async (command: MoveToPublished): Promise<void> =>
     this.handle(command.data.bookId, (book) => {
       if (!isInPrint(book)) throw InvalidOperationError('Invalid State');
 
-      return moveToPublished(book);
+      return moveToPublished(command, book);
     });
 
-  public moveToOutOfPrint = async (command: MoveToOutOfPrint): Promise<void> =>
-    this.handle(command.data.bookId, (book) => {
+  public moveToOutOfPrint = async (
+    applicationCommand: MoveToOutOfPrint,
+  ): Promise<void> => {
+    const command: MoveToOutOfPrintWithAdditionalData = {
+      type: 'MoveToOutOfPrintCommand',
+      data: {
+        ...applicationCommand.data,
+        maxAllowedUnsoldCopiesRatioToGoOutOfPrint:
+          this.maxAllowedUnsoldCopiesRatioToGoOutOfPrint,
+      },
+    };
+
+    return this.handle(command.data.bookId, (book) => {
       if (!isPublished(book)) throw InvalidOperationError('Invalid State');
 
-      return moveToOutOfPrint(
-        book,
-        this.maxAllowedUnsoldCopiesRatioToGoOutOfPrint,
-      );
+      return moveToOutOfPrint(command, book);
     });
+  };
 
   private handle = (
     id: BookId,
@@ -223,6 +273,7 @@ export class BooksService implements IBooksService {
     private readonly bookFactory: IBookFactory,
     private readonly authorProvider: IAuthorProvider,
     private readonly publisherProvider: IPublisherProvider,
+    private readonly publishingHouse: IPublishingHouse,
     private readonly minimumReviewersRequiredForApproval: PositiveNumber,
     private readonly maximumNumberOfTranslations: PositiveNumber,
     private readonly maxAllowedUnsoldCopiesRatioToGoOutOfPrint: Ratio,

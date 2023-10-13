@@ -6,6 +6,7 @@ using PublishingHouse.Core.ValueObjects;
 namespace PublishingHouse.Books.Draft;
 
 using static DraftEvent;
+using static DraftCommand;
 using static UnderEditingEvent;
 
 public abstract record DraftCommand: BookCommand
@@ -13,8 +14,8 @@ public abstract record DraftCommand: BookCommand
     public record CreateDraft(
         BookId BookId,
         Title Title,
-        AuthorIdOrData Author,
-        PublisherId PublisherId,
+        Author Author,
+        Publisher Publisher,
         PositiveInt Edition,
         Genre? Genre
     ): DraftCommand;
@@ -27,23 +28,21 @@ public abstract record DraftCommand: BookCommand
 
     public record MoveToEditing(BookId BookId): DraftCommand;
 
-    private DraftCommand(){}
+    private DraftCommand() { }
 }
 
 public static class DraftDecider
 {
     public static DraftCreated CreateDraft(
-        InitialBook state,
-        Title title,
-        Author author,
-        Publisher publisher,
-        PositiveInt edition,
-        Genre? genre
+        CreateDraft command,
+        InitialBook state
     ) =>
-        new DraftCreated(title, author, publisher, edition, genre);
+        new(command.Title, command.Author, command.Publisher, command.Edition, command.Genre);
 
-    public static ChapterAdded AddChapter(BookDraft state, ChapterTitle title, ChapterContent content)
+    public static ChapterAdded AddChapter(AddChapter command, BookDraft state)
     {
+        var (_, title, content) = command;
+
         if (!title.Value.StartsWith("Chapter " + (state.ChapterTitles.Count + 1)))
             throw new InvalidOperationException(
                 $"Chapter should be added in sequence. The title of the next chapter should be 'Chapter {state.ChapterTitles.Count + 1}'");
@@ -54,7 +53,7 @@ public static class DraftDecider
         return new ChapterAdded(new Chapter(new ChapterNumber(state.ChapterTitles.Count + 1), title, content));
     }
 
-    public static MovedToEditing MoveToEditing(BookDraft state)
+    public static MovedToEditing MoveToEditing(MoveToEditing command, BookDraft state)
     {
         if (state.ChaptersCount < 1)
             throw new InvalidOperationException(

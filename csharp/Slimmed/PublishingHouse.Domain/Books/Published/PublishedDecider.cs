@@ -8,13 +8,15 @@ using static PublishedEvent;
 
 public abstract record PublishedCommand: BookCommand
 {
-    public record MoveToOutOfPrint(BookId BookId): BookCommand;
+    public record MoveToOutOfPrint(BookId BookId, Ratio MaxAllowedUnsoldCopiesRatioToGoOutOfPrint): BookCommand;
 }
 
 public static class PublishedDecider
 {
-    public static MovedToOutOfPrint MoveToOutOfPrint(PublishedBook state, Ratio maxAllowedUnsoldCopiesRatioToGoOutOfPrint)
+    public static MovedToOutOfPrint MoveToOutOfPrint(PublishedCommand.MoveToOutOfPrint command, PublishedBook state)
     {
+        var (_, maxAllowedUnsoldCopiesRatioToGoOutOfPrint) = command;
+
         if (state.UnsoldCopiesRatio.CompareTo(maxAllowedUnsoldCopiesRatioToGoOutOfPrint) > 0)
             throw new InvalidOperationException(
                 "Cannot move to Out of Print state if more than 10% of total copies are unsold.");

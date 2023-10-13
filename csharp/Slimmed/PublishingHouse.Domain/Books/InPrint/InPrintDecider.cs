@@ -4,7 +4,7 @@ using PublishingHouse.Books.Published;
 namespace PublishingHouse.Books.InPrint;
 
 using static PublishedEvent;
-
+using static InPrintCommand;
 
 public abstract record InPrintCommand: BookCommand
 {
@@ -15,6 +15,6 @@ public abstract record InPrintCommand: BookCommand
 
 public static class InPrintDecider
 {
-    public static Published MoveToPublished(BookInPrint state) =>
+    public static Published MoveToPublished(MoveToPublished command, BookInPrint state) =>
         new Published(state.TotalCopies);
 }
