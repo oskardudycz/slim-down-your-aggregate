@@ -3,5 +3,5 @@ package io.eventdriven.slimdownaggregates.original.domain.books.authors;
 import io.eventdriven.slimdownaggregates.original.domain.books.entities.Author;
 
 public interface AuthorProvider {
-  Author GetOrCreate(AuthorIdOrData authorIdOrData);
+  Author getOrCreate(AuthorIdOrData authorIdOrData);
 }
