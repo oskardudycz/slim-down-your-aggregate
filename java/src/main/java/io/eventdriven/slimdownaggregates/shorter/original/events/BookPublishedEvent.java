@@ -1,7 +1,7 @@
 package io.eventdriven.slimdownaggregates.shorter.original.events;
 
 
-import io.eventdriven.slimdownaggregates.shorter.original.core.IDomainEvent;
+import io.eventdriven.slimdownaggregates.shorter.original.core.DomainEvent;
 import io.eventdriven.slimdownaggregates.shorter.original.entities.Author;
 import io.eventdriven.slimdownaggregates.shorter.original.entities.BookId;
 import io.eventdriven.slimdownaggregates.shorter.original.entities.ISBN;
@@ -12,5 +12,5 @@ public record BookPublishedEvent(
   ISBN isbn,
   Title title,
   Author author
-) implements IDomainEvent {
+) implements DomainEvent {
 }
