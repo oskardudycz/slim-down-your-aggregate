@@ -6,9 +6,9 @@ import io.eventdriven.slimdownaggregates.original.domain.books.entities.BookId;
 import java.util.Optional;
 
 public interface BooksRepository {
-  Optional<Book> FindById(BookId bookId);
+  Optional<Book> findById(BookId bookId);
 
-  void Add(Book book);
+  void add(Book book);
 
-  void Update(Book book);
+  void update(Book book);
 }
