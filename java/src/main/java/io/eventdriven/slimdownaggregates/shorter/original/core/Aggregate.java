@@ -7,14 +7,14 @@ import java.util.UUID;
 
 public abstract class Aggregate {
   protected UUID id;
-  private List<IDomainEvent> domainEvents;
+  private List<DomainEvent> domainEvents;
 
   protected Aggregate(UUID id) {
     this.id = id;
     this.domainEvents = new ArrayList<>();
   }
 
-  protected void addDomainEvent(IDomainEvent domainEvent) {
+  protected void addDomainEvent(DomainEvent domainEvent) {
     this.domainEvents.add(domainEvent);
   }
 
@@ -22,7 +22,7 @@ public abstract class Aggregate {
     this.domainEvents.clear();
   }
 
-  public List<IDomainEvent> getDomainEvents() {
+  public List<DomainEvent> getDomainEvents() {
     return Collections.unmodifiableList(domainEvents);
   }
 
