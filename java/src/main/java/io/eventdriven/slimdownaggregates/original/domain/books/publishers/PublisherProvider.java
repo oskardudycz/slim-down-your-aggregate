@@ -4,5 +4,5 @@ import io.eventdriven.slimdownaggregates.original.domain.books.entities.Publishe
 import io.eventdriven.slimdownaggregates.original.domain.books.entities.PublisherId;
 
 public interface PublisherProvider {
-  Publisher GetById(PublisherId publisherId);
+  Publisher getById(PublisherId publisherId);
 }
