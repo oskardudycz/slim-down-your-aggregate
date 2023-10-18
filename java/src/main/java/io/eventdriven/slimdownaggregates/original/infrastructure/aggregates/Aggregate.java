@@ -32,7 +32,7 @@ public abstract class Aggregate<TKey> {
     return Collections.unmodifiableList(domainEvents);
   }
 
-  public TKey getId() {
+  public TKey id() {
     return id;
   }
 }
