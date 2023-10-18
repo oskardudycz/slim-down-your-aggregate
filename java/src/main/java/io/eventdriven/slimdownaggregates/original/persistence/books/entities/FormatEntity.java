@@ -31,6 +31,14 @@ public class FormatEntity {
   // Default constructor for JPA
   public FormatEntity() {}
 
+  // Default constructor for JPA
+  public FormatEntity(UUID bookId, String formatType, int totalCopies, int soldCopies) {
+    this.bookId = bookId;
+    this.formatType = formatType;
+    this.totalCopies = totalCopies;
+    this.soldCopies = soldCopies;
+  }
+
   // Getters and setters
 
   public String getFormatType() {

@@ -7,12 +7,23 @@ import io.eventdriven.slimdownaggregates.original.application.books.BooksService
 import io.eventdriven.slimdownaggregates.original.domain.books.Book;
 import io.eventdriven.slimdownaggregates.original.domain.books.authors.AuthorProvider;
 import io.eventdriven.slimdownaggregates.original.domain.books.entities.*;
+import io.eventdriven.slimdownaggregates.original.domain.books.factories.BookFactory;
 import io.eventdriven.slimdownaggregates.original.domain.books.publishers.PublisherProvider;
 import io.eventdriven.slimdownaggregates.original.domain.books.repositories.BooksQueryRepository;
 import io.eventdriven.slimdownaggregates.original.domain.books.repositories.BooksRepository;
 import io.eventdriven.slimdownaggregates.original.domain.books.services.PublishingHouse;
+import io.eventdriven.slimdownaggregates.original.persistence.authors.AuthorEntity;
+import io.eventdriven.slimdownaggregates.original.persistence.authors.AuthorRepository;
+import io.eventdriven.slimdownaggregates.original.persistence.authors.AuthorService;
+import io.eventdriven.slimdownaggregates.original.persistence.books.BookEntity;
+import io.eventdriven.slimdownaggregates.original.persistence.books.repositories.BooksEntityRepository;
+import io.eventdriven.slimdownaggregates.original.persistence.books.repositories.BooksJpaRepository;
+import io.eventdriven.slimdownaggregates.original.persistence.publishers.PublisherEntity;
+import io.eventdriven.slimdownaggregates.original.persistence.publishers.PublisherRepository;
+import io.eventdriven.slimdownaggregates.original.persistence.publishers.PublisherService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.jpa.repository.support.JpaRepositoryFactoryBean;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -45,27 +56,19 @@ public class Config {
   }
 
   @Bean
-  BooksRepository booksRepository() {
-    Map<BookId, Book> books = new HashMap<>();
+  BooksRepository booksRepository(BooksJpaRepository jpaRepository, BookFactory bookFactory) {
+    return new BooksEntityRepository(jpaRepository, bookFactory);
+  }
 
-    return new BooksRepository() {
-      @Override
-      public Optional<Book> findById(BookId bookId) {
-        return books.containsKey(bookId) ?
-          Optional.of(books.get(bookId))
-          : Optional.empty();
-      }
+  @Bean
+  // assuming userId is String
+  public JpaRepositoryFactoryBean<BooksJpaRepository, BookEntity, UUID> userRepository() {
+    return new JpaRepositoryFactoryBean<>(BooksJpaRepository.class);
+  }
 
-      @Override
-      public void add(Book book) {
-        books.put(book.id(), book);
-      }
-
-      @Override
-      public void update(Book book) {
-        books.put(book.id(), book);
-      }
-    };
+  @Bean
+  BookFactory bookFactory() {
+    return new Book.Factory();
   }
 
   @Bean
@@ -74,16 +77,25 @@ public class Config {
   }
 
   @Bean
-  AuthorProvider authorProvider() {
-    return authorIdOrData ->
-      authorIdOrData.authorId() != null ?
-        new Author(authorIdOrData.authorId(), new AuthorFirstName("John"), new AuthorLastName("Doe"))
-        : new Author(new AuthorId(UUID.randomUUID()), authorIdOrData.firstName(), authorIdOrData.lastName());
+  AuthorProvider authorProvider(AuthorRepository authorRepository) {
+    return new AuthorService(authorRepository);
   }
 
   @Bean
-  PublisherProvider publisherProvider() {
-    return publisherId -> new Publisher(publisherId, new PublisherName("Readers Digest"));
+  // assuming userId is String
+  public JpaRepositoryFactoryBean<AuthorRepository, AuthorEntity, UUID> authorRepository() {
+    return new JpaRepositoryFactoryBean<>(AuthorRepository.class);
+  }
+
+  @Bean
+  PublisherProvider publisherProvider(PublisherRepository publisherRepository) {
+    return new PublisherService(publisherRepository);
+  }
+
+  @Bean
+  // assuming userId is String
+  public JpaRepositoryFactoryBean<PublisherRepository, PublisherEntity, UUID> publisherRepository() {
+    return new JpaRepositoryFactoryBean<>(PublisherRepository.class);
   }
 
   @Bean

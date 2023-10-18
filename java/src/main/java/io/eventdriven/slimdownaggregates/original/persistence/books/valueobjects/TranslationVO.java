@@ -28,7 +28,12 @@ public class TranslationVO {
   private TranslatorEntity translator;
 
   // Default constructor for JPA
-  public TranslationVO() {}
+  public TranslationVO(){}
+
+  public TranslationVO(UUID languageId, UUID translatorId) {
+    this.languageId = languageId;
+    this.translatorId = translatorId;
+  }
 
   // Getters and setters
 

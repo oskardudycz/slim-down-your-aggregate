@@ -17,6 +17,11 @@ public class ReviewerEntity {
     // Default constructor for JPA
   }
 
+  public ReviewerEntity(UUID id, String name) {
+    this.id = id;
+    this.name = name;
+  }
+
   // Standard getters and setters
 
   public UUID getId() {

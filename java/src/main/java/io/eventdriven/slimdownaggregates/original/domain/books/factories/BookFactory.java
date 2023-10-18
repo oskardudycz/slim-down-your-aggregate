@@ -9,7 +9,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 public interface BookFactory {
-  Book Create(
+  Book create(
     BookId bookId,
     Book.State state,
     Title title,
