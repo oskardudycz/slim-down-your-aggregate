@@ -28,7 +28,12 @@ public class ChapterEntity {
   private BookEntity book;
 
   // Default constructor for JPA
-  public ChapterEntity() {}
+  public ChapterEntity(UUID bookId, int chapterNumber, String title, String content) {
+    this.bookId = bookId;
+    this.number = chapterNumber;
+    this.title = title;
+    this.content = content;
+  }
 
   // Getters and setters
 
