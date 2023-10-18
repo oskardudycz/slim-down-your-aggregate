@@ -327,10 +327,10 @@ public class Book extends Aggregate<BookId> {
 
   public enum State {WRITING, EDITING, PRINTING, PUBLISHED, OUT_OF_PRINT}
 
-  public class Factory implements BookFactory {
+  public static class Factory implements BookFactory {
 
     @Override
-    public Book Create(
+    public Book create(
       BookId bookId,
       State state,
       Title title,
